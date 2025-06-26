@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фигуры как нарисованные от руки</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        canvas {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            cursor: grab;
+        }
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 200px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .slider-container { margin: 10px 0; }
+        .slider-container label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .slider {
+            width: 100%;
+            height: 5px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #007bff;
+            cursor: pointer;
+        }
+        .value-display { font-size: 12px; color: #666; margin-top: 2px; }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <h3>Управление</h3>
+        <div class="slider-container">
+            <label for="roughnessSlider">Естественность линий:</label>
+            <input type="range" id="roughnessSlider" class="slider" min="0" max="3" value="1" step="1">
+            <div class="value-display" id="roughnessValue">1</div>
+        </div>
+        <div class="slider-container">
+            <label for="segmentsSlider">Плавность:</label>
+            <input type="range" id="segmentsSlider" class="slider" min="20" max="100" value="50" step="10">
+            <div class="value-display" id="segmentsValue">50 точек</div>
+        </div>
+        <div class="slider-container">
+            <label for="variationSlider">Вариация толщины:</label>
+            <input type="range" id="variationSlider" class="slider" min="0" max="3" value="1" step="0.5">
+            <div class="value-display" id="variationValue">1</div>
+        </div>
+        <button onclick="redrawShapes()">Перерисовать</button>
+        <button onclick="addRandomShape()">Добавить фигуру</button>
+        <button onclick="clearCanvas()">Очистить</button>
+    </div>
+    
+    <canvas id="canvas" width="800" height="600"></canvas>
+
+    <script>
+    class CanvasEditor {
+        /**
+         * Конструктор класса. Инициализирует canvas, состояние, события и начальные фигуры.
+         * @param {string} canvasId - id элемента canvas
+         */
+        constructor(canvasId) {
+            this.canvas = document.getElementById(canvasId);
+            this.ctx = this.canvas.getContext('2d');
+            this.roughness = { intensity: 1, segments: 50, variation: 1 };
+            this.interaction = { isDragging: false, isResizing: false, selectedShape: null, dragOffset: {x:0,y:0}, resizeHandle: null };
+            this.shapes = [
+                { type: 'rectangle', x: 150, y: 100, width: 200, height: 120, color: '#ff6b6b', strokeWidth: 3, selected: false },
+                { type: 'circle', x: 500, y: 200, radius: 80, color: '#4ecdc4', strokeWidth: 4, selected: false },
+                { type: 'triangle', points: [{x:300,y:350},{x:450,y:350},{x:375,y:250}], color: '#45b7d1', strokeWidth: 3, selected: false, centerX: 375, centerY: 316.67, size: 150 }
+            ];
+            this.initSliders();
+            this.attachEvents();
+            this.shapes.forEach(shape => this.generateRoughPaths(shape, true));
+            this.drawShapes();
+        }
+
+        /**
+         * Генерирует путь с "нарисованным от руки" эффектом по заданным точкам.
+         * @param {Array} points - массив точек {x, y}
+         * @param {boolean} closed - замкнутый ли путь
+         * @returns {Array} массив точек пути
+         */
+        generateHandDrawnPath(points, closed = true) {
+            if (points.length < 2) return points;
+            const path = [];
+            const curvature = this.roughness.intensity * 0.3;
+            for (let i = 0; i < points.length; i++) {
+                const current = points[i];
+                const next = points[(i + 1) % points.length];
+                if (!closed && i === points.length - 1) break;
+                const wobbleX = (Math.random() - 0.5) * this.roughness.intensity * 0.5;
+                const wobbleY = (Math.random() - 0.5) * this.roughness.intensity * 0.5;
+                path.push({ x: current.x + wobbleX, y: current.y + wobbleY });
+                const segments = Math.max(3, Math.floor(this.roughness.segments / (points.length * 2)));
+                for (let j = 1; j < segments; j++) {
+                    const t = j / segments;
+                    const dx = next.x - current.x;
+                    const dy = next.y - current.y;
+                    const baseX = current.x + dx * t;
+                    const baseY = current.y + dy * t;
+                    const perpX = -dy / Math.sqrt(dx*dx + dy*dy) || 0;
+                    const perpY = dx / Math.sqrt(dx*dx + dy*dy) || 0;
+                    const waveOffset = Math.sin(t * Math.PI * 2) * curvature;
+                    const randomOffset = (Math.random() - 0.5) * this.roughness.intensity;
+                    const totalOffset = waveOffset + randomOffset;
+                    const longWobble = (Math.random() - 0.5) * this.roughness.intensity * 0.3;
+                    path.push({
+                        x: baseX + perpX * totalOffset + dx * longWobble * 0.01,
+                        y: baseY + perpY * totalOffset + dy * longWobble * 0.01
+                    });
+                }
+            }
+            return path;
+        }
+
+        /**
+         * Генерирует или обновляет путь фигуры с учетом текущих параметров естественности.
+         * @param {Object} shape - объект фигуры
+         * @param {boolean} forceRegenerate - принудительно пересоздать путь
+         */
+        generateRoughPaths(shape, forceRegenerate = false) {
+            if (shape.roughPath && !forceRegenerate) {
+                this.updateRoughPathPositions(shape);
+                return;
+            }
+            if (shape.type === 'rectangle') {
+                const corners = [
+                    {x: 0, y: 0},
+                    {x: shape.width, y: 0},
+                    {x: shape.width, y: shape.height},
+                    {x: 0, y: shape.height}
+                ];
+                shape.baseRoughPath = this.generateHandDrawnPath(corners, true);
+            } else if (shape.type === 'circle') {
+                const points = [];
+                const numPoints = Math.max(16, Math.floor(this.roughness.segments / 3));
+                for (let i = 0; i < numPoints; i++) {
+                    const angle = (i * Math.PI * 2) / numPoints;
+                    const radiusVariation = 1 + (Math.random() - 0.5) * 0.1;
+                    const r = shape.radius * radiusVariation;
+                    points.push({ x: Math.cos(angle) * r, y: Math.sin(angle) * r });
+                }
+                shape.baseRoughPath = this.generateHandDrawnPath(points, true);
+            } else if (shape.type === 'triangle') {
+                const relativePoints = shape.points.map(p => ({ x: p.x - shape.centerX, y: p.y - shape.centerY }));
+                shape.baseRoughPath = this.generateHandDrawnPath(relativePoints, true);
+            }
+            this.updateRoughPathPositions(shape);
+        }
+
+        /**
+         * Обновляет абсолютные координаты точек пути фигуры без перегенерации базового пути.
+         * @param {Object} shape - объект фигуры
+         */
+        updateRoughPathPositions(shape) {
+            if (!shape.baseRoughPath) return;
+            shape.roughPath = shape.baseRoughPath.map(point => {
+                if (shape.type === 'rectangle') {
+                    return { x: shape.x + point.x, y: shape.y + point.y };
+                } else if (shape.type === 'circle') {
+                    return { x: shape.x + point.x, y: shape.y + point.y };
+                } else if (shape.type === 'triangle') {
+                    return { x: shape.centerX + point.x, y: shape.centerY + point.y };
+                }
+                return point;
+            });
+        }
+
+        /**
+         * Рисует фигуру с "нарисованным от руки" эффектом на canvas.
+         * @param {Object} shape - объект фигуры
+         */
+        drawHandDrawnShape(shape) {
+            if (!shape.roughPath || shape.roughPath.length === 0) return;
+            const ctx = this.ctx;
+            ctx.strokeStyle = shape.color;
+            ctx.lineWidth = shape.strokeWidth;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(shape.roughPath[0].x, shape.roughPath[0].y);
+            for (let i = 1; i < shape.roughPath.length - 1; i++) {
+                const current = shape.roughPath[i];
+                const next = shape.roughPath[i + 1];
+                const cpX = current.x;
+                const cpY = current.y;
+                const endX = (current.x + next.x) / 2;
+                const endY = (current.y + next.y) / 2;
+                ctx.quadraticCurveTo(cpX, cpY, endX, endY);
+            }
+            if (shape.roughPath.length > 2) {
+                ctx.quadraticCurveTo(
+                    shape.roughPath[shape.roughPath.length - 1].x,
+                    shape.roughPath[shape.roughPath.length - 1].y,
+                    shape.roughPath[0].x,
+                    shape.roughPath[0].y
+                );
+            }
+            ctx.stroke();
+            if (this.roughness.variation > 0) {
+                ctx.save();
+                ctx.globalAlpha = 0.3;
+                ctx.lineWidth = shape.strokeWidth * 0.5;
+                ctx.translate(
+                    (Math.random() - 0.5) * this.roughness.variation,
+                    (Math.random() - 0.5) * this.roughness.variation
+                );
+                ctx.beginPath();
+                ctx.moveTo(shape.roughPath[0].x, shape.roughPath[0].y);
+                for (let i = 1; i < shape.roughPath.length - 1; i++) {
+                    const current = shape.roughPath[i];
+                    const next = shape.roughPath[i + 1];
+                    const cpX = current.x + (Math.random() - 0.5) * 2;
+                    const cpY = current.y + (Math.random() - 0.5) * 2;
+                    const endX = (current.x + next.x) / 2;
+                    const endY = (current.y + next.y) / 2;
+                    ctx.quadraticCurveTo(cpX, cpY, endX, endY);
+                }
+                if (shape.roughPath.length > 2) {
+                    ctx.quadraticCurveTo(
+                        shape.roughPath[shape.roughPath.length - 1].x,
+                        shape.roughPath[shape.roughPath.length - 1].y,
+                        shape.roughPath[0].x,
+                        shape.roughPath[0].y
+                    );
+                }
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        /**
+         * Рисует выделение и ручки изменения размера для выбранной фигуры.
+         * @param {Object} shape - объект фигуры
+         */
+        drawSelection(shape) {
+            if (!shape.selected) return;
+            const ctx = this.ctx;
+            const bounds = this.getShapeBounds(shape);
+            ctx.save();
+            ctx.strokeStyle = '#007bff';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+            ctx.fillStyle = '#007bff';
+            ctx.setLineDash([]);
+            const handles = [
+                [bounds.x, bounds.y], [bounds.x + bounds.width, bounds.y],
+                [bounds.x + bounds.width, bounds.y + bounds.height], [bounds.x, bounds.y + bounds.height],
+                [bounds.x + bounds.width/2, bounds.y], [bounds.x + bounds.width, bounds.y + bounds.height/2],
+                [bounds.x + bounds.width/2, bounds.y + bounds.height], [bounds.x, bounds.y + bounds.height/2]
+            ];
+            handles.forEach(([x, y]) => ctx.fillRect(x - 4, y - 4, 8, 8));
+            ctx.restore();
+        }
+
+        /**
+         * Очищает canvas и отрисовывает все фигуры.
+         */
+        drawShapes() {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.shapes.forEach(shape => {
+                this.drawHandDrawnShape(shape);
+                this.drawSelection(shape);
+            });
+        }
+
+        /**
+         * Возвращает координаты мыши относительно canvas.
+         * @param {MouseEvent} e - событие мыши
+         * @returns {{x: number, y: number}} координаты мыши
+         */
+        getMousePos(e) {
+            const rect = this.canvas.getBoundingClientRect();
+            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        }
+
+        /**
+         * Возвращает габаритный прямоугольник фигуры.
+         * @param {Object} shape - объект фигуры
+         * @returns {{x: number, y: number, width: number, height: number}} габариты
+         */
+        getShapeBounds(shape) {
+            switch(shape.type) {
+                case 'rectangle': return { x: shape.x, y: shape.y, width: shape.width, height: shape.height };
+                case 'circle': return { x: shape.x - shape.radius, y: shape.y - shape.radius, width: shape.radius * 2, height: shape.radius * 2 };
+                case 'triangle':
+                    const xs = shape.points.map(p => p.x), ys = shape.points.map(p => p.y);
+                    return { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
+            }
+        }
+
+        /**
+         * Проверяет, находится ли точка (x, y) внутри фигуры.
+         * @param {number} x - координата X
+         * @param {number} y - координата Y
+         * @param {Object} shape - объект фигуры
+         * @returns {boolean} true, если точка внутри фигуры
+         */
+        isPointInShape(x, y, shape) {
+            const bounds = this.getShapeBounds(shape);
+            if (shape.type === 'circle') {
+                const dx = x - shape.x, dy = y - shape.y;
+                return dx * dx + dy * dy <= shape.radius * shape.radius;
+            }
+            return x >= bounds.x && x <= bounds.x + bounds.width && y >= bounds.y && y <= bounds.y + bounds.height;
+        }
+
+        /**
+         * Проверяет, находится ли точка (x, y) на ручке изменения размера фигуры.
+         * @param {number} x - координата X
+         * @param {number} y - координата Y
+         * @param {Object} shape - объект фигуры
+         * @returns {Object|null} объект ручки или null
+         */
+        getHandleAt(x, y, shape) {
+            if (!shape.selected) return null;
+            const bounds = this.getShapeBounds(shape);
+            const handles = [
+                {x: bounds.x, y: bounds.y, type: 'nw'}, {x: bounds.x + bounds.width, y: bounds.y, type: 'ne'},
+                {x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se'}, {x: bounds.x, y: bounds.y + bounds.height, type: 'sw'}
+            ];
+            return handles.find(h => Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) || null;
+        }
+
+        /**
+         * Изменяет размер фигуры в зависимости от ручки и положения мыши.
+         * @param {Object} shape - объект фигуры
+         * @param {Object} handle - объект ручки
+         * @param {Object} mouse - координаты мыши
+         */
+        resizeShape(shape, handle, mouse) {
+            if (shape.type === 'rectangle') {
+                const { type } = handle;
+                if (type === 'se') {
+                    shape.width = Math.max(20, mouse.x - shape.x);
+                    shape.height = Math.max(20, mouse.y - shape.y);
+                } else if (type === 'nw') {
+                    const newW = Math.max(20, shape.x + shape.width - mouse.x);
+                    const newH = Math.max(20, shape.y + shape.height - mouse.y);
+                    shape.x = shape.x + shape.width - newW;
+                    shape.y = shape.y + shape.height - newH;
+                    shape.width = newW;
+                    shape.height = newH;
+                }
+            } else if (shape.type === 'circle') {
+                const dx = mouse.x - shape.x, dy = mouse.y - shape.y;
+                shape.radius = Math.max(20, Math.sqrt(dx * dx + dy * dy));
+            } else if (shape.type === 'triangle') {
+                const scale = Math.max(0.5, Math.sqrt((mouse.x - shape.centerX) ** 2 + (mouse.y - shape.centerY) ** 2) / 50);
+                shape.size = Math.max(30, scale * 60);
+                shape.points = [
+                    {x: shape.centerX, y: shape.centerY - shape.size/2},
+                    {x: shape.centerX - shape.size/2, y: shape.centerY + shape.size/2},
+                    {x: shape.centerX + shape.size/2, y: shape.centerY + shape.size/2}
+                ];
+            }
+            this.generateRoughPaths(shape, true);
+        }
+
+        /**
+         * Навешивает обработчики событий мыши на canvas.
+         */
+        attachEvents() {
+            this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
+            this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
+            this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
+        }
+
+        /**
+         * Обработчик события нажатия мыши по canvas.
+         * @param {MouseEvent} e - событие мыши
+         */
+        onMouseDown(e) {
+            const mouse = this.getMousePos(e);
+            for (const shape of this.shapes) {
+                if (shape.selected) {
+                    const handle = this.getHandleAt(mouse.x, mouse.y, shape);
+                    if (handle) {
+                        this.interaction = { ...this.interaction, isResizing: true, selectedShape: shape, resizeHandle: handle };
+                        return;
+                    }
+                }
+            }
+            this.shapes.forEach(s => s.selected = false);
+            for (let i = this.shapes.length - 1; i >= 0; i--) {
+                if (this.isPointInShape(mouse.x, mouse.y, this.shapes[i])) {
+                    this.shapes[i].selected = true;
+                    const shape = this.shapes[i];
+                    this.interaction = {
+                        isDragging: true, selectedShape: shape,
+                        dragOffset: {
+                            x: mouse.x - (shape.type === 'triangle' ? shape.centerX : shape.x),
+                            y: mouse.y - (shape.type === 'triangle' ? shape.centerY : shape.y)
+                        }
+                    };
+                    break;
+                }
+            }
+            this.drawShapes();
+        }
+
+        /**
+         * Обработчик события движения мыши по canvas.
+         * @param {MouseEvent} e - событие мыши
+         */
+        onMouseMove(e) {
+            const mouse = this.getMousePos(e);
+            if (this.interaction.isDragging) {
+                const shape = this.interaction.selectedShape;
+                if (shape.type === 'triangle') {
+                    const newCX = mouse.x - this.interaction.dragOffset.x;
+                    const newCY = mouse.y - this.interaction.dragOffset.y;
+                    const deltaX = newCX - shape.centerX;
+                    const deltaY = newCY - shape.centerY;
+                    shape.points.forEach(p => { p.x += deltaX; p.y += deltaY; });
+                    shape.centerX = newCX;
+                    shape.centerY = newCY;
+                } else {
+                    shape.x = mouse.x - this.interaction.dragOffset.x;
+                    shape.y = mouse.y - this.interaction.dragOffset.y;
+                }
+                this.generateRoughPaths(shape, false);
+                this.drawShapes();
+            } else if (this.interaction.isResizing) {
+                this.resizeShape(this.interaction.selectedShape, this.interaction.resizeHandle, mouse);
+                this.drawShapes();
+            }
+        }
+
+        /**
+         * Обработчик события отпускания кнопки мыши.
+         */
+        onMouseUp() {
+            this.interaction = { isDragging: false, isResizing: false, selectedShape: null, dragOffset: {x:0,y:0}, resizeHandle: null };
+        }
+
+        /**
+         * Инициализирует слайдеры управления и их обработчики.
+         */
+        initSliders() {
+            ['roughness', 'segments', 'variation'].forEach((name, i) => {
+                const slider = document.getElementById(name + 'Slider');
+                const display = document.getElementById(name + 'Value');
+                const props = ['intensity', 'segments', 'variation'];
+                const units = ['', ' точек', ''];
+                slider.addEventListener('input', () => {
+                    this.roughness[props[i]] = parseFloat(slider.value);
+                    display.textContent = slider.value + units[i];
+                    this.shapes.forEach(shape => this.generateRoughPaths(shape, true));
+                    this.drawShapes();
+                });
+            });
+        }
+
+        /**
+         * Перерисовывает все фигуры с новой естественностью.
+         */
+        redrawShapes() {
+            this.shapes.forEach(shape => this.generateRoughPaths(shape, true));
+            this.drawShapes();
+        }
+
+        /**
+         * Добавляет случайную фигуру на холст.
+         */
+        addRandomShape() {
+            const types = ['rectangle', 'circle', 'triangle'];
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
+            const type = types[Math.floor(Math.random() * 3)];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            let newShape = { type, color, strokeWidth: Math.random() * 3 + 2, selected: false };
+            if (type === 'rectangle') {
+                Object.assign(newShape, { x: Math.random() * 600 + 50, y: Math.random() * 400 + 50, width: Math.random() * 150 + 100, height: Math.random() * 100 + 80 });
+            } else if (type === 'circle') {
+                Object.assign(newShape, { x: Math.random() * 600 + 100, y: Math.random() * 400 + 100, radius: Math.random() * 60 + 40 });
+            } else {
+                const centerX = Math.random() * 600 + 100, centerY = Math.random() * 400 + 100, size = Math.random() * 80 + 60;
+                Object.assign(newShape, {
+                    points: [{x: centerX, y: centerY - size/2}, {x: centerX - size/2, y: centerY + size/2}, {x: centerX + size/2, y: centerY + size/2}],
+                    centerX, centerY, size
+                });
+            }
+            this.shapes.push(newShape);
+            this.generateRoughPaths(newShape, true);
+            this.drawShapes();
+        }
+
+        /**
+         * Очищает холст и удаляет все фигуры.
+         */
+        clearCanvas() {
+            this.shapes = [];
+            this.drawShapes();
+        }
+    }
+
+    // Instantiate and wire up UI controls
+    let canvasEditor;
+    window.addEventListener('DOMContentLoaded', () => {
+        canvasEditor = new CanvasEditor('canvas');
+        document.querySelector('button[onclick="redrawShapes()"]')
+            .onclick = () => canvasEditor.redrawShapes();
+        document.querySelector('button[onclick="addRandomShape()"]')
+            .onclick = () => canvasEditor.addRandomShape();
+        document.querySelector('button[onclick="clearCanvas()"]')
+            .onclick = () => canvasEditor.clearCanvas();
+    });
+    </script>
+</body>
+</html>
