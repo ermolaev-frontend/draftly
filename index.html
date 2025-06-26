@@ -107,8 +107,7 @@
             this.interaction = { isDragging: false, isResizing: false, selectedShape: null, dragOffset: {x:0,y:0}, resizeHandle: null };
             this.shapes = [
                 { type: 'rectangle', x: 150, y: 100, width: 200, height: 120, color: '#ff6b6b', strokeWidth: 3, selected: false },
-                { type: 'circle', x: 500, y: 200, radius: 80, color: '#4ecdc4', strokeWidth: 4, selected: false },
-                { type: 'triangle', points: [{x:300,y:350},{x:450,y:350},{x:375,y:250}], color: '#45b7d1', strokeWidth: 3, selected: false, centerX: 375, centerY: 316.67, size: 150 }
+                { type: 'circle', x: 500, y: 200, radius: 80, color: '#4ecdc4', strokeWidth: 4, selected: false }
             ];
             this.initSliders();
             this.attachEvents();
@@ -183,9 +182,6 @@
                     points.push({ x: Math.cos(angle) * r, y: Math.sin(angle) * r });
                 }
                 shape.baseRoughPath = this.generateHandDrawnPath(points, true);
-            } else if (shape.type === 'triangle') {
-                const relativePoints = shape.points.map(p => ({ x: p.x - shape.centerX, y: p.y - shape.centerY }));
-                shape.baseRoughPath = this.generateHandDrawnPath(relativePoints, true);
             }
             this.updateRoughPathPositions(shape);
         }
@@ -201,8 +197,6 @@
                     return { x: shape.x + point.x, y: shape.y + point.y };
                 } else if (shape.type === 'circle') {
                     return { x: shape.x + point.x, y: shape.y + point.y };
-                } else if (shape.type === 'triangle') {
-                    return { x: shape.centerX + point.x, y: shape.centerY + point.y };
                 }
                 return point;
             });
@@ -279,18 +273,28 @@
             if (!shape.selected) return;
             const ctx = this.ctx;
             const bounds = this.getShapeBounds(shape);
+            const offset = 15;
             ctx.save();
             ctx.strokeStyle = '#007bff';
             ctx.lineWidth = 1;
             ctx.setLineDash([5, 5]);
-            ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+            ctx.strokeRect(
+                bounds.x - offset,
+                bounds.y - offset,
+                bounds.width + offset * 2,
+                bounds.height + offset * 2
+            );
             ctx.fillStyle = '#007bff';
             ctx.setLineDash([]);
             const handles = [
-                [bounds.x, bounds.y], [bounds.x + bounds.width, bounds.y],
-                [bounds.x + bounds.width, bounds.y + bounds.height], [bounds.x, bounds.y + bounds.height],
-                [bounds.x + bounds.width/2, bounds.y], [bounds.x + bounds.width, bounds.y + bounds.height/2],
-                [bounds.x + bounds.width/2, bounds.y + bounds.height], [bounds.x, bounds.y + bounds.height/2]
+                [bounds.x - offset, bounds.y - offset],
+                [bounds.x + bounds.width + offset, bounds.y - offset],
+                [bounds.x + bounds.width + offset, bounds.y + bounds.height + offset],
+                [bounds.x - offset, bounds.y + bounds.height + offset],
+                [bounds.x + bounds.width/2, bounds.y - offset],
+                [bounds.x + bounds.width + offset, bounds.y + bounds.height/2],
+                [bounds.x + bounds.width/2, bounds.y + bounds.height + offset],
+                [bounds.x - offset, bounds.y + bounds.height/2]
             ];
             handles.forEach(([x, y]) => ctx.fillRect(x - 4, y - 4, 8, 8));
             ctx.restore();
@@ -326,9 +330,6 @@
             switch(shape.type) {
                 case 'rectangle': return { x: shape.x, y: shape.y, width: shape.width, height: shape.height };
                 case 'circle': return { x: shape.x - shape.radius, y: shape.y - shape.radius, width: shape.radius * 2, height: shape.radius * 2 };
-                case 'triangle':
-                    const xs = shape.points.map(p => p.x), ys = shape.points.map(p => p.y);
-                    return { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
             }
         }
 
@@ -388,14 +389,6 @@
             } else if (shape.type === 'circle') {
                 const dx = mouse.x - shape.x, dy = mouse.y - shape.y;
                 shape.radius = Math.max(20, Math.sqrt(dx * dx + dy * dy));
-            } else if (shape.type === 'triangle') {
-                const scale = Math.max(0.5, Math.sqrt((mouse.x - shape.centerX) ** 2 + (mouse.y - shape.centerY) ** 2) / 50);
-                shape.size = Math.max(30, scale * 60);
-                shape.points = [
-                    {x: shape.centerX, y: shape.centerY - shape.size/2},
-                    {x: shape.centerX - shape.size/2, y: shape.centerY + shape.size/2},
-                    {x: shape.centerX + shape.size/2, y: shape.centerY + shape.size/2}
-                ];
             }
             this.generateRoughPaths(shape, true);
         }
@@ -432,8 +425,8 @@
                     this.interaction = {
                         isDragging: true, selectedShape: shape,
                         dragOffset: {
-                            x: mouse.x - (shape.type === 'triangle' ? shape.centerX : shape.x),
-                            y: mouse.y - (shape.type === 'triangle' ? shape.centerY : shape.y)
+                            x: mouse.x - shape.x,
+                            y: mouse.y - shape.y
                         }
                     };
                     break;
@@ -450,18 +443,8 @@
             const mouse = this.getMousePos(e);
             if (this.interaction.isDragging) {
                 const shape = this.interaction.selectedShape;
-                if (shape.type === 'triangle') {
-                    const newCX = mouse.x - this.interaction.dragOffset.x;
-                    const newCY = mouse.y - this.interaction.dragOffset.y;
-                    const deltaX = newCX - shape.centerX;
-                    const deltaY = newCY - shape.centerY;
-                    shape.points.forEach(p => { p.x += deltaX; p.y += deltaY; });
-                    shape.centerX = newCX;
-                    shape.centerY = newCY;
-                } else {
-                    shape.x = mouse.x - this.interaction.dragOffset.x;
-                    shape.y = mouse.y - this.interaction.dragOffset.y;
-                }
+                shape.x = mouse.x - this.interaction.dragOffset.x;
+                shape.y = mouse.y - this.interaction.dragOffset.y;
                 this.generateRoughPaths(shape, false);
                 this.drawShapes();
             } else if (this.interaction.isResizing) {
@@ -507,21 +490,15 @@
          * Добавляет случайную фигуру на холст.
          */
         addRandomShape() {
-            const types = ['rectangle', 'circle', 'triangle'];
+            const types = ['rectangle', 'circle'];
             const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
-            const type = types[Math.floor(Math.random() * 3)];
+            const type = types[Math.floor(Math.random() * 2)];
             const color = colors[Math.floor(Math.random() * colors.length)];
             let newShape = { type, color, strokeWidth: Math.random() * 3 + 2, selected: false };
             if (type === 'rectangle') {
                 Object.assign(newShape, { x: Math.random() * 600 + 50, y: Math.random() * 400 + 50, width: Math.random() * 150 + 100, height: Math.random() * 100 + 80 });
             } else if (type === 'circle') {
                 Object.assign(newShape, { x: Math.random() * 600 + 100, y: Math.random() * 400 + 100, radius: Math.random() * 60 + 40 });
-            } else {
-                const centerX = Math.random() * 600 + 100, centerY = Math.random() * 400 + 100, size = Math.random() * 80 + 60;
-                Object.assign(newShape, {
-                    points: [{x: centerX, y: centerY - size/2}, {x: centerX - size/2, y: centerY + size/2}, {x: centerX + size/2, y: centerY + size/2}],
-                    centerX, centerY, size
-                });
             }
             this.shapes.push(newShape);
             this.generateRoughPaths(newShape, true);
@@ -538,7 +515,7 @@
     }
     
     // Создание экземпляра и подключение элементов управления интерфейса
-    window.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
         const canvasEditor = new CanvasEditor('canvas');
         document.getElementById('redrawButton').addEventListener('click', () => canvasEditor.redrawShapes());
         document.getElementById('addShapeButton').addEventListener('click', () => canvasEditor.addRandomShape());
