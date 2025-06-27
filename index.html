@@ -247,7 +247,13 @@
                     break;
                 case 'circle':
                     const dx = mouse.x - shape.x, dy = mouse.y - shape.y;
-                    shape.radius = Math.max(20, Math.sqrt(dx * dx + dy * dy));
+                    const currentDistance = Math.sqrt(dx * dx + dy * dy);
+                    if (this.interaction && this.interaction.initialRadius != null && this.interaction.initialDistance != null) {
+                        const delta = currentDistance - this.interaction.initialDistance;
+                        shape.radius = Math.max(20, this.interaction.initialRadius + delta);
+                    } else {
+                        shape.radius = Math.max(20, currentDistance);
+                    }
                     break;
             }
             this.drawShapes();
@@ -272,7 +278,21 @@
                 if (shape.selected) {
                     const handle = this.getHandleAt(mouse.x, mouse.y, shape);
                     if (handle) {
-                        this.interaction = { ...this.interaction, isResizing: true, selectedShape: shape, resizeHandle: handle };
+                        let initialRadius = null;
+                        let initialDistance = null;
+                        if (shape.type === 'circle') {
+                            initialRadius = shape.radius;
+                            const dx = mouse.x - shape.x, dy = mouse.y - shape.y;
+                            initialDistance = Math.sqrt(dx * dx + dy * dy);
+                        }
+                        this.interaction = { 
+                            ...this.interaction, 
+                            isResizing: true, 
+                            selectedShape: shape, 
+                            resizeHandle: handle,
+                            initialRadius,
+                            initialDistance
+                        };
                         return;
                     }
                 }
