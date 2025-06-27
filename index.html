@@ -104,7 +104,12 @@
             ctx.lineJoin = 'round';
             ctx.beginPath();
             if (shape.type === 'rectangle') {
-                ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
+                // Вращение
+                const cx = shape.x + shape.width / 2;
+                const cy = shape.y + shape.height / 2;
+                ctx.translate(cx, cy);
+                ctx.rotate((shape.rotation || 0));
+                ctx.strokeRect(-shape.width / 2, -shape.height / 2, shape.width, shape.height);
             } else if (shape.type === 'circle') {
                 ctx.arc(shape.x, shape.y, shape.radius, 0, Math.PI * 2);
                 ctx.stroke();
@@ -129,7 +134,40 @@
             ctx.strokeStyle = '#007bff';
             ctx.lineWidth = 1;
             ctx.setLineDash([5, 5]);
-            if (shape.type === 'line') {
+            if (shape.type === 'rectangle') {
+                // Вращаем bounding box и ручки вместе с прямоугольником
+                const cx = shape.x + shape.width / 2;
+                const cy = shape.y + shape.height / 2;
+                ctx.translate(cx, cy);
+                ctx.rotate((shape.rotation || 0));
+                ctx.strokeRect(-shape.width/2 - offset, -shape.height/2 - offset, shape.width + offset*2, shape.height + offset*2);
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#007bff';
+                // 8 ручек
+                const w = shape.width, h = shape.height;
+                const handles = [
+                    {x: -w/2 - offset, y: -h/2 - offset, type: 'nw'},
+                    {x: +w/2 + offset, y: -h/2 - offset, type: 'ne'},
+                    {x: +w/2 + offset, y: +h/2 + offset, type: 'se'},
+                    {x: -w/2 - offset, y: +h/2 + offset, type: 'sw'},
+                    {x: 0, y: -h/2 - offset, type: 'n'},
+                    {x: +w/2 + offset, y: 0, type: 'e'},
+                    {x: 0, y: +h/2 + offset, type: 's'},
+                    {x: -w/2 - offset, y: 0, type: 'w'},
+                    // вращение
+                    {x: 0, y: -h/2 - offset - 30, type: 'rotate'}
+                ];
+                handles.forEach((h) => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
+                // Ручка вращения (кружок)
+                const rotateHandle = {x: 0, y: -h/2 - offset - 30, type: 'rotate'};
+                ctx.beginPath();
+                ctx.arc(rotateHandle.x, rotateHandle.y, 8, 0, Math.PI*2);
+                ctx.fillStyle = '#fff';
+                ctx.fill();
+                ctx.strokeStyle = '#007bff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            } else if (shape.type === 'line') {
                 // bounding box с отступом offset
                 ctx.strokeRect(
                     bounds.x,
@@ -240,6 +278,16 @@
                 const dist = Math.sqrt((x - px) ** 2 + (y - py) ** 2);
                 return dist < 8;
             }
+            if (shape.type === 'rectangle') {
+                // Проверяем попадание с учётом поворота
+                const cx = shape.x + shape.width/2;
+                const cy = shape.y + shape.height/2;
+                const angle = -(shape.rotation || 0);
+                const dx = x - cx, dy = y - cy;
+                const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
+                const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
+                return lx >= -shape.width/2 && lx <= shape.width/2 && ly >= -shape.height/2 && ly <= shape.height/2;
+            }
             return x >= bounds.x && x <= bounds.x + bounds.width && y >= bounds.y && y <= bounds.y + bounds.height;
         }
 
@@ -256,6 +304,39 @@
                 // ручки только на концах
                 if (Math.abs(x - shape.x1) <= 8 && Math.abs(y - shape.y1) <= 8) return {type: 'start'};
                 if (Math.abs(x - shape.x2) <= 8 && Math.abs(y - shape.y2) <= 8) return {type: 'end'};
+                return null;
+            }
+            if (shape.type === 'rectangle') {
+                // Проверяем вращённые ручки
+                const cx = shape.x + shape.width/2;
+                const cy = shape.y + shape.height/2;
+                const offset = 5;
+                // Переводим (x, y) в локальные координаты прямоугольника
+                const angle = -(shape.rotation || 0);
+                const dx = x - cx, dy = y - cy;
+                const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
+                const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
+                // 8 ручек
+                const w = shape.width, h = shape.height;
+                const handles = [
+                    {x: -w/2 - offset, y: -h/2 - offset, type: 'nw'},
+                    {x: +w/2 + offset, y: -h/2 - offset, type: 'ne'},
+                    {x: +w/2 + offset, y: +h/2 + offset, type: 'se'},
+                    {x: -w/2 - offset, y: +h/2 + offset, type: 'sw'},
+                    {x: 0, y: -h/2 - offset, type: 'n'},
+                    {x: +w/2 + offset, y: 0, type: 'e'},
+                    {x: 0, y: +h/2 + offset, type: 's'},
+                    {x: -w/2 - offset, y: 0, type: 'w'},
+                    // вращение
+                    {x: 0, y: -h/2 - offset - 30, type: 'rotate'}
+                ];
+                for (const h of handles) {
+                    if (h.type === 'rotate') {
+                        if ((lx-h.x)**2 + (ly-h.y)**2 <= 10*10) return {type: 'rotate'};
+                    } else {
+                        if (Math.abs(lx - h.x) <= 8 && Math.abs(ly - h.y) <= 8) return {type: h.type};
+                    }
+                }
                 return null;
             }
             const bounds = this.getShapeBounds(shape);
@@ -281,6 +362,76 @@
          * @param {Object} mouse - координаты мыши
          */
         resizeShape(shape, handle, mouse) {
+            if (shape.type === 'rectangle' && handle.type === 'rotate') {
+                // Вращение
+                const cx = shape.x + shape.width/2;
+                const cy = shape.y + shape.height/2;
+                const angle = Math.atan2(mouse.y - cy, mouse.x - cx);
+                if (this.interaction && this.interaction.initialAngle != null) {
+                    shape.rotation = angle - this.interaction.initialAngle + (this.interaction.startRotation || 0);
+                } else {
+                    shape.rotation = angle;
+                }
+                this.drawShapes();
+                return;
+            }
+            if (shape.type === 'rectangle' && handle.type) {
+                // --- Новый ресайз с учетом поворота ---
+                const offset = 5;
+                const cx = shape.x + shape.width/2;
+                const cy = shape.y + shape.height/2;
+                const angle = -(shape.rotation || 0);
+                // Переводим мышь в локальные координаты
+                const dx = mouse.x - cx, dy = mouse.y - cy;
+                const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
+                const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
+                // Текущие локальные границы
+                let left = -shape.width/2, right = shape.width/2, top = -shape.height/2, bottom = shape.height/2;
+                // В зависимости от ручки меняем стороны
+                switch (handle.type) {
+                    case 'nw':
+                        left = Math.min(lx, right - 20);
+                        top = Math.min(ly, bottom - 20);
+                        break;
+                    case 'ne':
+                        right = Math.max(lx, left + 20);
+                        top = Math.min(ly, bottom - 20);
+                        break;
+                    case 'se':
+                        right = Math.max(lx, left + 20);
+                        bottom = Math.max(ly, top + 20);
+                        break;
+                    case 'sw':
+                        left = Math.min(lx, right - 20);
+                        bottom = Math.max(ly, top + 20);
+                        break;
+                    case 'n':
+                        top = Math.min(ly, bottom - 20);
+                        break;
+                    case 's':
+                        bottom = Math.max(ly, top + 20);
+                        break;
+                    case 'e':
+                        right = Math.max(lx, left + 20);
+                        break;
+                    case 'w':
+                        left = Math.min(lx, right - 20);
+                        break;
+                }
+                // Новые размеры
+                const newWidth = right - left;
+                const newHeight = bottom - top;
+                // Новый центр
+                const newCx = cx + (Math.cos(shape.rotation||0)*(left+right)/2 - Math.sin(shape.rotation||0)*(top+bottom)/2);
+                const newCy = cy + (Math.sin(shape.rotation||0)*(left+right)/2 + Math.cos(shape.rotation||0)*(top+bottom)/2);
+                // Обновляем shape
+                shape.width = newWidth;
+                shape.height = newHeight;
+                shape.x = newCx - newWidth/2;
+                shape.y = newCy - newHeight/2;
+                this.drawShapes();
+                return;
+            }
             switch (shape.type) {
                 case 'rectangle':
                     switch (handle.type) {
@@ -372,10 +523,18 @@
                     if (handle) {
                         let initialRadius = null;
                         let initialDistance = null;
+                        let initialAngle = null;
+                        let startRotation = null;
                         if (shape.type === 'circle') {
                             initialRadius = shape.radius;
                             const dx = mouse.x - shape.x, dy = mouse.y - shape.y;
                             initialDistance = Math.sqrt(dx * dx + dy * dy);
+                        }
+                        if (shape.type === 'rectangle' && handle.type === 'rotate') {
+                            const cx = shape.x + shape.width/2;
+                            const cy = shape.y + shape.height/2;
+                            initialAngle = Math.atan2(mouse.y - cy, mouse.x - cx);
+                            startRotation = shape.rotation || 0;
                         }
                         this.interaction = { 
                             ...this.interaction, 
@@ -383,7 +542,9 @@
                             selectedShape: shape, 
                             resizeHandle: handle,
                             initialRadius,
-                            initialDistance
+                            initialDistance,
+                            initialAngle,
+                            startRotation
                         };
                         return;
                     }
@@ -543,6 +704,7 @@
         getCursorForHandle(handle) {
             if (!handle) return 'default';
             if (handle.type === 'start' || handle.type === 'end') return 'pointer';
+            if (handle.type === 'rotate') return 'grab';
             return CanvasEditor.handleCursorMap.get(handle.type) || 'default';
         }
 
@@ -555,7 +717,8 @@
                 x: Math.random() * 600 + 50,
                 y: Math.random() * 400 + 50,
                 width: Math.random() * 150 + 100,
-                height: Math.random() * 100 + 80
+                height: Math.random() * 100 + 80,
+                rotation: 0
             };
             this.shapes.push(newShape);
             this.drawShapes();
