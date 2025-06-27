@@ -1,0 +1,56 @@
+:root {
+    --main-bg: #f5f5f5;
+    --panel-bg: #fff;
+    --panel-radius: 8px;
+    --panel-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    --panel-padding: 15px;
+    --panel-width: 200px;
+    --primary: #007bff;
+    --primary-hover: #0056b3;
+    --button-radius: 4px;
+    --button-padding: 8px 16px;
+    --button-margin: 5px;
+    --canvas-bg: #fff;
+    --canvas-border: 1px solid #ddd;
+    --canvas-radius: 8px;
+    --canvas-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    --value-color: #666;
+}
+body {
+    margin: 0;
+    padding: 20px;
+    background: var(--main-bg);
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+canvas {
+    background: var(--canvas-bg);
+    border: var(--canvas-border);
+    border-radius: var(--canvas-radius);
+    box-shadow: var(--canvas-shadow);
+    cursor: default;
+}
+.controls {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: var(--panel-bg);
+    padding: var(--panel-padding);
+    border-radius: var(--panel-radius);
+    box-shadow: var(--panel-shadow);
+    width: var(--panel-width);
+}
+button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: var(--button-padding);
+    border-radius: var(--button-radius);
+    cursor: pointer;
+    margin: var(--button-margin);
+}
+button:hover { background: var(--primary-hover); }
+.value-display { font-size: 12px; color: var(--value-color); margin-top: 2px; } 
