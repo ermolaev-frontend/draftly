@@ -1,4 +1,12 @@
+/**
+ * Класс CanvasEditor предоставляет инструменты для рисования и редактирования фигур на canvas.
+ * Позволяет добавлять, выделять, перемещать, изменять размер и удалять фигуры.
+ */
 export class CanvasEditor {
+    /**
+     * Создает экземпляр CanvasEditor и инициализирует canvas, события и начальные фигуры.
+     * @param {string} canvasId - id элемента canvas в DOM
+     */
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
@@ -78,27 +86,41 @@ export class CanvasEditor {
         this.#drawShapes();
     }
 
-    // === Публичные методы ===
+    /**
+     * Добавляет новый прямоугольник на canvas.
+     */
     addRectangle() {
         this.shapes.push(this.#createRectangle());
         this.#drawShapes();
     }
 
+    /**
+     * Добавляет новый круг на canvas.
+     */
     addCircle() {
         this.shapes.push(this.#createCircle());
         this.#drawShapes();
     }
 
+    /**
+     * Добавляет новую линию на canvas.
+     */
     addLine() {
         this.shapes.push(this.#createLine());
         this.#drawShapes();
     }
 
+    /**
+     * Очищает canvas, удаляя все фигуры.
+     */
     clearCanvas() {
         this.shapes = [];
         this.#drawShapes();
     }
 
+    /**
+     * Добавляет случайную фигуру (прямоугольник, круг или линию) на canvas.
+     */
     addRandomShape() {
         const types = ['rectangle', 'circle', 'line'];
         const type = types[Math.floor(Math.random() * types.length)];
@@ -114,11 +136,20 @@ export class CanvasEditor {
         this.#drawShapes();
     }
 
+    /**
+     * Устанавливает текущий инструмент (select, pencil и др.).
+     * @param {string} toolName - Имя инструмента
+     */
     setTool(toolName) {
         this.currentTool = toolName;
     }
 
     // === Приватные методы ===
+    /**
+     * Рисует одну фигуру на canvas.
+     * @private
+     * @param {Object} shape - Фигура для рисования
+     */
     #drawShape(shape) {
         const ctx = this.ctx;
         ctx.save();
@@ -168,6 +199,11 @@ export class CanvasEditor {
         ctx.restore();
     }
 
+    /**
+     * Рисует выделение и управляющие ручки для фигуры.
+     * @private
+     * @param {Object} shape - Фигура для выделения
+     */
     #drawSelection(shape) {
         if (!shape.selected) return;
 
@@ -266,6 +302,10 @@ export class CanvasEditor {
         ctx.restore();
     }
 
+    /**
+     * Перерисовывает все фигуры на canvas.
+     * @private
+     */
     #drawShapes() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.shapes.forEach(shape => {
@@ -274,10 +314,22 @@ export class CanvasEditor {
         });
     }
 
+    /**
+     * Получает координаты мыши относительно canvas.
+     * @private
+     * @param {MouseEvent} e
+     * @returns {{x: number, y: number}}
+     */
     #getMousePos(e) {
         return { x: e.offsetX, y: e.offsetY };
     }
 
+    /**
+     * Возвращает ограничивающий прямоугольник для фигуры.
+     * @private
+     * @param {Object} shape
+     * @returns {{x: number, y: number, width: number, height: number}}
+     */
     #getShapeBounds(shape) {
         switch(shape.type) {
             case 'rectangle': return { x: shape.x, y: shape.y, width: shape.width, height: shape.height };
@@ -306,6 +358,14 @@ export class CanvasEditor {
         }
     }
 
+    /**
+     * Проверяет, находится ли точка (x, y) внутри фигуры.
+     * @private
+     * @param {number} x
+     * @param {number} y
+     * @param {Object} shape
+     * @returns {boolean}
+     */
     #isPointInShape(x, y, shape) {
         const bounds = this.#getShapeBounds(shape);
         switch (shape.type) {
@@ -362,6 +422,14 @@ export class CanvasEditor {
         }
     }
 
+    /**
+     * Проверяет, наведена ли мышь на управляющую ручку фигуры.
+     * @private
+     * @param {number} x
+     * @param {number} y
+     * @param {Object} shape
+     * @returns {Object|null} - Объект ручки или null
+     */
     #getHandleAt(x, y, shape) {
         if (!shape.selected) return null;
         switch (shape.type) {
@@ -420,6 +488,11 @@ export class CanvasEditor {
         }
     }
 
+    /**
+     * Изменяет размер или другие параметры фигуры при перетаскивании ручки.
+     * @private
+     * @param {{x: number, y: number}} mouse - Текущая позиция мыши
+     */
     #resizeShape(mouse) {
         const shape = this.interaction.selectedShape;
         const handle = this.interaction.resizeHandle;
@@ -573,6 +646,10 @@ export class CanvasEditor {
         this.#drawShapes();
     }
 
+    /**
+     * Подключает обработчики событий мыши к canvas.
+     * @private
+     */
     #attachEvents() {
         this.canvas.addEventListener('mousedown', this.#onMouseDown.bind(this));
         this.canvas.addEventListener('mousemove', this.#onMouseMove.bind(this));
@@ -581,6 +658,11 @@ export class CanvasEditor {
         this.canvas.addEventListener('mouseleave', this.#onMouseUp.bind(this));
     }
 
+    /**
+     * Обработчик события mousedown на canvas.
+     * @private
+     * @param {MouseEvent} e
+     */
     #onMouseDown(e) {
         const mouse = this.#getMousePos(e);
         if (this.currentTool === 'pencil') {
@@ -692,6 +774,11 @@ export class CanvasEditor {
         this.#drawShapes();
     }
 
+    /**
+     * Обработчик события mousemove на canvas.
+     * @private
+     * @param {MouseEvent} e
+     */
     #onMouseMove(e) {
         const mouse = this.#getMousePos(e);
         let cursor = 'default';
@@ -776,6 +863,10 @@ export class CanvasEditor {
         this.canvas.style.cursor = cursor;
     }
 
+    /**
+     * Обработчик события mouseup/mouseleave на canvas.
+     * @private
+     */
     #onMouseUp() {
         if (this.interaction.isDrawingPencil) {
             this.interaction = { ...this.interaction, isDrawingPencil: false, drawingShape: null };
@@ -784,18 +875,34 @@ export class CanvasEditor {
         this.interaction = { isDragging: false, isResizing: false, selectedShape: null, dragOffset: {x:0,y:0}, resizeHandle: null };
     }
 
+    /**
+     * Возвращает CSS-курсор для типа ручки.
+     * @private
+     * @param {Object} handle
+     * @returns {string}
+     */
     #getCursorForHandle(handle) {
         if (!handle) return 'default';
 
         return CanvasEditor.handleCursorMap.get(handle.type) ?? 'default';
     }
 
+    /**
+     * Возвращает случайный цвет из палитры.
+     * @private
+     * @returns {string}
+     */
     #getRandomColor() {
         const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
 
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
+    /**
+     * Возвращает случайную толщину линии.
+     * @private
+     * @returns {number}
+     */
     #getRandomStrokeWidth() {
         return Math.random() * 3 + 2;
     }
@@ -817,6 +924,12 @@ export class CanvasEditor {
     ]);
 
     // --- Catmull-Rom Spline to Bezier for smoothing pencil lines ---
+    /**
+     * Преобразует массив точек Catmull-Rom в сегменты Безье для сглаживания карандашных линий.
+     * @private
+     * @param {Array<{x: number, y: number}>} points
+     * @returns {Array<Object>} - Сегменты Безье
+     */
     #catmullRom2bezier(points) {
         if (points.length < 2) return [];
         const beziers = [];
@@ -845,6 +958,13 @@ export class CanvasEditor {
     }
 
     // --- Douglas-Peucker simplification for points ---
+    /**
+     * Упрощает массив точек методом Дугласа-Пекера.
+     * @private
+     * @param {Array<{x: number, y: number}>} points
+     * @param {number} epsilon - Порог чувствительности
+     * @returns {Array<{x: number, y: number}>}
+     */
     #simplifyDouglasPeucker(points, epsilon) {
         if (points.length < 3) return points;
         const dmax = { dist: 0, idx: 0 };
@@ -873,6 +993,12 @@ export class CanvasEditor {
         }
     }
 
+    /**
+     * Создает объект прямоугольника с заданными или случайными параметрами.
+     * @private
+     * @param {Object} [options]
+     * @returns {Object}
+     */
     #createRectangle(options = {}) {
         return {
             type: 'rectangle',
@@ -887,6 +1013,12 @@ export class CanvasEditor {
         };
     }
 
+    /**
+     * Создает объект круга с заданными или случайными параметрами.
+     * @private
+     * @param {Object} [options]
+     * @returns {Object}
+     */
     #createCircle(options = {}) {
         return {
             type: 'circle',
@@ -899,6 +1031,12 @@ export class CanvasEditor {
         };
     }
 
+    /**
+     * Создает объект линии с заданными или случайными параметрами.
+     * @private
+     * @param {Object} [options]
+     * @returns {Object}
+     */
     #createLine(options = {}) {
         const x1 = options.x1 ?? (Math.random() * 600 + 100);
         const y1 = options.y1 ?? (Math.random() * 400 + 100);
@@ -915,6 +1053,13 @@ export class CanvasEditor {
         };
     }
 
+    /**
+     * Возвращает массив управляющих ручек для прямоугольника.
+     * @private
+     * @param {Object} shape
+     * @param {number} [offset=5]
+     * @returns {Array<Object>}
+     */
     #getRectangleHandles(shape, offset = 5) {
         const w = shape.width, h = shape.height;
         return [
@@ -930,6 +1075,12 @@ export class CanvasEditor {
         ];
     }
 
+    /**
+     * Возвращает массив управляющих ручек для карандашной линии.
+     * @private
+     * @param {Object} bounds
+     * @returns {Array<Object>}
+     */
     #getPencilHandles(bounds) {
         return [
             {x: bounds.x, y: bounds.y, type: 'nw'},
@@ -944,6 +1095,12 @@ export class CanvasEditor {
     }
 
     // --- Вспомогательные методы для фигур ---
+    /**
+     * Возвращает центр прямоугольника.
+     * @private
+     * @param {Object} shape
+     * @returns {{x: number, y: number}}
+     */
     #getRectangleCenter(shape) {
         return {
             x: shape.x + shape.width / 2,
@@ -951,14 +1108,32 @@ export class CanvasEditor {
         };
     }
 
+    /**
+     * Возвращает угол поворота прямоугольника.
+     * @private
+     * @param {Object} shape
+     * @returns {number}
+     */
     #getRectangleRotation(shape) {
         return shape.rotation ?? 0;
     }
 
+    /**
+     * Возвращает центр круга.
+     * @private
+     * @param {Object} shape
+     * @returns {{x: number, y: number}}
+     */
     #getCircleCenter(shape) {
         return { x: shape.x, y: shape.y };
     }
     
+    /**
+     * Возвращает центр линии.
+     * @private
+     * @param {Object} shape
+     * @returns {{x: number, y: number}}
+     */
     #getLineCenter(shape) {
         return {
             x: (shape.x1 + shape.x2) / 2,
