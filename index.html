@@ -82,10 +82,33 @@
         constructor(canvasId) {
             this.canvas = document.getElementById(canvasId);
             this.ctx = this.canvas.getContext('2d');
-            this.interaction = { isDragging: false, isResizing: false, selectedShape: null, dragOffset: {x:0,y:0}, resizeHandle: null };
+            this.interaction = {
+                isDragging: false,
+                isResizing: false,
+                selectedShape: null,
+                dragOffset: { x: 0, y: 0 },
+                resizeHandle: null
+            };
             this.shapes = [
-                { type: 'rectangle', x: 150, y: 100, width: 200, height: 120, color: '#ff6b6b', strokeWidth: 3, selected: false },
-                { type: 'circle', x: 500, y: 200, radius: 80, color: '#4ecdc4', strokeWidth: 4, selected: false }
+                {
+                    type: 'rectangle',
+                    x: 150,
+                    y: 100,
+                    width: 200,
+                    height: 120,
+                    color: '#ff6b6b',
+                    strokeWidth: 3,
+                    selected: false
+                },
+                {
+                    type: 'circle',
+                    x: 500,
+                    y: 200,
+                    radius: 80,
+                    color: '#4ecdc4',
+                    strokeWidth: 4,
+                    selected: false
+                }
             ];
             this.attachEvents();
             this.drawShapes();
@@ -264,7 +287,7 @@
             }
             if (shape.type === 'line') {
                 // hit test: расстояние до линии < 8px
-                const {x1, y1, x2, y2} = shape;
+                const { x1, y1, x2, y2 } = shape;
                 const A = x - x1;
                 const B = y - y1;
                 const C = x2 - x1;
