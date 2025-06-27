@@ -198,7 +198,7 @@ export class CanvasEditor {
             const cx = shape.x + shape.width / 2;
             const cy = shape.y + shape.height / 2;
             ctx.translate(cx, cy);
-            ctx.rotate((shape.rotation || 0));
+            ctx.rotate((shape.rotation ?? 0));
             ctx.strokeRect(-shape.width / 2, -shape.height / 2, shape.width, shape.height);
         } else if (shape.type === 'circle') {
             ctx.arc(shape.x, shape.y, shape.radius, 0, Math.PI * 2);
@@ -213,6 +213,7 @@ export class CanvasEditor {
 
     #drawSelection(shape) {
         if (!shape.selected) return;
+
         const ctx = this.ctx;
         const bounds = this.#getShapeBounds(shape);
         const offset = 5;
@@ -229,7 +230,7 @@ export class CanvasEditor {
             const cx = shape.x + shape.width / 2;
             const cy = shape.y + shape.height / 2;
             ctx.translate(cx, cy);
-            ctx.rotate((shape.rotation || 0));
+            ctx.rotate((shape.rotation ?? 0));
             // Заливка
             ctx.fillRect(-shape.width/2 - offset, -shape.height/2 - offset, shape.width + offset*2, shape.height + offset*2);
             // Рамка
@@ -249,6 +250,7 @@ export class CanvasEditor {
                 // вращение
                 {x: 0, y: -h/2 - offset - 30, type: 'rotate'}
             ];
+
             handles.forEach((h) => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
             // Ручка вращения (кружок)
             const rotateHandle = {x: 0, y: -h/2 - offset - 30, type: 'rotate'};
@@ -300,17 +302,19 @@ export class CanvasEditor {
             ctx.fillStyle = borderColor;
             // 8 ручек: 4 угловые и 4 боковые
             const handles = [
-                {x: bounds.x - offset, y: bounds.y - offset}, // nw
-                {x: bounds.x + bounds.width + offset, y: bounds.y - offset}, // ne
-                {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height + offset}, // se
-                {x: bounds.x - offset, y: bounds.y + bounds.height + offset}, // sw
-                {x: bounds.x + bounds.width/2, y: bounds.y - offset}, // n
-                {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height/2}, // e
-                {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height + offset}, // s
+                {x: bounds.x - offset, y: bounds.y - offset, type: 'nw'},
+                {x: bounds.x + bounds.width + offset, y: bounds.y - offset, type: 'ne'},
+                {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height + offset, type: 'se'},
+                {x: bounds.x - offset, y: bounds.y + bounds.height + offset, type: 'sw'},
+                {x: bounds.x + bounds.width/2, y: bounds.y - offset, type: 'n'},
+                {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height/2, type: 'e'},
+                {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height + offset, type: 's'},
                 {x: bounds.x - offset, y: bounds.y + bounds.height/2, type: 'w'}
             ];
+
             handles.forEach((h) => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
         }
+
         ctx.restore();
     }
 
@@ -369,7 +373,7 @@ export class CanvasEditor {
             // Проверяем попадание с учётом поворота
             const cx = shape.x + shape.width/2;
             const cy = shape.y + shape.height/2;
-            const angle = -(shape.rotation || 0);
+            const angle = -(shape.rotation ?? 0);
             const dx = x - cx, dy = y - cy;
             const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
             const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
@@ -380,19 +384,23 @@ export class CanvasEditor {
 
     #getHandleAt(x, y, shape) {
         if (!shape.selected) return null;
+
         if (shape.type === 'line') {
             // ручки только на концах
             if (Math.abs(x - shape.x1) <= 8 && Math.abs(y - shape.y1) <= 8) return {type: 'start'};
+
             if (Math.abs(x - shape.x2) <= 8 && Math.abs(y - shape.y2) <= 8) return {type: 'end'};
+
             return null;
         }
+
         if (shape.type === 'rectangle') {
             // Проверяем вращённые ручки
             const cx = shape.x + shape.width/2;
             const cy = shape.y + shape.height/2;
             const offset = 5;
             // Переводим (x, y) в локальные координаты прямоугольника
-            const angle = -(shape.rotation || 0);
+            const angle = -(shape.rotation ?? 0);
             const dx = x - cx, dy = y - cy;
             const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
             const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
@@ -410,6 +418,7 @@ export class CanvasEditor {
                 // вращение
                 {x: 0, y: -h/2 - offset - 30, type: 'rotate'}
             ];
+
             for (const h of handles) {
                 if (h.type === 'rotate') {
                     if ((lx-h.x)**2 + (ly-h.y)**2 <= 10*10) return {type: 'rotate'};
@@ -417,8 +426,10 @@ export class CanvasEditor {
                     if (Math.abs(lx - h.x) <= 8 && Math.abs(ly - h.y) <= 8) return {type: h.type};
                 }
             }
+
             return null;
         }
+
         if (shape.type === 'circle') {
             // Проверяем только одну ручку справа от центра
             const handleX = shape.x + shape.radius;
@@ -426,8 +437,10 @@ export class CanvasEditor {
             if ((x - handleX) ** 2 + (y - handleY) ** 2 <= 10 * 10) {
                 return { type: 'radius' };
             }
+
             return null;
         }
+
         const bounds = this.#getShapeBounds(shape);
         const offset = 5;
         // 8 ручек: 4 угловые и 4 боковые
@@ -441,29 +454,38 @@ export class CanvasEditor {
             {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height + offset, type: 's'},
             {x: bounds.x - offset, y: bounds.y + bounds.height/2, type: 'w'}
         ];
-        return handles.find(h => Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) || null;
+
+        return handles.find(h => Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) ?? null;
     }
 
-    #resizeShape(shape, handle, mouse) {
+    #resizeShape(mouse) {
+        const shape = this.interaction.selectedShape;
+        const handle = this.interaction.resizeHandle;
+
+        if (!shape || !handle) return;
+
         if (shape.type === 'rectangle' && handle.type === 'rotate') {
             // Вращение
             const cx = shape.x + shape.width/2;
             const cy = shape.y + shape.height/2;
             const angle = Math.atan2(mouse.y - cy, mouse.x - cx);
             if (this.interaction && this.interaction.initialAngle != null) {
-                shape.rotation = angle - this.interaction.initialAngle + (this.interaction.startRotation || 0);
+                shape.rotation = angle - this.interaction.initialAngle + (this.interaction.startRotation ?? 0);
             } else {
                 shape.rotation = angle;
             }
+
             this.#drawShapes();
+
             return;
         }
+
         if (shape.type === 'rectangle' && handle.type) {
             // --- Новый ресайз с учетом поворота ---
             const offset = 5;
             const cx = shape.x + shape.width/2;
             const cy = shape.y + shape.height/2;
-            const angle = -(shape.rotation || 0);
+            const angle = -(shape.rotation ?? 0);
             // Переводим мышь в локальные координаты
             const dx = mouse.x - cx, dy = mouse.y - cy;
             const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
@@ -505,25 +527,31 @@ export class CanvasEditor {
             const newWidth = right - left;
             const newHeight = bottom - top;
             // Новый центр
-            const newCx = cx + (Math.cos(shape.rotation||0)*(left+right)/2 - Math.sin(shape.rotation||0)*(top+bottom)/2);
-            const newCy = cy + (Math.sin(shape.rotation||0)*(left+right)/2 + Math.cos(shape.rotation||0)*(top+bottom)/2);
+            const newCx = cx + (Math.cos(shape.rotation??0)*(left+right)/2 - Math.sin(shape.rotation ?? 0)*(top+bottom)/2);
+            const newCy = cy + (Math.sin(shape.rotation??0)*(left+right)/2 + Math.cos(shape.rotation ?? 0)*(top+bottom)/2);
             // Обновляем shape
             shape.width = newWidth;
             shape.height = newHeight;
             shape.x = newCx - newWidth/2;
             shape.y = newCy - newHeight/2;
+
             this.#drawShapes();
+
             return;
         }
+
         if (shape.type === 'circle' && handle.type === 'radius') {
             // Меняем радиус только если тянут за ручку
             const dx = mouse.x - shape.x;
             const dy = mouse.y - shape.y;
             const newRadius = Math.sqrt(dx * dx + dy * dy);
             shape.radius = Math.max(20, newRadius);
+
             this.#drawShapes();
+
             return;
         }
+
         switch (shape.type) {
             case 'rectangle':
                 switch (handle.type) {
@@ -532,31 +560,31 @@ export class CanvasEditor {
                         shape.height = Math.max(20, mouse.y - shape.y);
                         break;
                     case 'nw':
-                        const newW_nw = Math.max(20, shape.x + shape.width - mouse.x);
-                        const newH_nw = Math.max(20, shape.y + shape.height - mouse.y);
-                        shape.x = shape.x + shape.width - newW_nw;
-                        shape.y = shape.y + shape.height - newH_nw;
-                        shape.width = newW_nw;
-                        shape.height = newH_nw;
+                        const newWNw = Math.max(20, shape.x + shape.width - mouse.x);
+                        const newHNw = Math.max(20, shape.y + shape.height - mouse.y);
+                        shape.x = shape.x + shape.width - newWNw;
+                        shape.y = shape.y + shape.height - newHNw;
+                        shape.width = newWNw;
+                        shape.height = newHNw;
                         break;
                     case 'ne':
-                        const newW_ne = Math.max(20, mouse.x - shape.x);
-                        const newH_ne = Math.max(20, shape.y + shape.height - mouse.y);
-                        shape.y = shape.y + shape.height - newH_ne;
-                        shape.width = newW_ne;
-                        shape.height = newH_ne;
+                        const newWNe = Math.max(20, mouse.x - shape.x);
+                        const newHNe = Math.max(20, shape.y + shape.height - mouse.y);
+                        shape.y = shape.y + shape.height - newHNe;
+                        shape.width = newWNe;
+                        shape.height = newHNe;
                         break;
                     case 'sw':
-                        const newW_sw = Math.max(20, shape.x + shape.width - mouse.x);
-                        const newH_sw = Math.max(20, mouse.y - shape.y);
-                        shape.x = shape.x + shape.width - newW_sw;
-                        shape.width = newW_sw;
-                        shape.height = newH_sw;
+                        const newWSw = Math.max(20, shape.x + shape.width - mouse.x);
+                        const newHSw = Math.max(20, mouse.y - shape.y);
+                        shape.x = shape.x + shape.width - newWSw;
+                        shape.width = newWSw;
+                        shape.height = newHSw;
                         break;
                     case 'n':
-                        const newH_n = Math.max(20, shape.y + shape.height - mouse.y);
-                        shape.y = shape.y + shape.height - newH_n;
-                        shape.height = newH_n;
+                        const newHN = Math.max(20, shape.y + shape.height - mouse.y);
+                        shape.y = shape.y + shape.height - newHN;
+                        shape.height = newHN;
                         break;
                     case 's':
                         shape.height = Math.max(20, mouse.y - shape.y);
@@ -565,9 +593,9 @@ export class CanvasEditor {
                         shape.width = Math.max(20, mouse.x - shape.x);
                         break;
                     case 'w':
-                        const newW_w = Math.max(20, shape.x + shape.width - mouse.x);
-                        shape.x = shape.x + shape.width - newW_w;
-                        shape.width = newW_w;
+                        const newWW = Math.max(20, shape.x + shape.width - mouse.x);
+                        shape.x = shape.x + shape.width - newWW;
+                        shape.width = newWW;
                         break;
                 }
                 break;
@@ -584,6 +612,7 @@ export class CanvasEditor {
                 }
                 break;
         }
+
         this.#drawShapes();
     }
 
@@ -595,6 +624,7 @@ export class CanvasEditor {
 
     #onMouseDown(e) {
         const mouse = this.#getMousePos(e);
+
         for (const shape of this.shapes) {
             if (shape.selected) {
                 const handle = this.#getHandleAt(mouse.x, mouse.y, shape);
@@ -603,17 +633,20 @@ export class CanvasEditor {
                     let initialDistance = null;
                     let initialAngle = null;
                     let startRotation = null;
+
                     if (shape.type === 'circle') {
                         initialRadius = shape.radius;
                         const dx = mouse.x - shape.x, dy = mouse.y - shape.y;
                         initialDistance = Math.sqrt(dx * dx + dy * dy);
                     }
+
                     if (shape.type === 'rectangle' && handle.type === 'rotate') {
                         const cx = shape.x + shape.width/2;
                         const cy = shape.y + shape.height/2;
                         initialAngle = Math.atan2(mouse.y - cy, mouse.x - cx);
-                        startRotation = shape.rotation || 0;
+                        startRotation = shape.rotation ?? 0;
                     }
+
                     this.interaction = { 
                         ...this.interaction, 
                         isResizing: true, 
@@ -624,15 +657,19 @@ export class CanvasEditor {
                         initialAngle,
                         startRotation
                     };
+
                     return;
                 }
             }
         }
+
         this.shapes.forEach(s => s.selected = false);
+
         for (let i = this.shapes.length - 1; i >= 0; i--) {
             if (this.#isPointInShape(mouse.x, mouse.y, this.shapes[i])) {
                 this.shapes[i].selected = true;
                 const shape = this.shapes[i];
+
                 if (shape.type === 'line') {
                     const centerX = (shape.x1 + shape.x2) / 2;
                     const centerY = (shape.y1 + shape.y2) / 2;
@@ -654,18 +691,23 @@ export class CanvasEditor {
                         }
                     };
                 }
+
                 this.canvas.style.cursor = 'move';
+
                 break;
             }
         }
+
         this.#drawShapes();
     }
 
     #onMouseMove(e) {
         const mouse = this.#getMousePos(e);
         let cursor = 'default';
+
         if (this.interaction.isDragging) {
             const shape = this.interaction.selectedShape;
+
             if (shape.type === 'line') {
                 // Корректное перемещение линии
                 const prevCenterX = (shape.x1 + shape.x2) / 2;
@@ -682,26 +724,30 @@ export class CanvasEditor {
                 shape.x = mouse.x - this.interaction.dragOffset.x;
                 shape.y = mouse.y - this.interaction.dragOffset.y;
             }
+
             this.#drawShapes();
             cursor = 'move';
         } else if (this.interaction.isResizing) {
-            this.#resizeShape(this.interaction.selectedShape, this.interaction.resizeHandle, mouse);
+            this.#resizeShape(mouse);
             cursor = this.#getCursorForHandle(this.interaction.resizeHandle);
         } else {
             // Проверяем, наведена ли мышь на ручку
             let hoveredHandle = null;
+
             for (const shape of this.shapes) {
                 if (shape.selected) {
                     hoveredHandle = this.#getHandleAt(mouse.x, mouse.y, shape);
                     if (hoveredHandle) break;
                 }
             }
+
             if (hoveredHandle) {
                 cursor = this.#getCursorForHandle(hoveredHandle);
             } else {
                 // Проверяем, наведена ли мышь на выделенную фигуру
                 let hoveredSelected = false;
                 let hovered = false;
+
                 for (let i = this.shapes.length - 1; i >= 0; i--) {
                     const shape = this.shapes[i];
                     if (this.#isPointInShape(mouse.x, mouse.y, shape)) {
@@ -712,6 +758,7 @@ export class CanvasEditor {
                         break;
                     }
                 }
+
                 if (hoveredSelected) {
                     cursor = 'move';
                 } else if (hovered) {
@@ -719,6 +766,7 @@ export class CanvasEditor {
                 }
             }
         }
+
         this.canvas.style.cursor = cursor;
     }
 
@@ -728,14 +776,13 @@ export class CanvasEditor {
 
     #getCursorForHandle(handle) {
         if (!handle) return 'default';
-        if (handle.type === 'start' || handle.type === 'end') return 'pointer';
-        if (handle.type === 'rotate') return 'grab';
-        if (handle.type === 'radius') return 'ew-resize';
-        return CanvasEditor.handleCursorMap.get(handle.type) || 'default';
+
+        return CanvasEditor.handleCursorMap.get(handle.type) ?? 'default';
     }
 
     #getRandomColor() {
         const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
+
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
@@ -752,6 +799,10 @@ export class CanvasEditor {
         ['nw', 'nwse-resize'],
         ['se', 'nwse-resize'],
         ['ne', 'nesw-resize'],
-        ['sw', 'nesw-resize']
+        ['sw', 'nesw-resize'],
+        ['start', 'pointer'],
+        ['end', 'pointer'],
+        ['rotate', 'grab'],
+        ['radius', 'ew-resize']
     ]);
 } 
