@@ -217,19 +217,25 @@ export class CanvasEditor {
         const bounds = this.#getShapeBounds(shape);
         const offset = 5;
         ctx.save();
-        ctx.strokeStyle = '#007bff';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([5, 5]);
+        // Цвета в стиле Excalidraw
+        const borderColor = '#228be6'; // насыщенный синий
+        const fillColor = 'rgba(34, 139, 230, 0.08)'; // полупрозрачная голубая
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = borderColor;
+        ctx.fillStyle = fillColor;
+        ctx.setLineDash([]); // Сплошная линия
         if (shape.type === 'rectangle') {
             // Вращаем bounding box и ручки вместе с прямоугольником
             const cx = shape.x + shape.width / 2;
             const cy = shape.y + shape.height / 2;
             ctx.translate(cx, cy);
             ctx.rotate((shape.rotation || 0));
+            // Заливка
+            ctx.fillRect(-shape.width/2 - offset, -shape.height/2 - offset, shape.width + offset*2, shape.height + offset*2);
+            // Рамка
             ctx.strokeRect(-shape.width/2 - offset, -shape.height/2 - offset, shape.width + offset*2, shape.height + offset*2);
-            ctx.setLineDash([]);
-            ctx.fillStyle = '#007bff';
-            // 8 ручек
+            // Ручки
+            ctx.fillStyle = borderColor;
             const w = shape.width, h = shape.height;
             const handles = [
                 {x: -w/2 - offset, y: -h/2 - offset, type: 'nw'},
@@ -250,42 +256,48 @@ export class CanvasEditor {
             ctx.arc(rotateHandle.x, rotateHandle.y, 8, 0, Math.PI*2);
             ctx.fillStyle = '#fff';
             ctx.fill();
-            ctx.strokeStyle = '#007bff';
+            ctx.strokeStyle = borderColor;
             ctx.lineWidth = 2;
             ctx.stroke();
         } else if (shape.type === 'line') {
-            // Не рисуем bounding box
-            ctx.setLineDash([]);
-            ctx.fillStyle = '#007bff';
-            // ручки только на концах линии
+            // Не рисуем bounding box, только ручки
+            ctx.fillStyle = borderColor;
             ctx.fillRect(shape.x1 - 4, shape.y1 - 4, 8, 8); // start
             ctx.fillRect(shape.x2 - 4, shape.y2 - 4, 8, 8); // end
         } else if (shape.type === 'circle') {
-            ctx.strokeRect(
-                bounds.x - offset,
-                bounds.y - offset,
-                bounds.width + offset * 2,
-                bounds.height + offset * 2
-            );
-            ctx.fillStyle = '#007bff';
-            ctx.setLineDash([]);
-            // Одна ручка справа от центра (на окружности)
+            // Заливка
+            ctx.beginPath();
+            ctx.arc(shape.x, shape.y, shape.radius + offset, 0, Math.PI * 2);
+            ctx.fill();
+            // Рамка
+            ctx.beginPath();
+            ctx.arc(shape.x, shape.y, shape.radius + offset, 0, Math.PI * 2);
+            ctx.strokeStyle = borderColor;
+            ctx.stroke();
+            // Ручка справа от центра (на окружности)
             const handle = { x: shape.x + shape.radius, y: shape.y, type: 'radius' };
             ctx.beginPath();
             ctx.arc(handle.x, handle.y, 7, 0, Math.PI * 2);
+            ctx.fillStyle = borderColor;
             ctx.fill();
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 2;
             ctx.stroke();
         } else {
+            // Для других фигур (если появятся)
+            ctx.fillRect(
+                bounds.x - offset,
+                bounds.y - offset,
+                bounds.width + offset * 2,
+                bounds.height + offset * 2
+            );
             ctx.strokeRect(
                 bounds.x - offset,
                 bounds.y - offset,
                 bounds.width + offset * 2,
                 bounds.height + offset * 2
             );
-            ctx.fillStyle = '#007bff';
-            ctx.setLineDash([]);
+            ctx.fillStyle = borderColor;
             // 8 ручек: 4 угловые и 4 боковые
             const handles = [
                 {x: bounds.x - offset, y: bounds.y - offset}, // nw
