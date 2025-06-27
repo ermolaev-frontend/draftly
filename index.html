@@ -130,18 +130,20 @@
             ctx.lineWidth = 1;
             ctx.setLineDash([5, 5]);
             if (shape.type === 'line') {
-                // bounding box
+                // bounding box с отступом offset
                 ctx.strokeRect(
-                    bounds.x - offset,
-                    bounds.y - offset,
-                    bounds.width + offset * 2,
-                    bounds.height + offset * 2
+                    bounds.x,
+                    bounds.y,
+                    bounds.width,
+                    bounds.height
                 );
                 ctx.setLineDash([]);
                 ctx.fillStyle = '#007bff';
-                // ручки на концах
-                ctx.fillRect(shape.x1 - 6, shape.y1 - 6, 12, 12);
-                ctx.fillRect(shape.x2 - 6, shape.y2 - 6, 12, 12);
+                // ручки по углам bounding box
+                ctx.fillRect(bounds.x - 4, bounds.y - 4, 8, 8); // top-left
+                ctx.fillRect(bounds.x + bounds.width - 4, bounds.y - 4, 8, 8); // top-right
+                ctx.fillRect(bounds.x + bounds.width - 4, bounds.y + bounds.height - 4, 8, 8); // bottom-right
+                ctx.fillRect(bounds.x - 4, bounds.y + bounds.height - 4, 8, 8); // bottom-left
             } else {
                 ctx.strokeRect(
                     bounds.x - offset,
@@ -153,14 +155,14 @@
                 ctx.setLineDash([]);
                 // 8 ручек: 4 угловые и 4 боковые
                 const handles = [
-                    {x: bounds.x, y: bounds.y, type: 'nw'},
-                    {x: bounds.x + bounds.width, y: bounds.y, type: 'ne'},
-                    {x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se'},
-                    {x: bounds.x, y: bounds.y + bounds.height, type: 'sw'},
-                    {x: bounds.x + bounds.width/2, y: bounds.y, type: 'n'},
-                    {x: bounds.x + bounds.width, y: bounds.y + bounds.height/2, type: 'e'},
-                    {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height, type: 's'},
-                    {x: bounds.x, y: bounds.y + bounds.height/2, type: 'w'}
+                    {x: bounds.x - offset, y: bounds.y - offset}, // nw
+                    {x: bounds.x + bounds.width + offset, y: bounds.y - offset}, // ne
+                    {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height + offset}, // se
+                    {x: bounds.x - offset, y: bounds.y + bounds.height + offset}, // sw
+                    {x: bounds.x + bounds.width/2, y: bounds.y - offset}, // n
+                    {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height/2}, // e
+                    {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height + offset}, // s
+                    {x: bounds.x - offset, y: bounds.y + bounds.height/2} // w
                 ];
                 handles.forEach((h) => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
             }
@@ -199,10 +201,11 @@
                 case 'rectangle': return { x: shape.x, y: shape.y, width: shape.width, height: shape.height };
                 case 'circle': return { x: shape.x - shape.radius, y: shape.y - shape.radius, width: shape.radius * 2, height: shape.radius * 2 };
                 case 'line': {
-                    const minX = Math.min(shape.x1, shape.x2);
-                    const minY = Math.min(shape.y1, shape.y2);
-                    const maxX = Math.max(shape.x1, shape.x2);
-                    const maxY = Math.max(shape.y1, shape.y2);
+                    const offset = 5;
+                    const minX = Math.min(shape.x1, shape.x2) - offset;
+                    const minY = Math.min(shape.y1, shape.y2) - offset;
+                    const maxX = Math.max(shape.x1, shape.x2) + offset;
+                    const maxY = Math.max(shape.y1, shape.y2) + offset;
                     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
                 }
             }
@@ -256,16 +259,17 @@
                 return null;
             }
             const bounds = this.getShapeBounds(shape);
+            const offset = 5;
             // 8 ручек: 4 угловые и 4 боковые
             const handles = [
-                {x: bounds.x, y: bounds.y, type: 'nw'},
-                {x: bounds.x + bounds.width, y: bounds.y, type: 'ne'},
-                {x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se'},
-                {x: bounds.x, y: bounds.y + bounds.height, type: 'sw'},
-                {x: bounds.x + bounds.width/2, y: bounds.y, type: 'n'},
-                {x: bounds.x + bounds.width, y: bounds.y + bounds.height/2, type: 'e'},
-                {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height, type: 's'},
-                {x: bounds.x, y: bounds.y + bounds.height/2, type: 'w'}
+                {x: bounds.x - offset, y: bounds.y - offset, type: 'nw'},
+                {x: bounds.x + bounds.width + offset, y: bounds.y - offset, type: 'ne'},
+                {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height + offset, type: 'se'},
+                {x: bounds.x - offset, y: bounds.y + bounds.height + offset, type: 'sw'},
+                {x: bounds.x + bounds.width/2, y: bounds.y - offset, type: 'n'},
+                {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height/2, type: 'e'},
+                {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height + offset, type: 's'},
+                {x: bounds.x - offset, y: bounds.y + bounds.height/2, type: 'w'}
             ];
             return handles.find(h => Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) || null;
         }
