@@ -59,4 +59,20 @@ button.active-tool {
     border: 2px solid var(--primary);
     font-weight: bold;
 }
-.value-display { font-size: 12px; color: var(--value-color); margin-top: 2px; } 
+.value-display { font-size: 12px; color: var(--value-color); margin-top: 2px; }
+
+#saveButton {
+  background: #27ae60;
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  border-radius: var(--button-radius);
+  padding: var(--button-padding);
+  margin: var(--button-margin);
+  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.08);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+#saveButton:hover, #saveButton:focus {
+  background: #219150;
+  box-shadow: 0 4px 16px rgba(39, 174, 96, 0.18);
+} 

@@ -8,6 +8,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('clearCanvasButton').addEventListener('click', () => canvasEditor.clearCanvas());
     document.getElementById('pencilButton').addEventListener('click', () => canvasEditor.setTool('pencil'));
     document.getElementById('selectButton').addEventListener('click', () => canvasEditor.setTool('select'));
+    document.getElementById('saveButton').addEventListener('click', () => {
+        console.log(canvasEditor.shapes);
+        localStorage.setItem('shapes', JSON.stringify(canvasEditor.shapes));
+    });
 
     function setActiveToolButton(tool) {
         document.getElementById('selectButton').classList.remove('active-tool');
