@@ -348,6 +348,7 @@
                             y: mouse.y - shape.y
                         }
                     };
+                    this.canvas.style.cursor = 'move';
                     break;
                 }
             }
@@ -443,19 +444,20 @@
         }
 
         // Добавляю функцию для выбора курсора по типу ручки
+        static handleCursorMap = new Map([
+            ['n', 'ns-resize'],
+            ['s', 'ns-resize'],
+            ['e', 'ew-resize'],
+            ['w', 'ew-resize'],
+            ['nw', 'nwse-resize'],
+            ['se', 'nwse-resize'],
+            ['ne', 'nesw-resize'],
+            ['sw', 'nesw-resize']
+        ]);
+
         getCursorForHandle(handle) {
             if (!handle) return 'default';
-            switch (handle.type) {
-                case 'n': return 'ns-resize';
-                case 's': return 'ns-resize';
-                case 'e': return 'ew-resize';
-                case 'w': return 'ew-resize';
-                case 'nw': return 'nwse-resize';
-                case 'se': return 'nwse-resize';
-                case 'ne': return 'nesw-resize';
-                case 'sw': return 'nesw-resize';
-                default: return 'default';
-            }
+            return CanvasEditor.handleCursorMap.get(handle.type) || 'default';
         }
     }
     
