@@ -9,26 +9,99 @@ export class CanvasEditor {
             dragOffset: { x: 0, y: 0 },
             resizeHandle: null
         };
+        // Размеры канваса
+        const canvasWidth = this.canvas.width;
+        const canvasHeight = this.canvas.height;
+        // Функция для получения случайного значения в диапазоне
+        const getRandom = (min, max) => Math.random() * (max - min) + min;
+        const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
+        // Сектора для равномерного распределения
+        const sectors = [
+            { xMin: 0, xMax: canvasWidth / 2, yMin: 0, yMax: canvasHeight / 2 },
+            { xMin: canvasWidth / 2, xMax: canvasWidth, yMin: 0, yMax: canvasHeight / 2 },
+            { xMin: 0, xMax: canvasWidth / 2, yMin: canvasHeight / 2, yMax: canvasHeight },
+            { xMin: canvasWidth / 2, xMax: canvasWidth, yMin: canvasHeight / 2, yMax: canvasHeight }
+        ];
+        // Прямоугольники
         this.shapes = [
             {
                 type: 'rectangle',
-                x: 150,
-                y: 100,
-                width: 200,
-                height: 120,
-                color: '#ff6b6b',
-                strokeWidth: 3,
+                x: getRandom(sectors[0].xMin + 20, sectors[0].xMax - 120),
+                y: getRandom(sectors[0].yMin + 20, sectors[0].yMax - 100),
+                width: getRandom(100, 180),
+                height: getRandom(80, 140),
+                color: colors[Math.floor(getRandom(0, colors.length))],
+                strokeWidth: getRandom(2, 5),
+                selected: false,
+                rotation: 0
+            },
+            {
+                type: 'rectangle',
+                x: getRandom(sectors[1].xMin + 20, sectors[1].xMax - 120),
+                y: getRandom(sectors[1].yMin + 20, sectors[1].yMax - 100),
+                width: getRandom(100, 180),
+                height: getRandom(80, 140),
+                color: colors[Math.floor(getRandom(0, colors.length))],
+                strokeWidth: getRandom(2, 5),
+                selected: false,
+                rotation: 0
+            },
+            // Круги
+            {
+                type: 'circle',
+                x: getRandom(sectors[2].xMin + 60, sectors[2].xMax - 60),
+                y: getRandom(sectors[2].yMin + 60, sectors[2].yMax - 60),
+                radius: getRandom(40, 80),
+                color: colors[Math.floor(getRandom(0, colors.length))],
+                strokeWidth: getRandom(2, 5),
                 selected: false
             },
             {
                 type: 'circle',
-                x: 500,
-                y: 200,
-                radius: 80,
-                color: '#4ecdc4',
-                strokeWidth: 4,
+                x: getRandom(sectors[3].xMin + 60, sectors[3].xMax - 60),
+                y: getRandom(sectors[3].yMin + 60, sectors[3].yMax - 60),
+                radius: getRandom(40, 80),
+                color: colors[Math.floor(getRandom(0, colors.length))],
+                strokeWidth: getRandom(2, 5),
                 selected: false
-            }
+            },
+            // Линии (разные сектора, но с перекрытием для большей равномерности)
+            (() => {
+                const x1 = getRandom(40, canvasWidth / 2 - 40), y1 = getRandom(40, canvasHeight / 2 - 40);
+                const x2 = getRandom(canvasWidth / 2 + 40, canvasWidth - 40), y2 = getRandom(canvasHeight / 2 + 40, canvasHeight - 40);
+                return {
+                    type: 'line',
+                    x1, y1, x2, y2,
+                    color: colors[Math.floor(getRandom(0, colors.length))],
+                    strokeWidth: getRandom(2, 5),
+                    selected: false
+                };
+            })(),
+            (() => {
+                const x1 = getRandom(canvasWidth / 2 + 40, canvasWidth - 40), y1 = getRandom(40, canvasHeight / 2 - 40);
+                const x2 = getRandom(40, canvasWidth / 2 - 40), y2 = getRandom(canvasHeight / 2 + 40, canvasHeight - 40);
+                return {
+                    type: 'line',
+                    x1, y1, x2, y2,
+                    color: colors[Math.floor(getRandom(0, colors.length))],
+                    strokeWidth: getRandom(2, 5),
+                    selected: false
+                };
+            })(),
+            (() => {
+                const x1 = getRandom(40, canvasWidth - 40), y1 = getRandom(40, canvasHeight - 40);
+                const angle = getRandom(0, Math.PI * 2);
+                const length = getRandom(80, 200);
+                const x2 = x1 + Math.cos(angle) * length;
+                const y2 = y1 + Math.sin(angle) * length;
+                return {
+                    type: 'line',
+                    x1, y1, x2, y2,
+                    color: colors[Math.floor(getRandom(0, colors.length))],
+                    strokeWidth: getRandom(2, 5),
+                    selected: false
+                };
+            })()
         ];
         this.#attachEvents();
         this.#drawShapes();
