@@ -198,32 +198,43 @@ export class CanvasEditor {
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.beginPath();
-        if (shape.type === 'rectangle') {
-            // Вращение
-            const cx = shape.x + shape.width / 2;
-            const cy = shape.y + shape.height / 2;
-            ctx.translate(cx, cy);
-            ctx.rotate((shape.rotation ?? 0));
-            ctx.strokeRect(-shape.width / 2, -shape.height / 2, shape.width, shape.height);
-        } else if (shape.type === 'circle') {
-            ctx.arc(shape.x, shape.y, shape.radius, 0, Math.PI * 2);
-            ctx.stroke();
-        } else if (shape.type === 'line') {
-            ctx.moveTo(shape.x1, shape.y1);
-            ctx.lineTo(shape.x2, shape.y2);
-            ctx.stroke();
-        } else if (shape.type === 'pencil') {
-            if (shape.points && shape.points.length > 1) {
-                const simplified = this.#simplifyDouglasPeucker(shape.points, 1.5);
-                const beziers = this.#catmullRom2bezier(simplified);
-                if (beziers.length > 0) {
-                    ctx.moveTo(beziers[0].start.x, beziers[0].start.y);
-                    for (const seg of beziers) {
-                        ctx.bezierCurveTo(seg.cp1.x, seg.cp1.y, seg.cp2.x, seg.cp2.y, seg.end.x, seg.end.y);
-                    }
-                    ctx.stroke();
-                }
+        switch (shape.type) {
+            case 'rectangle': {
+                // Вращение
+                const cx = shape.x + shape.width / 2;
+                const cy = shape.y + shape.height / 2;
+                ctx.translate(cx, cy);
+                ctx.rotate((shape.rotation ?? 0));
+                ctx.strokeRect(-shape.width / 2, -shape.height / 2, shape.width, shape.height);
+                break;
             }
+            case 'circle': {
+                ctx.arc(shape.x, shape.y, shape.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                break;
+            }
+            case 'line': {
+                ctx.moveTo(shape.x1, shape.y1);
+                ctx.lineTo(shape.x2, shape.y2);
+                ctx.stroke();
+                break;
+            }
+            case 'pencil': {
+                if (shape.points && shape.points.length > 1) {
+                    const simplified = this.#simplifyDouglasPeucker(shape.points, 1.5);
+                    const beziers = this.#catmullRom2bezier(simplified);
+                    if (beziers.length > 0) {
+                        ctx.moveTo(beziers[0].start.x, beziers[0].start.y);
+                        for (const seg of beziers) {
+                            ctx.bezierCurveTo(seg.cp1.x, seg.cp1.y, seg.cp2.x, seg.cp2.y, seg.end.x, seg.end.y);
+                        }
+                        ctx.stroke();
+                    }
+                }
+                break;
+            }
+            default:
+                break;
         }
         ctx.restore();
     }
@@ -393,357 +404,222 @@ export class CanvasEditor {
 
     #isPointInShape(x, y, shape) {
         const bounds = this.#getShapeBounds(shape);
-        if (shape.type === 'circle') {
-            const dx = x - shape.x, dy = y - shape.y;
-            return dx * dx + dy * dy <= shape.radius * shape.radius;
-        }
-        if (shape.type === 'line') {
-            // hit test: расстояние до линии < 8px
-            const { x1, y1, x2, y2 } = shape;
-            const dxToStart = x - x1;
-            const dyToStart = y - y1;
-            const lineDx = x2 - x1;
-            const lineDy = y2 - y1;
-            const projection = dxToStart * lineDx + dyToStart * lineDy;
-            const lineLengthSq = lineDx * lineDx + lineDy * lineDy;
-            let t = lineLengthSq ? projection / lineLengthSq : -1;
-            t = Math.max(0, Math.min(1, t));
-            const closestX = x1 + t * lineDx;
-            const closestY = y1 + t * lineDy;
-            const distance = Math.sqrt((x - closestX) ** 2 + (y - closestY) ** 2);
-            return distance < 8;
-        }
-        if (shape.type === 'rectangle') {
-            // Проверяем попадание с учётом поворота
-            const cx = shape.x + shape.width/2;
-            const cy = shape.y + shape.height/2;
-            const angle = -(shape.rotation ?? 0);
-            const dx = x - cx, dy = y - cy;
-            const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
-            const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
-            return lx >= -shape.width/2 && lx <= shape.width/2 && ly >= -shape.height/2 && ly <= shape.height/2;
-        }
-        if (shape.type === 'pencil') {
-            // Проверяем, близка ли точка к любому сегменту линии
-            if (!shape.points || shape.points.length < 2) return false;
-            for (let i = 1; i < shape.points.length; i++) {
-                const xStart = shape.points[i-1].x, yStart = shape.points[i-1].y;
-                const xEnd = shape.points[i].x, yEnd = shape.points[i].y;
-                // Расстояние от точки (x, y) до отрезка (xStart, yStart)-(xEnd, yEnd)
-                const dxToStart = x - xStart;
-                const dyToStart = y - yStart;
-                const segmentDx = xEnd - xStart;
-                const segmentDy = yEnd - yStart;
-                const projection = dxToStart * segmentDx + dyToStart * segmentDy;
-                const segmentLengthSq = segmentDx * segmentDx + segmentDy * segmentDy;
-                let t = segmentLengthSq ? projection / segmentLengthSq : -1;
-                t = Math.max(0, Math.min(1, t));
-                const closestX = xStart + t * segmentDx;
-                const closestY = yStart + t * segmentDy;
-                const dist = Math.sqrt((x - closestX) ** 2 + (y - closestY) ** 2);
-                if (dist < 8) return true;
+        switch (shape.type) {
+            case 'circle': {
+                const dx = x - shape.x, dy = y - shape.y;
+                return dx * dx + dy * dy <= shape.radius * shape.radius;
             }
-            return false;
+            case 'line': {
+                const { x1, y1, x2, y2 } = shape;
+                const dxToStart = x - x1;
+                const dyToStart = y - y1;
+                const lineDx = x2 - x1;
+                const lineDy = y2 - y1;
+                const projection = dxToStart * lineDx + dyToStart * lineDy;
+                const lineLengthSq = lineDx * lineDx + lineDy * lineDy;
+                let t = lineLengthSq ? projection / lineLengthSq : -1;
+                t = Math.max(0, Math.min(1, t));
+                const closestX = x1 + t * lineDx;
+                const closestY = y1 + t * lineDy;
+                const distance = Math.sqrt((x - closestX) ** 2 + (y - closestY) ** 2);
+                return distance < 8;
+            }
+            case 'rectangle': {
+                const cx = shape.x + shape.width/2;
+                const cy = shape.y + shape.height/2;
+                const angle = -(shape.rotation ?? 0);
+                const dx = x - cx, dy = y - cy;
+                const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
+                const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
+                return lx >= -shape.width/2 && lx <= shape.width/2 && ly >= -shape.height/2 && ly <= shape.height/2;
+            }
+            case 'pencil': {
+                if (!shape.points || shape.points.length < 2) return false;
+                for (let i = 1; i < shape.points.length; i++) {
+                    const xStart = shape.points[i-1].x, yStart = shape.points[i-1].y;
+                    const xEnd = shape.points[i].x, yEnd = shape.points[i].y;
+                    const dxToStart = x - xStart;
+                    const dyToStart = y - yStart;
+                    const segmentDx = xEnd - xStart;
+                    const segmentDy = yEnd - yStart;
+                    const projection = dxToStart * segmentDx + dyToStart * segmentDy;
+                    const segmentLengthSq = segmentDx * segmentDx + segmentDy * segmentDy;
+                    let t = segmentLengthSq ? projection / segmentLengthSq : -1;
+                    t = Math.max(0, Math.min(1, t));
+                    const closestX = xStart + t * segmentDx;
+                    const closestY = yStart + t * segmentDy;
+                    const dist = Math.sqrt((x - closestX) ** 2 + (y - closestY) ** 2);
+                    if (dist < 8) return true;
+                }
+                return false;
+            }
+            default:
+                return x >= bounds.x && x <= bounds.x + bounds.width && y >= bounds.y && y <= bounds.y + bounds.height;
         }
-        return x >= bounds.x && x <= bounds.x + bounds.width && y >= bounds.y && y <= bounds.y + bounds.height;
     }
 
     #getHandleAt(x, y, shape) {
         if (!shape.selected) return null;
-
-        if (shape.type === 'line') {
-            // ручки только на концах
-            if (Math.abs(x - shape.x1) <= 8 && Math.abs(y - shape.y1) <= 8) return {type: 'start'};
-
-            if (Math.abs(x - shape.x2) <= 8 && Math.abs(y - shape.y2) <= 8) return {type: 'end'};
-
-            return null;
-        }
-
-        if (shape.type === 'rectangle') {
-            // Проверяем вращённые ручки
-            const cx = shape.x + shape.width/2;
-            const cy = shape.y + shape.height/2;
-            const offset = 5;
-            // Переводим (x, y) в локальные координаты прямоугольника
-            const angle = -(shape.rotation ?? 0);
-            const dx = x - cx, dy = y - cy;
-            const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
-            const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
-            // 8 ручек
-            const w = shape.width, h = shape.height;
-            const handles = [
-                {x: -w/2 - offset, y: -h/2 - offset, type: 'nw'},
-                {x: +w/2 + offset, y: -h/2 - offset, type: 'ne'},
-                {x: +w/2 + offset, y: +h/2 + offset, type: 'se'},
-                {x: -w/2 - offset, y: +h/2 + offset, type: 'sw'},
-                {x: 0, y: -h/2 - offset, type: 'n'},
-                {x: +w/2 + offset, y: 0, type: 'e'},
-                {x: 0, y: +h/2 + offset, type: 's'},
-                {x: -w/2 - offset, y: 0, type: 'w'},
-                // вращение
-                {x: 0, y: -h/2 - offset - 30, type: 'rotate'}
-            ];
-
-            for (const h of handles) {
-                if (h.type === 'rotate') {
-                    if ((lx-h.x)**2 + (ly-h.y)**2 <= 10*10) return {type: 'rotate'};
-                } else {
-                    if (Math.abs(lx - h.x) <= 8 && Math.abs(ly - h.y) <= 8) return {type: h.type};
+        switch (shape.type) {
+            case 'line': {
+                if (Math.abs(x - shape.x1) <= 8 && Math.abs(y - shape.y1) <= 8) return {type: 'start'};
+                if (Math.abs(x - shape.x2) <= 8 && Math.abs(y - shape.y2) <= 8) return {type: 'end'};
+                return null;
+            }
+            case 'rectangle': {
+                const cx = shape.x + shape.width/2;
+                const cy = shape.y + shape.height/2;
+                const offset = 5;
+                const angle = -(shape.rotation ?? 0);
+                const dx = x - cx, dy = y - cy;
+                const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
+                const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
+                const w = shape.width, h = shape.height;
+                const handles = [
+                    {x: -w/2 - offset, y: -h/2 - offset, type: 'nw'},
+                    {x: +w/2 + offset, y: -h/2 - offset, type: 'ne'},
+                    {x: +w/2 + offset, y: +h/2 + offset, type: 'se'},
+                    {x: -w/2 - offset, y: +h/2 + offset, type: 'sw'},
+                    {x: 0, y: -h/2 - offset, type: 'n'},
+                    {x: +w/2 + offset, y: 0, type: 'e'},
+                    {x: 0, y: +h/2 + offset, type: 's'},
+                    {x: -w/2 - offset, y: 0, type: 'w'},
+                    {x: 0, y: -h/2 - offset - 30, type: 'rotate'}
+                ];
+                for (const h of handles) {
+                    if (h.type === 'rotate') {
+                        if ((lx-h.x)**2 + (ly-h.y)**2 <= 10*10) return {type: 'rotate'};
+                    } else {
+                        if (Math.abs(lx - h.x) <= 8 && Math.abs(ly - h.y) <= 8) return {type: h.type};
+                    }
                 }
+                return null;
             }
-
-            return null;
-        }
-
-        if (shape.type === 'circle') {
-            // Проверяем только одну ручку справа от центра
-            const handleX = shape.x + shape.radius;
-            const handleY = shape.y;
-            if ((x - handleX) ** 2 + (y - handleY) ** 2 <= 10 * 10) {
-                return { type: 'radius' };
+            case 'circle': {
+                const handleX = shape.x + shape.radius;
+                const handleY = shape.y;
+                if ((x - handleX) ** 2 + (y - handleY) ** 2 <= 10 * 10) {
+                    return { type: 'radius' };
+                }
+                return null;
             }
-
-            return null;
-        }
-
-        if (shape.type === 'pencil') {
-            const bounds = this.#getShapeBounds(shape);
-            const handles = [
-                {x: bounds.x, y: bounds.y, type: 'nw'},
-                {x: bounds.x + bounds.width, y: bounds.y, type: 'ne'},
-                {x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se'},
-                {x: bounds.x, y: bounds.y + bounds.height, type: 'sw'},
-                {x: bounds.x + bounds.width/2, y: bounds.y, type: 'n'},
-                {x: bounds.x + bounds.width, y: bounds.y + bounds.height/2, type: 'e'},
-                {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height, type: 's'},
-                {x: bounds.x, y: bounds.y + bounds.height/2, type: 'w'}
-            ];
-            for (const h of handles) {
-                if (Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) return {type: h.type};
+            case 'pencil': {
+                const bounds = this.#getShapeBounds(shape);
+                const handles = [
+                    {x: bounds.x, y: bounds.y, type: 'nw'},
+                    {x: bounds.x + bounds.width, y: bounds.y, type: 'ne'},
+                    {x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se'},
+                    {x: bounds.x, y: bounds.y + bounds.height, type: 'sw'},
+                    {x: bounds.x + bounds.width/2, y: bounds.y, type: 'n'},
+                    {x: bounds.x + bounds.width, y: bounds.y + bounds.height/2, type: 'e'},
+                    {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height, type: 's'},
+                    {x: bounds.x, y: bounds.y + bounds.height/2, type: 'w'}
+                ];
+                for (const h of handles) {
+                    if (Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) return {type: h.type};
+                }
+                return null;
             }
-            return null;
+            default: {
+                const bounds = this.#getShapeBounds(shape);
+                const offset = 5;
+                const handles = [
+                    {x: bounds.x - offset, y: bounds.y - offset, type: 'nw'},
+                    {x: bounds.x + bounds.width + offset, y: bounds.y - offset, type: 'ne'},
+                    {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height + offset, type: 'se'},
+                    {x: bounds.x - offset, y: bounds.y + bounds.height + offset, type: 'sw'},
+                    {x: bounds.x + bounds.width/2, y: bounds.y - offset, type: 'n'},
+                    {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height/2, type: 'e'},
+                    {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height + offset, type: 's'},
+                    {x: bounds.x - offset, y: bounds.y + bounds.height/2, type: 'w'}
+                ];
+                return handles.find(h => Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) ?? null;
+            }
         }
-
-        const bounds = this.#getShapeBounds(shape);
-        const offset = 5;
-        // 8 ручек: 4 угловые и 4 боковые
-        const handles = [
-            {x: bounds.x - offset, y: bounds.y - offset, type: 'nw'},
-            {x: bounds.x + bounds.width + offset, y: bounds.y - offset, type: 'ne'},
-            {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height + offset, type: 'se'},
-            {x: bounds.x - offset, y: bounds.y + bounds.height + offset, type: 'sw'},
-            {x: bounds.x + bounds.width/2, y: bounds.y - offset, type: 'n'},
-            {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height/2, type: 'e'},
-            {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height + offset, type: 's'},
-            {x: bounds.x - offset, y: bounds.y + bounds.height/2, type: 'w'}
-        ];
-
-        return handles.find(h => Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) ?? null;
     }
 
     #resizeShape(mouse) {
         const shape = this.interaction.selectedShape;
         const handle = this.interaction.resizeHandle;
-
         if (!shape || !handle) return;
-
-        if (shape.type === 'rectangle' && handle.type === 'rotate') {
-            // Вращение
-            const cx = shape.x + shape.width/2;
-            const cy = shape.y + shape.height/2;
-            const angle = Math.atan2(mouse.y - cy, mouse.x - cx);
-            if (this.interaction && this.interaction.initialAngle != null) {
-                shape.rotation = angle - this.interaction.initialAngle + (this.interaction.startRotation ?? 0);
-            } else {
-                shape.rotation = angle;
-            }
-
-            this.#drawShapes();
-
-            return;
-        }
-
-        if (shape.type === 'rectangle' && handle.type) {
-            // --- Новый ресайз с учетом поворота ---
-            const offset = 5;
-            const cx = shape.x + shape.width/2;
-            const cy = shape.y + shape.height/2;
-            const angle = -(shape.rotation ?? 0);
-            // Переводим мышь в локальные координаты
-            const dx = mouse.x - cx, dy = mouse.y - cy;
-            const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
-            const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
-            // Текущие локальные границы
-            let left = -shape.width/2, right = shape.width/2, top = -shape.height/2, bottom = shape.height/2;
-            // В зависимости от ручки меняем стороны
-            switch (handle.type) {
-                case 'nw':
-                    left = Math.min(lx, right - 20);
-                    top = Math.min(ly, bottom - 20);
-                    break;
-                case 'ne':
-                    right = Math.max(lx, left + 20);
-                    top = Math.min(ly, bottom - 20);
-                    break;
-                case 'se':
-                    right = Math.max(lx, left + 20);
-                    bottom = Math.max(ly, top + 20);
-                    break;
-                case 'sw':
-                    left = Math.min(lx, right - 20);
-                    bottom = Math.max(ly, top + 20);
-                    break;
-                case 'n':
-                    top = Math.min(ly, bottom - 20);
-                    break;
-                case 's':
-                    bottom = Math.max(ly, top + 20);
-                    break;
-                case 'e':
-                    right = Math.max(lx, left + 20);
-                    break;
-                case 'w':
-                    left = Math.min(lx, right - 20);
-                    break;
-            }
-            // Новые размеры
-            const newWidth = right - left;
-            const newHeight = bottom - top;
-            // Новый центр
-            const newCx = cx + (Math.cos(shape.rotation??0)*(left+right)/2 - Math.sin(shape.rotation ?? 0)*(top+bottom)/2);
-            const newCy = cy + (Math.sin(shape.rotation??0)*(left+right)/2 + Math.cos(shape.rotation ?? 0)*(top+bottom)/2);
-            // Обновляем shape
-            shape.width = newWidth;
-            shape.height = newHeight;
-            shape.x = newCx - newWidth/2;
-            shape.y = newCy - newHeight/2;
-
-            this.#drawShapes();
-
-            return;
-        }
-
-        if (shape.type === 'circle' && handle.type === 'radius') {
-            // Меняем радиус только если тянут за ручку
-            const dx = mouse.x - shape.x;
-            const dy = mouse.y - shape.y;
-            const newRadius = Math.sqrt(dx * dx + dy * dy);
-            shape.radius = Math.max(20, newRadius);
-
-            this.#drawShapes();
-
-            return;
-        }
-
-        // --- pencil ---
-        if (shape.type === 'pencil' && this.interaction.pencilResize) {
-            const { initialPoints, initialBounds } = this.interaction.pencilResize;
-            // Определяем новый bounding box по ручке
-            let newX = initialBounds.x, newY = initialBounds.y, newW = initialBounds.width, newH = initialBounds.height;
-            switch (handle.type) {
-                case 'nw':
-                    newX = mouse.x;
-                    newY = mouse.y;
-                    newW = initialBounds.x + initialBounds.width - mouse.x;
-                    newH = initialBounds.y + initialBounds.height - mouse.y;
-                    break;
-                case 'ne':
-                    newY = mouse.y;
-                    newW = mouse.x - initialBounds.x;
-                    newH = initialBounds.y + initialBounds.height - mouse.y;
-                    break;
-                case 'se':
-                    newW = mouse.x - initialBounds.x;
-                    newH = mouse.y - initialBounds.y;
-                    break;
-                case 'sw':
-                    newX = mouse.x;
-                    newW = initialBounds.x + initialBounds.width - mouse.x;
-                    newH = mouse.y - initialBounds.y;
-                    break;
-                case 'n':
-                    newY = mouse.y;
-                    newH = initialBounds.y + initialBounds.height - mouse.y;
-                    break;
-                case 's':
-                    newH = mouse.y - initialBounds.y;
-                    break;
-                case 'e':
-                    newW = mouse.x - initialBounds.x;
-                    break;
-                case 'w':
-                    newX = mouse.x;
-                    newW = initialBounds.x + initialBounds.width - mouse.x;
-                    break;
-            }
-            // Минимальные размеры
-            newW = Math.max(10, newW);
-            newH = Math.max(10, newH);
-            // Масштабируем точки
-            shape.points = initialPoints.map(pt => {
-                const relX = (pt.x - initialBounds.x) / initialBounds.width;
-                const relY = (pt.y - initialBounds.y) / initialBounds.height;
-                return {
-                    x: newX + relX * newW,
-                    y: newY + relY * newH
-                };
-            });
-            this.#drawShapes();
-            return;
-        }
-
         switch (shape.type) {
-            case 'rectangle':
-                switch (handle.type) {
-                    case 'se':
-                        shape.width = Math.max(20, mouse.x - shape.x);
-                        shape.height = Math.max(20, mouse.y - shape.y);
-                        break;
-                    case 'nw':
-                        const newWNw = Math.max(20, shape.x + shape.width - mouse.x);
-                        const newHNw = Math.max(20, shape.y + shape.height - mouse.y);
-                        shape.x = shape.x + shape.width - newWNw;
-                        shape.y = shape.y + shape.height - newHNw;
-                        shape.width = newWNw;
-                        shape.height = newHNw;
-                        break;
-                    case 'ne':
-                        const newWNe = Math.max(20, mouse.x - shape.x);
-                        const newHNe = Math.max(20, shape.y + shape.height - mouse.y);
-                        shape.y = shape.y + shape.height - newHNe;
-                        shape.width = newWNe;
-                        shape.height = newHNe;
-                        break;
-                    case 'sw':
-                        const newWSw = Math.max(20, shape.x + shape.width - mouse.x);
-                        const newHSw = Math.max(20, mouse.y - shape.y);
-                        shape.x = shape.x + shape.width - newWSw;
-                        shape.width = newWSw;
-                        shape.height = newHSw;
-                        break;
-                    case 'n':
-                        const newHN = Math.max(20, shape.y + shape.height - mouse.y);
-                        shape.y = shape.y + shape.height - newHN;
-                        shape.height = newHN;
-                        break;
-                    case 's':
-                        shape.height = Math.max(20, mouse.y - shape.y);
-                        break;
-                    case 'e':
-                        shape.width = Math.max(20, mouse.x - shape.x);
-                        break;
-                    case 'w':
-                        const newWW = Math.max(20, shape.x + shape.width - mouse.x);
-                        shape.x = shape.x + shape.width - newWW;
-                        shape.width = newWW;
-                        break;
+            case 'rectangle': {
+                if (handle.type === 'rotate') {
+                    const cx = shape.x + shape.width/2;
+                    const cy = shape.y + shape.height/2;
+                    const angle = Math.atan2(mouse.y - cy, mouse.x - cx);
+                    if (this.interaction && this.interaction.initialAngle != null) {
+                        shape.rotation = angle - this.interaction.initialAngle + (this.interaction.startRotation ?? 0);
+                    } else {
+                        shape.rotation = angle;
+                    }
+                    this.#drawShapes();
+                    return;
+                }
+                if (handle.type) {
+                    const offset = 5;
+                    const cx = shape.x + shape.width/2;
+                    const cy = shape.y + shape.height/2;
+                    const angle = -(shape.rotation ?? 0);
+                    const dx = mouse.x - cx, dy = mouse.y - cy;
+                    const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
+                    const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
+                    let left = -shape.width/2, right = shape.width/2, top = -shape.height/2, bottom = shape.height/2;
+                    switch (handle.type) {
+                        case 'nw':
+                            left = Math.min(lx, right - 20);
+                            top = Math.min(ly, bottom - 20);
+                            break;
+                        case 'ne':
+                            right = Math.max(lx, left + 20);
+                            top = Math.min(ly, bottom - 20);
+                            break;
+                        case 'se':
+                            right = Math.max(lx, left + 20);
+                            bottom = Math.max(ly, top + 20);
+                            break;
+                        case 'sw':
+                            left = Math.min(lx, right - 20);
+                            bottom = Math.max(ly, top + 20);
+                            break;
+                        case 'n':
+                            top = Math.min(ly, bottom - 20);
+                            break;
+                        case 's':
+                            bottom = Math.max(ly, top + 20);
+                            break;
+                        case 'e':
+                            right = Math.max(lx, left + 20);
+                            break;
+                        case 'w':
+                            left = Math.min(lx, right - 20);
+                            break;
+                    }
+                    const newWidth = right - left;
+                    const newHeight = bottom - top;
+                    const newCx = cx + (Math.cos(shape.rotation??0)*(left+right)/2 - Math.sin(shape.rotation ?? 0)*(top+bottom)/2);
+                    const newCy = cy + (Math.sin(shape.rotation??0)*(left+right)/2 + Math.cos(shape.rotation ?? 0)*(top+bottom)/2);
+                    shape.width = newWidth;
+                    shape.height = newHeight;
+                    shape.x = newCx - newWidth/2;
+                    shape.y = newCy - newHeight/2;
+                    this.#drawShapes();
+                    return;
                 }
                 break;
-            case 'circle':
-                // Обычный ресайз больше не нужен, только через ручку
+            }
+            case 'circle': {
+                if (handle.type === 'radius') {
+                    const dx = mouse.x - shape.x;
+                    const dy = mouse.y - shape.y;
+                    const newRadius = Math.sqrt(dx * dx + dy * dy);
+                    shape.radius = Math.max(20, newRadius);
+                    this.#drawShapes();
+                    return;
+                }
                 break;
-            case 'line':
+            }
+            case 'line': {
                 if (handle.type === 'start') {
                     shape.x1 = mouse.x;
                     shape.y1 = mouse.y;
@@ -751,9 +627,67 @@ export class CanvasEditor {
                     shape.x2 = mouse.x;
                     shape.y2 = mouse.y;
                 }
+                this.#drawShapes();
+                return;
+            }
+            case 'pencil': {
+                if (this.interaction.pencilResize) {
+                    const { initialPoints, initialBounds } = this.interaction.pencilResize;
+                    let newX = initialBounds.x, newY = initialBounds.y, newW = initialBounds.width, newH = initialBounds.height;
+                    switch (handle.type) {
+                        case 'nw':
+                            newX = mouse.x;
+                            newY = mouse.y;
+                            newW = initialBounds.x + initialBounds.width - mouse.x;
+                            newH = initialBounds.y + initialBounds.height - mouse.y;
+                            break;
+                        case 'ne':
+                            newY = mouse.y;
+                            newW = mouse.x - initialBounds.x;
+                            newH = initialBounds.y + initialBounds.height - mouse.y;
+                            break;
+                        case 'se':
+                            newW = mouse.x - initialBounds.x;
+                            newH = mouse.y - initialBounds.y;
+                            break;
+                        case 'sw':
+                            newX = mouse.x;
+                            newW = initialBounds.x + initialBounds.width - mouse.x;
+                            newH = mouse.y - initialBounds.y;
+                            break;
+                        case 'n':
+                            newY = mouse.y;
+                            newH = initialBounds.y + initialBounds.height - mouse.y;
+                            break;
+                        case 's':
+                            newH = mouse.y - initialBounds.y;
+                            break;
+                        case 'e':
+                            newW = mouse.x - initialBounds.x;
+                            break;
+                        case 'w':
+                            newX = mouse.x;
+                            newW = initialBounds.x + initialBounds.width - mouse.x;
+                            break;
+                    }
+                    newW = Math.max(10, newW);
+                    newH = Math.max(10, newH);
+                    shape.points = initialPoints.map(pt => {
+                        const relX = (pt.x - initialBounds.x) / initialBounds.width;
+                        const relY = (pt.y - initialBounds.y) / initialBounds.height;
+                        return {
+                            x: newX + relX * newW,
+                            y: newY + relY * newH
+                        };
+                    });
+                    this.#drawShapes();
+                    return;
+                }
+                break;
+            }
+            default:
                 break;
         }
-
         this.#drawShapes();
     }
 
