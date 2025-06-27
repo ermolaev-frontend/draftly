@@ -194,7 +194,7 @@ export class CanvasEditor {
         const ctx = this.ctx;
         ctx.save();
         ctx.strokeStyle = shape.color;
-        ctx.lineWidth = shape.strokeWidth;
+        ctx.lineWidth = (shape.type === 'pencil') ? shape.strokeWidth * 2 : shape.strokeWidth;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.beginPath();
@@ -214,11 +214,15 @@ export class CanvasEditor {
             ctx.stroke();
         } else if (shape.type === 'pencil') {
             if (shape.points && shape.points.length > 1) {
-                ctx.moveTo(shape.points[0].x, shape.points[0].y);
-                for (let i = 1; i < shape.points.length; i++) {
-                    ctx.lineTo(shape.points[i].x, shape.points[i].y);
+                const simplified = this.#simplifyDouglasPeucker(shape.points, 1.5);
+                const beziers = this.#catmullRom2bezier(simplified);
+                if (beziers.length > 0) {
+                    ctx.moveTo(beziers[0].start.x, beziers[0].start.y);
+                    for (const seg of beziers) {
+                        ctx.bezierCurveTo(seg.cp1.x, seg.cp1.y, seg.cp2.x, seg.cp2.y, seg.end.x, seg.end.y);
+                    }
+                    ctx.stroke();
                 }
-                ctx.stroke();
             }
         }
         ctx.restore();
@@ -348,9 +352,7 @@ export class CanvasEditor {
     }
 
     #drawShapes() {
-        console.log('drawShapes');
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
         this.shapes.forEach(shape => {
             this.#drawShape(shape);
             this.#drawSelection(shape);
@@ -997,4 +999,61 @@ export class CanvasEditor {
         ['rotate', 'grab'],
         ['radius', 'ew-resize']
     ]);
+
+    // --- Catmull-Rom Spline to Bezier for smoothing pencil lines ---
+    #catmullRom2bezier(points) {
+        if (points.length < 2) return [];
+        const beziers = [];
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = points[i - 1] || points[i];
+            const p1 = points[i];
+            const p2 = points[i + 1] || points[i];
+            const p3 = points[i + 2] || p2;
+            // Catmull-Rom to Bezier conversion
+            const cp1 = {
+                x: p1.x + (p2.x - p0.x) / 6,
+                y: p1.y + (p2.y - p0.y) / 6
+            };
+            const cp2 = {
+                x: p2.x - (p3.x - p1.x) / 6,
+                y: p2.y - (p3.y - p1.y) / 6
+            };
+            beziers.push({
+                start: { x: p1.x, y: p1.y },
+                cp1,
+                cp2,
+                end: { x: p2.x, y: p2.y }
+            });
+        }
+        return beziers;
+    }
+
+    // --- Douglas-Peucker simplification for points ---
+    #simplifyDouglasPeucker(points, epsilon) {
+        if (points.length < 3) return points;
+        const dmax = { dist: 0, idx: 0 };
+        const sq = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
+        function getPerpendicularDistance(pt, lineStart, lineEnd) {
+            const dx = lineEnd.x - lineStart.x;
+            const dy = lineEnd.y - lineStart.y;
+            if (dx === 0 && dy === 0) return Math.sqrt(sq(pt, lineStart));
+            const t = ((pt.x - lineStart.x) * dx + (pt.y - lineStart.y) * dy) / (dx * dx + dy * dy);
+            const proj = { x: lineStart.x + t * dx, y: lineStart.y + t * dy };
+            return Math.sqrt(sq(pt, proj));
+        }
+        for (let i = 1; i < points.length - 1; i++) {
+            const d = getPerpendicularDistance(points[i], points[0], points[points.length - 1]);
+            if (d > dmax.dist) {
+                dmax.dist = d;
+                dmax.idx = i;
+            }
+        }
+        if (dmax.dist > epsilon) {
+            const rec1 = this.#simplifyDouglasPeucker(points.slice(0, dmax.idx + 1), epsilon);
+            const rec2 = this.#simplifyDouglasPeucker(points.slice(dmax.idx), epsilon);
+            return rec1.slice(0, -1).concat(rec2);
+        } else {
+            return [points[0], points[points.length - 1]];
+        }
+    }
 } 
