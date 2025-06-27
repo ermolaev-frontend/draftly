@@ -141,15 +141,16 @@
             );
             ctx.fillStyle = '#007bff';
             ctx.setLineDash([]);
+            // 8 ручек: 4 угловые и 4 боковые
             const handles = [
-                [bounds.x - offset, bounds.y - offset],
-                [bounds.x + bounds.width + offset, bounds.y - offset],
-                [bounds.x + bounds.width + offset, bounds.y + bounds.height + offset],
-                [bounds.x - offset, bounds.y + bounds.height + offset],
-                [bounds.x + bounds.width/2, bounds.y - offset],
-                [bounds.x + bounds.width + offset, bounds.y + bounds.height/2],
-                [bounds.x + bounds.width/2, bounds.y + bounds.height + offset],
-                [bounds.x - offset, bounds.y + bounds.height/2]
+                [bounds.x - offset, bounds.y - offset], // nw
+                [bounds.x + bounds.width + offset, bounds.y - offset], // ne
+                [bounds.x + bounds.width + offset, bounds.y + bounds.height + offset], // se
+                [bounds.x - offset, bounds.y + bounds.height + offset], // sw
+                [bounds.x + bounds.width/2, bounds.y - offset], // n
+                [bounds.x + bounds.width + offset, bounds.y + bounds.height/2], // e
+                [bounds.x + bounds.width/2, bounds.y + bounds.height + offset], // s
+                [bounds.x - offset, bounds.y + bounds.height/2] // w
             ];
             handles.forEach(([x, y]) => ctx.fillRect(x - 4, y - 4, 8, 8));
             ctx.restore();
@@ -215,9 +216,16 @@
         getHandleAt(x, y, shape) {
             if (!shape.selected) return null;
             const bounds = this.getShapeBounds(shape);
+            // 8 ручек: 4 угловые и 4 боковые
             const handles = [
-                {x: bounds.x, y: bounds.y, type: 'nw'}, {x: bounds.x + bounds.width, y: bounds.y, type: 'ne'},
-                {x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se'}, {x: bounds.x, y: bounds.y + bounds.height, type: 'sw'}
+                {x: bounds.x, y: bounds.y, type: 'nw'},
+                {x: bounds.x + bounds.width, y: bounds.y, type: 'ne'},
+                {x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se'},
+                {x: bounds.x, y: bounds.y + bounds.height, type: 'sw'},
+                {x: bounds.x + bounds.width/2, y: bounds.y, type: 'n'},
+                {x: bounds.x + bounds.width, y: bounds.y + bounds.height/2, type: 'e'},
+                {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height, type: 's'},
+                {x: bounds.x, y: bounds.y + bounds.height/2, type: 'w'}
             ];
             return handles.find(h => Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) || null;
         }
@@ -257,6 +265,22 @@
                             shape.x = shape.x + shape.width - newW_sw;
                             shape.width = newW_sw;
                             shape.height = newH_sw;
+                            break;
+                        case 'n':
+                            const newH_n = Math.max(20, shape.y + shape.height - mouse.y);
+                            shape.y = shape.y + shape.height - newH_n;
+                            shape.height = newH_n;
+                            break;
+                        case 's':
+                            shape.height = Math.max(20, mouse.y - shape.y);
+                            break;
+                        case 'e':
+                            shape.width = Math.max(20, mouse.x - shape.x);
+                            break;
+                        case 'w':
+                            const newW_w = Math.max(20, shape.x + shape.width - mouse.x);
+                            shape.x = shape.x + shape.width - newW_w;
+                            shape.width = newW_w;
                             break;
                     }
                     break;
@@ -345,25 +369,38 @@
                 cursor = 'move';
             } else if (this.interaction.isResizing) {
                 this.resizeShape(this.interaction.selectedShape, this.interaction.resizeHandle, mouse);
-                cursor = 'nwse-resize';
+                // курсор уже был выбран при наведении на ручку, не меняем
+                cursor = this.getCursorForHandle(this.interaction.resizeHandle);
             } else {
-                // Проверяем, наведена ли мышь на выделенную фигуру
-                let hoveredSelected = false;
-                let hovered = false;
-                for (let i = this.shapes.length - 1; i >= 0; i--) {
-                    const shape = this.shapes[i];
-                    if (this.isPointInShape(mouse.x, mouse.y, shape)) {
-                        hovered = true;
-                        if (shape.selected) {
-                            hoveredSelected = true;
-                        }
-                        break;
+                // Проверяем, наведена ли мышь на ручку
+                let hoveredHandle = null;
+                for (const shape of this.shapes) {
+                    if (shape.selected) {
+                        hoveredHandle = this.getHandleAt(mouse.x, mouse.y, shape);
+                        if (hoveredHandle) break;
                     }
                 }
-                if (hoveredSelected) {
-                    cursor = 'move';
-                } else if (hovered) {
-                    cursor = 'pointer';
+                if (hoveredHandle) {
+                    cursor = this.getCursorForHandle(hoveredHandle);
+                } else {
+                    // Проверяем, наведена ли мышь на выделенную фигуру
+                    let hoveredSelected = false;
+                    let hovered = false;
+                    for (let i = this.shapes.length - 1; i >= 0; i--) {
+                        const shape = this.shapes[i];
+                        if (this.isPointInShape(mouse.x, mouse.y, shape)) {
+                            hovered = true;
+                            if (shape.selected) {
+                                hoveredSelected = true;
+                            }
+                            break;
+                        }
+                    }
+                    if (hoveredSelected) {
+                        cursor = 'move';
+                    } else if (hovered) {
+                        cursor = 'pointer';
+                    }
                 }
             }
             this.canvas.style.cursor = cursor;
@@ -403,6 +440,22 @@
         clearCanvas() {
             this.shapes = [];
             this.drawShapes();
+        }
+
+        // Добавляю функцию для выбора курсора по типу ручки
+        getCursorForHandle(handle) {
+            if (!handle) return 'default';
+            switch (handle.type) {
+                case 'n': return 'ns-resize';
+                case 's': return 'ns-resize';
+                case 'e': return 'ew-resize';
+                case 'w': return 'ew-resize';
+                case 'nw': return 'nwse-resize';
+                case 'se': return 'nwse-resize';
+                case 'ne': return 'nesw-resize';
+                case 'sw': return 'nesw-resize';
+                default: return 'default';
+            }
         }
     }
     
