@@ -159,6 +159,7 @@
          * Очищает canvas и отрисовывает все фигуры.
          */
         drawShapes() {
+            console.log('drawShapes');
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
             this.shapes.forEach(shape => {
@@ -236,12 +237,26 @@
                             shape.height = Math.max(20, mouse.y - shape.y);
                             break;
                         case 'nw':
-                            const newW = Math.max(20, shape.x + shape.width - mouse.x);
-                            const newH = Math.max(20, shape.y + shape.height - mouse.y);
-                            shape.x = shape.x + shape.width - newW;
-                            shape.y = shape.y + shape.height - newH;
-                            shape.width = newW;
-                            shape.height = newH;
+                            const newW_nw = Math.max(20, shape.x + shape.width - mouse.x);
+                            const newH_nw = Math.max(20, shape.y + shape.height - mouse.y);
+                            shape.x = shape.x + shape.width - newW_nw;
+                            shape.y = shape.y + shape.height - newH_nw;
+                            shape.width = newW_nw;
+                            shape.height = newH_nw;
+                            break;
+                        case 'ne':
+                            const newW_ne = Math.max(20, mouse.x - shape.x);
+                            const newH_ne = Math.max(20, shape.y + shape.height - mouse.y);
+                            shape.y = shape.y + shape.height - newH_ne;
+                            shape.width = newW_ne;
+                            shape.height = newH_ne;
+                            break;
+                        case 'sw':
+                            const newW_sw = Math.max(20, shape.x + shape.width - mouse.x);
+                            const newH_sw = Math.max(20, mouse.y - shape.y);
+                            shape.x = shape.x + shape.width - newW_sw;
+                            shape.width = newW_sw;
+                            shape.height = newH_sw;
                             break;
                     }
                     break;
