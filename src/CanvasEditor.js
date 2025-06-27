@@ -254,18 +254,29 @@ export class CanvasEditor {
             ctx.lineWidth = 2;
             ctx.stroke();
         } else if (shape.type === 'line') {
-            // bounding box с отступом offset
-            ctx.strokeRect(
-                bounds.x,
-                bounds.y,
-                bounds.width,
-                bounds.height
-            );
+            // Не рисуем bounding box
             ctx.setLineDash([]);
             ctx.fillStyle = '#007bff';
             // ручки только на концах линии
             ctx.fillRect(shape.x1 - 4, shape.y1 - 4, 8, 8); // start
             ctx.fillRect(shape.x2 - 4, shape.y2 - 4, 8, 8); // end
+        } else if (shape.type === 'circle') {
+            ctx.strokeRect(
+                bounds.x - offset,
+                bounds.y - offset,
+                bounds.width + offset * 2,
+                bounds.height + offset * 2
+            );
+            ctx.fillStyle = '#007bff';
+            ctx.setLineDash([]);
+            // Одна ручка справа от центра (на окружности)
+            const handle = { x: shape.x + shape.radius, y: shape.y, type: 'radius' };
+            ctx.beginPath();
+            ctx.arc(handle.x, handle.y, 7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
         } else {
             ctx.strokeRect(
                 bounds.x - offset,
@@ -396,6 +407,15 @@ export class CanvasEditor {
             }
             return null;
         }
+        if (shape.type === 'circle') {
+            // Проверяем только одну ручку справа от центра
+            const handleX = shape.x + shape.radius;
+            const handleY = shape.y;
+            if ((x - handleX) ** 2 + (y - handleY) ** 2 <= 10 * 10) {
+                return { type: 'radius' };
+            }
+            return null;
+        }
         const bounds = this.#getShapeBounds(shape);
         const offset = 5;
         // 8 ручек: 4 угловые и 4 боковые
@@ -483,6 +503,15 @@ export class CanvasEditor {
             this.#drawShapes();
             return;
         }
+        if (shape.type === 'circle' && handle.type === 'radius') {
+            // Меняем радиус только если тянут за ручку
+            const dx = mouse.x - shape.x;
+            const dy = mouse.y - shape.y;
+            const newRadius = Math.sqrt(dx * dx + dy * dy);
+            shape.radius = Math.max(20, newRadius);
+            this.#drawShapes();
+            return;
+        }
         switch (shape.type) {
             case 'rectangle':
                 switch (handle.type) {
@@ -531,14 +560,7 @@ export class CanvasEditor {
                 }
                 break;
             case 'circle':
-                const dx = mouse.x - shape.x, dy = mouse.y - shape.y;
-                const currentDistance = Math.sqrt(dx * dx + dy * dy);
-                if (this.interaction && this.interaction.initialRadius != null && this.interaction.initialDistance != null) {
-                    const delta = currentDistance - this.interaction.initialDistance;
-                    shape.radius = Math.max(20, this.interaction.initialRadius + delta);
-                } else {
-                    shape.radius = Math.max(20, currentDistance);
-                }
+                // Обычный ресайз больше не нужен, только через ручку
                 break;
             case 'line':
                 if (handle.type === 'start') {
@@ -696,6 +718,7 @@ export class CanvasEditor {
         if (!handle) return 'default';
         if (handle.type === 'start' || handle.type === 'end') return 'pointer';
         if (handle.type === 'rotate') return 'grab';
+        if (handle.type === 'radius') return 'ew-resize';
         return CanvasEditor.handleCursorMap.get(handle.type) || 'default';
     }
 
