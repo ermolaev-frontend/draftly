@@ -53,4 +53,10 @@ button {
     margin: var(--button-margin);
 }
 button:hover { background: var(--primary-hover); }
+button.active-tool {
+    background: #fff;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    font-weight: bold;
+}
 .value-display { font-size: 12px; color: var(--value-color); margin-top: 2px; } 

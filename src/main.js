@@ -6,4 +6,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('addCircleButton').addEventListener('click', () => canvasEditor.addCircle());
     document.getElementById('addLineButton').addEventListener('click', () => canvasEditor.addLine());
     document.getElementById('clearCanvasButton').addEventListener('click', () => canvasEditor.clearCanvas());
+    document.getElementById('pencilButton').addEventListener('click', () => canvasEditor.setTool('pencil'));
+    document.getElementById('selectButton').addEventListener('click', () => canvasEditor.setTool('select'));
+
+    function setActiveToolButton(tool) {
+        document.getElementById('selectButton').classList.remove('active-tool');
+        document.getElementById('pencilButton').classList.remove('active-tool');
+        if (tool === 'select') {
+            document.getElementById('selectButton').classList.add('active-tool');
+        } else if (tool === 'pencil') {
+            document.getElementById('pencilButton').classList.add('active-tool');
+        }
+    }
+    // Инициализация: по умолчанию select
+    setActiveToolButton('select');
+    document.getElementById('pencilButton').addEventListener('click', () => {
+        canvasEditor.setTool('pencil');
+        setActiveToolButton('pencil');
+    });
+    document.getElementById('selectButton').addEventListener('click', () => {
+        canvasEditor.setTool('select');
+        setActiveToolButton('select');
+    });
 }); 

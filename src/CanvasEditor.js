@@ -9,6 +9,7 @@ export class CanvasEditor {
             dragOffset: { x: 0, y: 0 },
             resizeHandle: null
         };
+        this.currentTool = 'select'; // Новый инструмент: select, pencil, ...
         // Размеры канваса
         const canvasWidth = this.canvas.width;
         const canvasHeight = this.canvas.height;
@@ -184,6 +185,10 @@ export class CanvasEditor {
         this.#drawShapes();
     }
 
+    setTool(toolName) {
+        this.currentTool = toolName;
+    }
+
     // === Приватные методы ===
     #drawShape(shape) {
         const ctx = this.ctx;
@@ -207,6 +212,14 @@ export class CanvasEditor {
             ctx.moveTo(shape.x1, shape.y1);
             ctx.lineTo(shape.x2, shape.y2);
             ctx.stroke();
+        } else if (shape.type === 'pencil') {
+            if (shape.points && shape.points.length > 1) {
+                ctx.moveTo(shape.points[0].x, shape.points[0].y);
+                for (let i = 1; i < shape.points.length; i++) {
+                    ctx.lineTo(shape.points[i].x, shape.points[i].y);
+                }
+                ctx.stroke();
+            }
         }
         ctx.restore();
     }
@@ -285,6 +298,22 @@ export class CanvasEditor {
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 2;
             ctx.stroke();
+        } else if (shape.type === 'pencil') {
+            // Bounding box + 8 ручек
+            ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+            ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+            ctx.fillStyle = borderColor;
+            const handles = [
+                {x: bounds.x, y: bounds.y, type: 'nw'},
+                {x: bounds.x + bounds.width, y: bounds.y, type: 'ne'},
+                {x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se'},
+                {x: bounds.x, y: bounds.y + bounds.height, type: 'sw'},
+                {x: bounds.x + bounds.width/2, y: bounds.y, type: 'n'},
+                {x: bounds.x + bounds.width, y: bounds.y + bounds.height/2, type: 'e'},
+                {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height, type: 's'},
+                {x: bounds.x, y: bounds.y + bounds.height/2, type: 'w'}
+            ];
+            handles.forEach((h) => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
         } else {
             // Для других фигур (если появятся)
             ctx.fillRect(
@@ -344,6 +373,19 @@ export class CanvasEditor {
                 const maxY = Math.max(shape.y1, shape.y2) + offset;
                 return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
             }
+            case 'pencil': {
+                if (!shape.points || shape.points.length === 0) return { x: 0, y: 0, width: 0, height: 0 };
+                let minX = shape.points[0].x, maxX = shape.points[0].x;
+                let minY = shape.points[0].y, maxY = shape.points[0].y;
+                for (const pt of shape.points) {
+                    if (pt.x < minX) minX = pt.x;
+                    if (pt.x > maxX) maxX = pt.x;
+                    if (pt.y < minY) minY = pt.y;
+                    if (pt.y > maxY) maxY = pt.y;
+                }
+                const offset = 5;
+                return { x: minX - offset, y: minY - offset, width: (maxX - minX) + offset * 2, height: (maxY - minY) + offset * 2 };
+            }
         }
     }
 
@@ -378,6 +420,28 @@ export class CanvasEditor {
             const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
             const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
             return lx >= -shape.width/2 && lx <= shape.width/2 && ly >= -shape.height/2 && ly <= shape.height/2;
+        }
+        if (shape.type === 'pencil') {
+            // Проверяем, близка ли точка к любому сегменту линии
+            if (!shape.points || shape.points.length < 2) return false;
+            for (let i = 1; i < shape.points.length; i++) {
+                const xStart = shape.points[i-1].x, yStart = shape.points[i-1].y;
+                const xEnd = shape.points[i].x, yEnd = shape.points[i].y;
+                // Расстояние от точки (x, y) до отрезка (xStart, yStart)-(xEnd, yEnd)
+                const dxToStart = x - xStart;
+                const dyToStart = y - yStart;
+                const segmentDx = xEnd - xStart;
+                const segmentDy = yEnd - yStart;
+                const projection = dxToStart * segmentDx + dyToStart * segmentDy;
+                const segmentLengthSq = segmentDx * segmentDx + segmentDy * segmentDy;
+                let t = segmentLengthSq ? projection / segmentLengthSq : -1;
+                t = Math.max(0, Math.min(1, t));
+                const closestX = xStart + t * segmentDx;
+                const closestY = yStart + t * segmentDy;
+                const dist = Math.sqrt((x - closestX) ** 2 + (y - closestY) ** 2);
+                if (dist < 8) return true;
+            }
+            return false;
         }
         return x >= bounds.x && x <= bounds.x + bounds.width && y >= bounds.y && y <= bounds.y + bounds.height;
     }
@@ -438,6 +502,24 @@ export class CanvasEditor {
                 return { type: 'radius' };
             }
 
+            return null;
+        }
+
+        if (shape.type === 'pencil') {
+            const bounds = this.#getShapeBounds(shape);
+            const handles = [
+                {x: bounds.x, y: bounds.y, type: 'nw'},
+                {x: bounds.x + bounds.width, y: bounds.y, type: 'ne'},
+                {x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se'},
+                {x: bounds.x, y: bounds.y + bounds.height, type: 'sw'},
+                {x: bounds.x + bounds.width/2, y: bounds.y, type: 'n'},
+                {x: bounds.x + bounds.width, y: bounds.y + bounds.height/2, type: 'e'},
+                {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height, type: 's'},
+                {x: bounds.x, y: bounds.y + bounds.height/2, type: 'w'}
+            ];
+            for (const h of handles) {
+                if (Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) return {type: h.type};
+            }
             return null;
         }
 
@@ -552,6 +634,63 @@ export class CanvasEditor {
             return;
         }
 
+        // --- pencil ---
+        if (shape.type === 'pencil' && this.interaction.pencilResize) {
+            const { initialPoints, initialBounds } = this.interaction.pencilResize;
+            // Определяем новый bounding box по ручке
+            let newX = initialBounds.x, newY = initialBounds.y, newW = initialBounds.width, newH = initialBounds.height;
+            switch (handle.type) {
+                case 'nw':
+                    newX = mouse.x;
+                    newY = mouse.y;
+                    newW = initialBounds.x + initialBounds.width - mouse.x;
+                    newH = initialBounds.y + initialBounds.height - mouse.y;
+                    break;
+                case 'ne':
+                    newY = mouse.y;
+                    newW = mouse.x - initialBounds.x;
+                    newH = initialBounds.y + initialBounds.height - mouse.y;
+                    break;
+                case 'se':
+                    newW = mouse.x - initialBounds.x;
+                    newH = mouse.y - initialBounds.y;
+                    break;
+                case 'sw':
+                    newX = mouse.x;
+                    newW = initialBounds.x + initialBounds.width - mouse.x;
+                    newH = mouse.y - initialBounds.y;
+                    break;
+                case 'n':
+                    newY = mouse.y;
+                    newH = initialBounds.y + initialBounds.height - mouse.y;
+                    break;
+                case 's':
+                    newH = mouse.y - initialBounds.y;
+                    break;
+                case 'e':
+                    newW = mouse.x - initialBounds.x;
+                    break;
+                case 'w':
+                    newX = mouse.x;
+                    newW = initialBounds.x + initialBounds.width - mouse.x;
+                    break;
+            }
+            // Минимальные размеры
+            newW = Math.max(10, newW);
+            newH = Math.max(10, newH);
+            // Масштабируем точки
+            shape.points = initialPoints.map(pt => {
+                const relX = (pt.x - initialBounds.x) / initialBounds.width;
+                const relY = (pt.y - initialBounds.y) / initialBounds.height;
+                return {
+                    x: newX + relX * newW,
+                    y: newY + relY * newH
+                };
+            });
+            this.#drawShapes();
+            return;
+        }
+
         switch (shape.type) {
             case 'rectangle':
                 switch (handle.type) {
@@ -620,10 +759,30 @@ export class CanvasEditor {
         this.canvas.addEventListener('mousedown', this.#onMouseDown.bind(this));
         this.canvas.addEventListener('mousemove', this.#onMouseMove.bind(this));
         this.canvas.addEventListener('mouseup', this.#onMouseUp.bind(this));
+        // Для карандаша поддержим mouseleave (завершение линии при выходе мыши)
+        this.canvas.addEventListener('mouseleave', this.#onMouseUp.bind(this));
     }
 
     #onMouseDown(e) {
         const mouse = this.#getMousePos(e);
+        if (this.currentTool === 'pencil') {
+            // Начинаем новую линию
+            const newShape = {
+                type: 'pencil',
+                color: this.#getRandomColor(),
+                strokeWidth: this.#getRandomStrokeWidth(),
+                selected: false,
+                points: [mouse]
+            };
+            this.shapes.push(newShape);
+            this.interaction = {
+                ...this.interaction,
+                isDrawingPencil: true,
+                drawingShape: newShape
+            };
+            this.#drawShapes();
+            return;
+        }
 
         for (const shape of this.shapes) {
             if (shape.selected) {
@@ -633,20 +792,26 @@ export class CanvasEditor {
                     let initialDistance = null;
                     let initialAngle = null;
                     let startRotation = null;
-
+                    // --- pencil ---
+                    let pencilResize = null;
+                    if (shape.type === 'pencil') {
+                        const bounds = this.#getShapeBounds(shape);
+                        pencilResize = {
+                            initialPoints: shape.points.map(pt => ({...pt})),
+                            initialBounds: {...bounds}
+                        };
+                    }
                     if (shape.type === 'circle') {
                         initialRadius = shape.radius;
                         const dx = mouse.x - shape.x, dy = mouse.y - shape.y;
                         initialDistance = Math.sqrt(dx * dx + dy * dy);
                     }
-
                     if (shape.type === 'rectangle' && handle.type === 'rotate') {
                         const cx = shape.x + shape.width/2;
                         const cy = shape.y + shape.height/2;
                         initialAngle = Math.atan2(mouse.y - cy, mouse.x - cx);
                         startRotation = shape.rotation ?? 0;
                     }
-
                     this.interaction = { 
                         ...this.interaction, 
                         isResizing: true, 
@@ -655,9 +820,9 @@ export class CanvasEditor {
                         initialRadius,
                         initialDistance,
                         initialAngle,
-                        startRotation
+                        startRotation,
+                        pencilResize
                     };
-
                     return;
                 }
             }
@@ -682,6 +847,14 @@ export class CanvasEditor {
                         },
                         lineCenter: { x: centerX, y: centerY }
                     };
+                } else if (shape.type === 'pencil') {
+                    // Для карандашной линии сохраняем смещение для всех точек
+                    this.interaction = {
+                        isDragging: true,
+                        selectedShape: shape,
+                        dragOffset: { x: mouse.x, y: mouse.y },
+                        initialPoints: shape.points.map(pt => ({...pt}))
+                    };
                 } else {
                     this.interaction = {
                         isDragging: true, selectedShape: shape,
@@ -704,7 +877,14 @@ export class CanvasEditor {
     #onMouseMove(e) {
         const mouse = this.#getMousePos(e);
         let cursor = 'default';
-
+        if (this.interaction.isDrawingPencil) {
+            // Добавляем точку к текущей линии
+            const shape = this.interaction.drawingShape;
+            shape.points.push(mouse);
+            this.#drawShapes();
+            this.canvas.style.cursor = 'crosshair';
+            return;
+        }
         if (this.interaction.isDragging) {
             const shape = this.interaction.selectedShape;
 
@@ -720,6 +900,14 @@ export class CanvasEditor {
                 shape.y1 += dy;
                 shape.x2 += dx;
                 shape.y2 += dy;
+            } else if (shape.type === 'pencil') {
+                // Перемещаем все точки на dx, dy
+                const dx = mouse.x - this.interaction.dragOffset.x;
+                const dy = mouse.y - this.interaction.dragOffset.y;
+                shape.points = this.interaction.initialPoints.map(pt => ({
+                    x: pt.x + dx,
+                    y: pt.y + dy
+                }));
             } else {
                 shape.x = mouse.x - this.interaction.dragOffset.x;
                 shape.y = mouse.y - this.interaction.dragOffset.y;
@@ -771,6 +959,10 @@ export class CanvasEditor {
     }
 
     #onMouseUp() {
+        if (this.interaction.isDrawingPencil) {
+            this.interaction = { ...this.interaction, isDrawingPencil: false, drawingShape: null };
+            return;
+        }
         this.interaction = { isDragging: false, isResizing: false, selectedShape: null, dragOffset: {x:0,y:0}, resizeHandle: null };
     }
 
