@@ -18,70 +18,81 @@ export class CanvasEditor {
             resizeHandle: null
         };
         this.currentTool = 'select'; // Новый инструмент: select, pencil, ...
-        // Размеры канваса
+        this.#resizeCanvasToWrapper();
+        // Теперь canvas.width и height актуальны!
         const canvasWidth = this.canvas.width;
         const canvasHeight = this.canvas.height;
-        // Функция для получения случайного значения в диапазоне
+        const margin = 40; // внутренний отступ для фигур
+        // 6 зон для 6 фигур (2 ряда по 3 колонки)
+        const zones = [
+            { xMin: margin, xMax: canvasWidth / 3 - margin, yMin: margin, yMax: canvasHeight / 2 - margin },
+            { xMin: canvasWidth / 3 + margin, xMax: 2 * canvasWidth / 3 - margin, yMin: margin, yMax: canvasHeight / 2 - margin },
+            { xMin: 2 * canvasWidth / 3 + margin, xMax: canvasWidth - margin, yMin: margin, yMax: canvasHeight / 2 - margin },
+            { xMin: margin, xMax: canvasWidth / 3 - margin, yMin: canvasHeight / 2 + margin, yMax: canvasHeight - margin },
+            { xMin: canvasWidth / 3 + margin, xMax: 2 * canvasWidth / 3 - margin, yMin: canvasHeight / 2 + margin, yMax: canvasHeight - margin },
+            { xMin: 2 * canvasWidth / 3 + margin, xMax: canvasWidth - margin, yMin: canvasHeight / 2 + margin, yMax: canvasHeight - margin }
+        ];
         const getRandom = (min, max) => Math.random() * (max - min) + min;
         const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
-        // Сектора для равномерного распределения
-        const sectors = [
-            { xMin: 0, xMax: canvasWidth / 2, yMin: 0, yMax: canvasHeight / 2 },
-            { xMin: canvasWidth / 2, xMax: canvasWidth, yMin: 0, yMax: canvasHeight / 2 },
-            { xMin: 0, xMax: canvasWidth / 2, yMin: canvasHeight / 2, yMax: canvasHeight },
-            { xMin: canvasWidth / 2, xMax: canvasWidth, yMin: canvasHeight / 2, yMax: canvasHeight }
-        ];
-        // Прямоугольники
         this.shapes = [
             this.#createRectangle({
-                x: getRandom(sectors[0].xMin + 20, sectors[0].xMax - 120),
-                y: getRandom(sectors[0].yMin + 20, sectors[0].yMax - 100),
-                width: getRandom(100, 180),
-                height: getRandom(80, 140),
+                x: getRandom(zones[0].xMin, zones[0].xMax - 120),
+                y: getRandom(zones[0].yMin, zones[0].yMax - 100),
+                width: getRandom(100, Math.min(180, zones[0].xMax - zones[0].xMin)),
+                height: getRandom(80, Math.min(140, zones[0].yMax - zones[0].yMin)),
                 color: colors[Math.floor(getRandom(0, colors.length))],
                 strokeWidth: getRandom(2, 5)
             }),
             this.#createRectangle({
-                x: getRandom(sectors[1].xMin + 20, sectors[1].xMax - 120),
-                y: getRandom(sectors[1].yMin + 20, sectors[1].yMax - 100),
-                width: getRandom(100, 180),
-                height: getRandom(80, 140),
+                x: getRandom(zones[1].xMin, zones[1].xMax - 120),
+                y: getRandom(zones[1].yMin, zones[1].yMax - 100),
+                width: getRandom(100, Math.min(180, zones[1].xMax - zones[1].xMin)),
+                height: getRandom(80, Math.min(140, zones[1].yMax - zones[1].yMin)),
                 color: colors[Math.floor(getRandom(0, colors.length))],
                 strokeWidth: getRandom(2, 5)
             }),
             this.#createCircle({
-                x: getRandom(sectors[2].xMin + 60, sectors[2].xMax - 60),
-                y: getRandom(sectors[2].yMin + 60, sectors[2].yMax - 60),
-                radius: getRandom(40, 80),
+                x: getRandom(zones[2].xMin + 60, zones[2].xMax - 60),
+                y: getRandom(zones[2].yMin + 60, zones[2].yMax - 60),
+                radius: getRandom(40, Math.min(80, (zones[2].xMax - zones[2].xMin) / 2, (zones[2].yMax - zones[2].yMin) / 2)),
                 color: colors[Math.floor(getRandom(0, colors.length))],
                 strokeWidth: getRandom(2, 5)
             }),
             this.#createCircle({
-                x: getRandom(sectors[3].xMin + 60, sectors[3].xMax - 60),
-                y: getRandom(sectors[3].yMin + 60, sectors[3].yMax - 60),
-                radius: getRandom(40, 80),
+                x: getRandom(zones[3].xMin + 60, zones[3].xMax - 60),
+                y: getRandom(zones[3].yMin + 60, zones[3].yMax - 60),
+                radius: getRandom(40, Math.min(80, (zones[3].xMax - zones[3].xMin) / 2, (zones[3].yMax - zones[3].yMin) / 2)),
                 color: colors[Math.floor(getRandom(0, colors.length))],
                 strokeWidth: getRandom(2, 5)
             }),
             (() => {
-                const x1 = getRandom(40, canvasWidth / 2 - 40), y1 = getRandom(40, canvasHeight / 2 - 40);
-                const x2 = getRandom(canvasWidth / 2 + 40, canvasWidth - 40), y2 = getRandom(canvasHeight / 2 + 40, canvasHeight - 40);
-                return this.#createLine({ x1, y1, x2, y2, color: colors[Math.floor(getRandom(0, colors.length))], strokeWidth: getRandom(2, 5) });
-            })(),
-            (() => {
-                const x1 = getRandom(canvasWidth / 2 + 40, canvasWidth - 40), y1 = getRandom(40, canvasHeight / 2 - 40);
-                const x2 = getRandom(40, canvasWidth / 2 - 40), y2 = getRandom(canvasHeight / 2 + 40, canvasHeight - 40);
-                return this.#createLine({ x1, y1, x2, y2, color: colors[Math.floor(getRandom(0, colors.length))], strokeWidth: getRandom(2, 5) });
-            })(),
-            (() => {
-                const x1 = getRandom(40, canvasWidth - 40), y1 = getRandom(40, canvasHeight - 40);
+                // Линия с произвольным углом в зоне 4
+                const zone = zones[4];
+                const cx = (zone.xMin + zone.xMax) / 2;
+                const cy = (zone.yMin + zone.yMax) / 2;
+                const length = getRandom(80, Math.min(zone.xMax - zone.xMin, zone.yMax - zone.yMin) - 20);
                 const angle = getRandom(0, Math.PI * 2);
-                const length = getRandom(80, 200);
-                const x2 = x1 + Math.cos(angle) * length;
-                const y2 = y1 + Math.sin(angle) * length;
+                const x1 = cx - Math.cos(angle) * length / 2;
+                const y1 = cy - Math.sin(angle) * length / 2;
+                const x2 = cx + Math.cos(angle) * length / 2;
+                const y2 = cy + Math.sin(angle) * length / 2;
+                return this.#createLine({ x1, y1, x2, y2, color: colors[Math.floor(getRandom(0, colors.length))], strokeWidth: getRandom(2, 5) });
+            })(),
+            (() => {
+                // Линия с произвольным углом в зоне 5
+                const zone = zones[5];
+                const cx = (zone.xMin + zone.xMax) / 2;
+                const cy = (zone.yMin + zone.yMax) / 2;
+                const length = getRandom(80, Math.min(zone.xMax - zone.xMin, zone.yMax - zone.yMin) - 20);
+                const angle = getRandom(0, Math.PI * 2);
+                const x1 = cx - Math.cos(angle) * length / 2;
+                const y1 = cy - Math.sin(angle) * length / 2;
+                const x2 = cx + Math.cos(angle) * length / 2;
+                const y2 = cy + Math.sin(angle) * length / 2;
                 return this.#createLine({ x1, y1, x2, y2, color: colors[Math.floor(getRandom(0, colors.length))], strokeWidth: getRandom(2, 5) });
             })()
         ];
+        window.addEventListener('resize', () => this.#resizeCanvasToWrapper());
         this.#attachEvents();
         this.#drawShapes();
     }
@@ -308,10 +319,18 @@ export class CanvasEditor {
      */
     #drawShapes() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        if (!Array.isArray(this.shapes)) return;
         this.shapes.forEach(shape => {
             this.#drawShape(shape);
             this.#drawSelection(shape);
         });
+    }
+
+    /**
+     * Публичный метод для перерисовки фигур
+     */
+    redraw() {
+        this.#drawShapes();
     }
 
     /**
@@ -835,6 +854,7 @@ export class CanvasEditor {
     #onMouseMove(e) {
         const mouse = this.#getMousePos(e);
         let cursor = 'default';
+        const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
         if (this.interaction.isDrawingPencil) {
             // Добавляем точку к текущей линии
             const shape = this.interaction.drawingShape;
@@ -843,7 +863,6 @@ export class CanvasEditor {
             this.canvas.style.cursor = 'crosshair';
             return;
         }
-        // --- Новый код для прямоугольника ---
         if (this.interaction.isDrawingRectangle) {
             const shape = this.interaction.drawingShape;
             const start = this.interaction.startPoint;
@@ -855,7 +874,6 @@ export class CanvasEditor {
             this.canvas.style.cursor = 'crosshair';
             return;
         }
-        // --- Новый код для круга ---
         if (this.interaction.isDrawingCircle) {
             const shape = this.interaction.drawingShape;
             const start = this.interaction.startPoint;
@@ -864,7 +882,6 @@ export class CanvasEditor {
             this.canvas.style.cursor = 'crosshair';
             return;
         }
-        // --- Новый код для линии ---
         if (this.interaction.isDrawingLine) {
             const shape = this.interaction.drawingShape;
             shape.x2 = mouse.x;
@@ -875,9 +892,7 @@ export class CanvasEditor {
         }
         if (this.interaction.isDragging) {
             const shape = this.interaction.selectedShape;
-
             if (shape.type === 'line') {
-                // Корректное перемещение линии
                 const prevCenterX = (shape.x1 + shape.x2) / 2;
                 const prevCenterY = (shape.y1 + shape.y2) / 2;
                 const newCenterX = mouse.x - this.interaction.dragOffset.x;
@@ -889,7 +904,6 @@ export class CanvasEditor {
                 shape.x2 += dx;
                 shape.y2 += dy;
             } else if (shape.type === 'pencil') {
-                // Перемещаем все точки на dx, dy
                 const dx = mouse.x - this.interaction.dragOffset.x;
                 const dy = mouse.y - this.interaction.dragOffset.y;
                 shape.points = this.interaction.initialPoints.map(pt => ({
@@ -900,7 +914,6 @@ export class CanvasEditor {
                 shape.x = mouse.x - this.interaction.dragOffset.x;
                 shape.y = mouse.y - this.interaction.dragOffset.y;
             }
-
             this.#drawShapes();
             cursor = 'move';
         } else if (this.interaction.isResizing) {
@@ -909,21 +922,17 @@ export class CanvasEditor {
         } else {
             // Проверяем, наведена ли мышь на ручку
             let hoveredHandle = null;
-
             for (const shape of this.shapes) {
                 if (shape.selected) {
                     hoveredHandle = this.#getHandleAt(mouse.x, mouse.y, shape);
                     if (hoveredHandle) break;
                 }
             }
-
             if (hoveredHandle) {
                 cursor = this.#getCursorForHandle(hoveredHandle);
             } else {
-                // Проверяем, наведена ли мышь на выделенную фигуру
                 let hoveredSelected = false;
                 let hovered = false;
-
                 for (let i = this.shapes.length - 1; i >= 0; i--) {
                     const shape = this.shapes[i];
                     if (this.#isPointInShape(mouse.x, mouse.y, shape)) {
@@ -934,7 +943,6 @@ export class CanvasEditor {
                         break;
                     }
                 }
-
                 if (hoveredSelected) {
                     cursor = 'move';
                 } else if (hovered) {
@@ -942,7 +950,10 @@ export class CanvasEditor {
                 }
             }
         }
-
+        // --- FINAL cursor logic for drawing tools ---
+        if (!this.interaction.isDragging && !this.interaction.isResizing && drawingTools.includes(this.currentTool)) {
+            cursor = 'crosshair';
+        }
         this.canvas.style.cursor = cursor;
     }
 
@@ -953,13 +964,24 @@ export class CanvasEditor {
     #onMouseUp() {
         if (this.interaction.isDrawingPencil) {
             this.interaction = { ...this.interaction, isDrawingPencil: false, drawingShape: null };
-            return;
-        }
-        if (this.interaction.isDrawingRectangle || this.interaction.isDrawingCircle || this.interaction.isDrawingLine) {
+        } else if (["isDrawingRectangle", "isDrawingCircle", "isDrawingLine"].some(key => this.interaction[key])) {
             this.interaction = { ...this.interaction, isDrawingRectangle: false, isDrawingCircle: false, isDrawingLine: false, drawingShape: null, startPoint: null };
-            return;
+        } else {
+            this.interaction = { isDragging: false, isResizing: false, selectedShape: null, dragOffset: { x: 0, y: 0 }, resizeHandle: null };
         }
-        this.interaction = { isDragging: false, isResizing: false, selectedShape: null, dragOffset: { x: 0, y: 0 }, resizeHandle: null };
+        this.#autoSave();
+    }
+
+    /**
+     * Автоматически сохраняет фигуры в localStorage
+     * @private
+     */
+    #autoSave() {
+        try {
+            localStorage.setItem('shapes', JSON.stringify(this.shapes));
+        } catch (e) {
+            console.warn('Ошибка автосохранения фигур:', e);
+        }
     }
 
     /**
@@ -1226,5 +1248,19 @@ export class CanvasEditor {
             x: (shape.x1 + shape.x2) / 2,
             y: (shape.y1 + shape.y2) / 2
         };
+    }
+
+    /**
+     * Устанавливает размеры canvas по размеру .canvas-wrapper
+     * @private
+     */
+    #resizeCanvasToWrapper() {
+        const wrapper = this.canvas.parentElement;
+        if (wrapper) {
+            const rect = wrapper.getBoundingClientRect();
+            this.canvas.width = rect.width;
+            this.canvas.height = rect.height;
+            this.#drawShapes();
+        }
     }
 } 

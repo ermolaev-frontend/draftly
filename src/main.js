@@ -17,9 +17,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('clearCanvasButton').addEventListener('click', () => canvasEditor.clearCanvas());
     document.getElementById('pencilButton').addEventListener('click', () => canvasEditor.setTool('pencil'));
     document.getElementById('selectButton').addEventListener('click', () => canvasEditor.setTool('select'));
-    document.getElementById('saveButton').addEventListener('click', () => {
-        console.log(canvasEditor.shapes);
-        localStorage.setItem('shapes', JSON.stringify(canvasEditor.shapes));
+    document.getElementById('restoreButton').addEventListener('click', () => {
+        const data = localStorage.getItem('shapes');
+        if (data) {
+            try {
+                const shapes = JSON.parse(data);
+                canvasEditor.shapes = shapes;
+                canvasEditor.redraw();
+            } catch (e) {
+                alert('Ошибка восстановления фигур!');
+            }
+        } else {
+            alert('Нет сохранённых фигур для восстановления.');
+        }
     });
 
     function setActiveToolButton(tool) {

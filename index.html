@@ -20,11 +20,14 @@
             <button id="addLineButton" class="tool-btn" title="Линия"><i class="fa-solid fa-slash fa-rotate-270"></i></button>
             <button id="selectButton" class="tool-btn" title="Выделение"><i class="fa-solid fa-arrow-pointer"></i></button>
             <button id="pencilButton" class="tool-btn" title="Карандаш"><i class="fa-solid fa-pencil"></i></button>
-            <button id="saveButton" class="tool-btn btn-save" title="Сохранить"><i class="fa-regular fa-floppy-disk"></i></button>
+            <!-- <button id="saveButton" class="tool-btn btn-save" title="Сохранить"><i class="fa-regular fa-floppy-disk"></i></button> -->
+            <button id="restoreButton" class="tool-btn btn-restore" title="Восстановить"><i class="fa-solid fa-rotate-left"></i></button>
             <button id="clearCanvasButton" class="tool-btn btn-clear" title="Очистить"><i class="fa-solid fa-broom"></i></button>
         </div>
     </div>
-    <canvas id="canvas" width="800" height="600"></canvas>
+    <div class="canvas-wrapper">
+        <canvas id="canvas"></canvas>
+    </div>
     <script type="module" src="./src/main.js"></script>
 </body>
 </html>
