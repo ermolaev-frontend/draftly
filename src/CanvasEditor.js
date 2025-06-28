@@ -683,6 +683,59 @@ export class CanvasEditor {
             this.#drawShapes();
             return;
         }
+        // --- Новый код для прямоугольника ---
+        if (this.currentTool === 'rectangle') {
+            const newShape = this.#createRectangle({
+                x: mouse.x,
+                y: mouse.y,
+                width: 1,
+                height: 1
+            });
+            this.shapes.push(newShape);
+            this.interaction = {
+                ...this.interaction,
+                isDrawingRectangle: true,
+                drawingShape: newShape,
+                startPoint: { ...mouse }
+            };
+            this.#drawShapes();
+            return;
+        }
+        // --- Новый код для круга ---
+        if (this.currentTool === 'circle') {
+            const newShape = this.#createCircle({
+                x: mouse.x,
+                y: mouse.y,
+                radius: 1
+            });
+            this.shapes.push(newShape);
+            this.interaction = {
+                ...this.interaction,
+                isDrawingCircle: true,
+                drawingShape: newShape,
+                startPoint: { ...mouse }
+            };
+            this.#drawShapes();
+            return;
+        }
+        // --- Новый код для линии ---
+        if (this.currentTool === 'line') {
+            const newShape = this.#createLine({
+                x1: mouse.x,
+                y1: mouse.y,
+                x2: mouse.x,
+                y2: mouse.y
+            });
+            this.shapes.push(newShape);
+            this.interaction = {
+                ...this.interaction,
+                isDrawingLine: true,
+                drawingShape: newShape,
+                startPoint: { ...mouse }
+            };
+            this.#drawShapes();
+            return;
+        }
 
         for (const shape of this.shapes) {
             if (shape.selected) {
@@ -790,6 +843,36 @@ export class CanvasEditor {
             this.canvas.style.cursor = 'crosshair';
             return;
         }
+        // --- Новый код для прямоугольника ---
+        if (this.interaction.isDrawingRectangle) {
+            const shape = this.interaction.drawingShape;
+            const start = this.interaction.startPoint;
+            shape.x = Math.min(start.x, mouse.x);
+            shape.y = Math.min(start.y, mouse.y);
+            shape.width = Math.abs(mouse.x - start.x);
+            shape.height = Math.abs(mouse.y - start.y);
+            this.#drawShapes();
+            this.canvas.style.cursor = 'crosshair';
+            return;
+        }
+        // --- Новый код для круга ---
+        if (this.interaction.isDrawingCircle) {
+            const shape = this.interaction.drawingShape;
+            const start = this.interaction.startPoint;
+            shape.radius = Math.sqrt((mouse.x - start.x) ** 2 + (mouse.y - start.y) ** 2);
+            this.#drawShapes();
+            this.canvas.style.cursor = 'crosshair';
+            return;
+        }
+        // --- Новый код для линии ---
+        if (this.interaction.isDrawingLine) {
+            const shape = this.interaction.drawingShape;
+            shape.x2 = mouse.x;
+            shape.y2 = mouse.y;
+            this.#drawShapes();
+            this.canvas.style.cursor = 'crosshair';
+            return;
+        }
         if (this.interaction.isDragging) {
             const shape = this.interaction.selectedShape;
 
@@ -872,7 +955,11 @@ export class CanvasEditor {
             this.interaction = { ...this.interaction, isDrawingPencil: false, drawingShape: null };
             return;
         }
-        this.interaction = { isDragging: false, isResizing: false, selectedShape: null, dragOffset: {x:0,y:0}, resizeHandle: null };
+        if (this.interaction.isDrawingRectangle || this.interaction.isDrawingCircle || this.interaction.isDrawingLine) {
+            this.interaction = { ...this.interaction, isDrawingRectangle: false, isDrawingCircle: false, isDrawingLine: false, drawingShape: null, startPoint: null };
+            return;
+        }
+        this.interaction = { isDragging: false, isResizing: false, selectedShape: null, dragOffset: { x: 0, y: 0 }, resizeHandle: null };
     }
 
     /**

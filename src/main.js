@@ -2,9 +2,18 @@ import { CanvasEditor } from './CanvasEditor.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const canvasEditor = new CanvasEditor('canvas');
-    document.getElementById('addRectangleButton').addEventListener('click', () => canvasEditor.addRectangle());
-    document.getElementById('addCircleButton').addEventListener('click', () => canvasEditor.addCircle());
-    document.getElementById('addLineButton').addEventListener('click', () => canvasEditor.addLine());
+    document.getElementById('addRectangleButton').addEventListener('click', () => {
+        canvasEditor.setTool('rectangle');
+        setActiveToolButton('rectangle');
+    });
+    document.getElementById('addCircleButton').addEventListener('click', () => {
+        canvasEditor.setTool('circle');
+        setActiveToolButton('circle');
+    });
+    document.getElementById('addLineButton').addEventListener('click', () => {
+        canvasEditor.setTool('line');
+        setActiveToolButton('line');
+    });
     document.getElementById('clearCanvasButton').addEventListener('click', () => canvasEditor.clearCanvas());
     document.getElementById('pencilButton').addEventListener('click', () => canvasEditor.setTool('pencil'));
     document.getElementById('selectButton').addEventListener('click', () => canvasEditor.setTool('select'));
@@ -16,10 +25,19 @@ document.addEventListener('DOMContentLoaded', () => {
     function setActiveToolButton(tool) {
         document.getElementById('selectButton').classList.remove('active-tool');
         document.getElementById('pencilButton').classList.remove('active-tool');
+        document.getElementById('addRectangleButton').classList.remove('active-tool');
+        document.getElementById('addCircleButton').classList.remove('active-tool');
+        document.getElementById('addLineButton').classList.remove('active-tool');
         if (tool === 'select') {
             document.getElementById('selectButton').classList.add('active-tool');
         } else if (tool === 'pencil') {
             document.getElementById('pencilButton').classList.add('active-tool');
+        } else if (tool === 'rectangle') {
+            document.getElementById('addRectangleButton').classList.add('active-tool');
+        } else if (tool === 'circle') {
+            document.getElementById('addCircleButton').classList.add('active-tool');
+        } else if (tool === 'line') {
+            document.getElementById('addLineButton').classList.add('active-tool');
         }
     }
     // Инициализация: по умолчанию select
