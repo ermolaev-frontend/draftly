@@ -1,6 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { CanvasEditorWrapper } from '../../entities/canvas/CanvasEditorWrapper';
 import styles from './EditorPage.module.scss';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSquare as faSquareRegular, faCircle as faCircleRegular } from '@fortawesome/free-regular-svg-icons';
+import { faSlash, faArrowPointer, faPencil, faRotateLeft, faBroom } from '@fortawesome/free-solid-svg-icons';
+import { Toolbar } from '../../widgets/Toolbar/Toolbar';
 
 export const EditorPage: React.FC = () => {
   const [activeTool, setActiveTool] = useState('select');
@@ -41,15 +45,12 @@ export const EditorPage: React.FC = () => {
 
   return (
     <div className={styles.editorPage}>
-      <div className={styles.toolbar}>
-        <button className={activeTool === 'rectangle' ? styles.active : ''} onClick={() => handleTool('rectangle')}>Rectangle</button>
-        <button className={activeTool === 'circle' ? styles.active : ''} onClick={() => handleTool('circle')}>Circle</button>
-        <button className={activeTool === 'line' ? styles.active : ''} onClick={() => handleTool('line')}>Line</button>
-        <button className={activeTool === 'pencil' ? styles.active : ''} onClick={() => handleTool('pencil')}>Pencil</button>
-        <button className={activeTool === 'select' ? styles.active : ''} onClick={() => handleTool('select')}>Select</button>
-        <button onClick={handleClear}>Clear</button>
-        <button onClick={handleRestore}>Restore</button>
-      </div>
+      <Toolbar
+        activeTool={activeTool}
+        onToolChange={handleTool}
+        onClear={handleClear}
+        onRestore={handleRestore}
+      />
       <CanvasEditorWrapper ref={editorRef} />
     </div>
   );
