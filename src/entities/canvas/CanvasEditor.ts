@@ -676,7 +676,7 @@ export class CanvasEditor {
         }
 
         // Deselect all shapes using onUpdateShape
-        this.shapes.forEach((s, idx) => {
+        this.shapes.forEach(s => {
             if (s.selected) {
                 this.actions.onUpdateShape(s.id, { ...s, selected: false });
             }
