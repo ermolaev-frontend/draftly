@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { CanvasEditorWrapper } from '../../entities/canvas/CanvasEditorWrapper';
 import styles from './EditorPage.module.scss';
 import { Toolbar } from '../../widgets/Toolbar/Toolbar';
@@ -52,6 +52,22 @@ export const EditorPage: React.FC = () => {
       }
     }
   };
+
+  // Listen for Escape key to select the Selection tool
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveTool('select');
+        if (editorRef.current) {
+          editorRef.current.setTool('select');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   return (
     <div className={styles.editorPage}>
