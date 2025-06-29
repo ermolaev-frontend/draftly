@@ -1,9 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { CanvasEditorWrapper } from '../../entities/canvas/CanvasEditorWrapper';
 import styles from './EditorPage.module.scss';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSquare as faSquareRegular, faCircle as faCircleRegular } from '@fortawesome/free-regular-svg-icons';
-import { faSlash, faArrowPointer, faPencil, faRotateLeft, faBroom } from '@fortawesome/free-solid-svg-icons';
 import { Toolbar } from '../../widgets/Toolbar/Toolbar';
 
 export const EditorPage: React.FC = () => {
@@ -42,6 +39,22 @@ export const EditorPage: React.FC = () => {
       }
     }
   };
+
+  // Listen for Escape key to select the Selection tool
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveTool('select');
+        if (editorRef.current) {
+          editorRef.current.setTool('select');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   return (
     <div className={styles.editorPage}>

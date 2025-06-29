@@ -7,8 +7,8 @@ export class CanvasEditor {
     currentTool: ToolType;
     interaction: InteractionState;
 
-    constructor(canvasId: string) {
-        this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+    constructor(canvas: HTMLCanvasElement) {
+        this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
         this.interaction = {
             isDragging: false,
@@ -103,7 +103,6 @@ export class CanvasEditor {
             })()
         ];
         window.addEventListener('resize', () => this.resizeCanvasToWrapper());
-        this.attachEvents();
         this.drawShapes();
     }
 
@@ -626,17 +625,7 @@ export class CanvasEditor {
         this.drawShapes();
     }
 
-    
-    private attachEvents(): void {
-        this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
-        this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
-        this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
-        // For pencil, support mouseleave (line completion when mouse leaves)
-        this.canvas.addEventListener('mouseleave', this.onMouseUp.bind(this));
-    }
-
-    
-    private onMouseDown(e: MouseEvent): void {
+    public onMouseDown(e: MouseEvent): void {
         const mouse = this.getMousePos(e);
         if (this.currentTool === 'pencil') {
             // Start a new line
@@ -840,7 +829,7 @@ export class CanvasEditor {
     }
 
     
-    private onMouseMove(e: MouseEvent): void {
+    public onMouseMove(e: MouseEvent): void {
         const mouse = this.getMousePos(e);
         let cursor = 'default';
         const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
@@ -957,7 +946,7 @@ export class CanvasEditor {
     }
 
     
-    private onMouseUp(): void {
+    public onMouseUp(): void {
         if (this.interaction.isDrawingPencil) {
             this.interaction = { ...this.interaction, isDrawingPencil: false, drawingShape: null };
         } else if (["isDrawingRectangle", "isDrawingCircle", "isDrawingLine"].some(key => this.interaction[key])) {
