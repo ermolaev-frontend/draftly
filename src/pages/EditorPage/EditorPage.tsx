@@ -1,14 +1,24 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { CanvasEditorWrapper } from '../../entities/canvas/CanvasEditorWrapper';
 import styles from './EditorPage.module.scss';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSquare as faSquareRegular, faCircle as faCircleRegular } from '@fortawesome/free-regular-svg-icons';
-import { faSlash, faArrowPointer, faPencil, faRotateLeft, faBroom } from '@fortawesome/free-solid-svg-icons';
 import { Toolbar } from '../../widgets/Toolbar/Toolbar';
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState } from '../../app/store';
+import { addShape, updateShape, removeShape, clearShapes, setShapes } from '../../features/shapesSlice';
+import type { Shape } from '../../shared/types/canvas';
 
 export const EditorPage: React.FC = () => {
   const [activeTool, setActiveTool] = useState('select');
   const editorRef = useRef<any>(null);
+  const shapes = useSelector((state: RootState) => state.shapes.shapes);
+  const dispatch = useDispatch();
+
+  const actions = {
+    onAddShape: (shape: Shape) => dispatch(addShape(shape)),
+    onUpdateShape: (id: string, shape: Shape) => dispatch(updateShape({ id, shape })),
+    onRemoveShape: (id: string) => dispatch(removeShape(id)),
+    onClearShapes: () => dispatch(clearShapes()),
+  };
 
   // Handler to set tool
   const handleTool = (tool: string) => {
@@ -51,7 +61,12 @@ export const EditorPage: React.FC = () => {
         onClear={handleClear}
         onRestore={handleRestore}
       />
-      <CanvasEditorWrapper ref={editorRef} />
+      <CanvasEditorWrapper
+        ref={editorRef}
+        shapes={shapes}
+        actions={actions}
+        onInitShapes={(shapes) => dispatch(setShapes(shapes))}
+      />
     </div>
   );
 };

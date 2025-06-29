@@ -3,6 +3,7 @@
 export type ToolType = 'select' | 'pencil' | 'rectangle' | 'circle' | 'line';
 
 export interface BaseShape {
+  id: string;
   type: ToolType;
   color: string;
   strokeWidth: number;
