@@ -1,4 +1,5 @@
-import { useEffect, useRef, forwardRef, useImperativeHandle, MouseEvent } from 'react';
+import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import type { MouseEvent } from 'react';
 import { CanvasEditor } from './CanvasEditor';
 import styles from './CanvasEditorWrapper.module.scss';
 import type { Shape } from '../../shared/types/canvas';
