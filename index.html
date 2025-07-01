@@ -1,33 +1,13 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Draftly: Draft, Doodle, Done — Together</title>
-    <link rel="stylesheet" href="./styles/main.css">
-    <!-- Font Awesome Free CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link rel="apple-touch-icon" sizes="180x180" href="public/assets/favicon_io/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="public/assets/favicon_io/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="public/assets/favicon_io/favicon-16x16.png">
-    <link rel="manifest" href="public/assets/favicon_io/site.webmanifest">
-</head>
-<body>
-    <div class="controls">
-        <div class="controls-grid">
-            <button id="addRectangleButton" class="tool-btn" title="Прямоугольник"><i class="fa-regular fa-square"></i></button>
-            <button id="addCircleButton" class="tool-btn" title="Круг"><i class="fa-regular fa-circle"></i></button>
-            <button id="addLineButton" class="tool-btn" title="Линия"><i class="fa-solid fa-slash fa-rotate-270"></i></button>
-            <button id="selectButton" class="tool-btn" title="Выделение"><i class="fa-solid fa-arrow-pointer"></i></button>
-            <button id="pencilButton" class="tool-btn" title="Карандаш"><i class="fa-solid fa-pencil"></i></button>
-            <!-- <button id="saveButton" class="tool-btn btn-save" title="Сохранить"><i class="fa-regular fa-floppy-disk"></i></button> -->
-            <button id="restoreButton" class="tool-btn btn-restore" title="Восстановить"><i class="fa-solid fa-rotate-left"></i></button>
-            <button id="clearCanvasButton" class="tool-btn btn-clear" title="Очистить"><i class="fa-solid fa-broom"></i></button>
-        </div>
-    </div>
-    <div class="canvas-wrapper">
-        <canvas id="canvas"></canvas>
-    </div>
-    <script type="module" src="./src/main.js"></script>
-</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React + TS</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
