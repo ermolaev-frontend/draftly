@@ -491,7 +491,6 @@ export class CanvasEditor {
                     return;
                 }
                 if (handle.type) {
-                    const offset = 5;
                     const cx = shape.x + shape.width/2;
                     const cy = shape.y + shape.height/2;
                     const angle = -(shape.rotation ?? 0);
