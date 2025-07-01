@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import styles from '../../pages/EditorPage/EditorPage.module.scss';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSquare as faSquareRegular, faCircle as faCircleRegular } from '@fortawesome/free-regular-svg-icons';
@@ -40,4 +40,4 @@ export const Toolbar: React.FC<ToolbarProps> = ({ activeTool, onToolChange, onCl
   </div>
 );
 
-export default Toolbar; 
+export default memo(Toolbar); 
