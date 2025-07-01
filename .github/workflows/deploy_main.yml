@@ -3,7 +3,6 @@ name: Deploy to VDS
 on:
   push:
     branches:
-      - feature/deploy
       - main
 
 jobs:
@@ -37,7 +36,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ermolaev-frontend --password-stdin
+            echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             cd $HOME/draftly
             docker-compose pull
             docker-compose up -d 
