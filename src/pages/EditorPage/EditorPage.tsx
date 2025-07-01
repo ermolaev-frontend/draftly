@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { CanvasEditorWrapper } from '../../entities/canvas/CanvasEditorWrapper';
 import styles from './EditorPage.module.scss';
 import { Toolbar } from '../../widgets/Toolbar/Toolbar';
@@ -8,22 +8,22 @@ export const EditorPage: React.FC = () => {
   const editorRef = useRef<any>(null);
 
   // Handler to set tool
-  const handleTool = (tool: string) => {
+  const handleTool = useCallback((tool: string) => {
     setActiveTool(tool);
     if (editorRef.current) {
       editorRef.current.setTool(tool);
     }
-  };
+  }, [editorRef]);
 
   // Handler to clear canvas
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     if (editorRef.current) {
       editorRef.current.clearCanvas();
     }
-  };
+  }, [editorRef]);
 
   // Handler to restore shapes
-  const handleRestore = () => {
+  const handleRestore = useCallback(() => {
     if (editorRef.current) {
       const data = localStorage.getItem('shapes');
       if (data) {
@@ -38,7 +38,7 @@ export const EditorPage: React.FC = () => {
         alert('Нет сохранённых фигур для восстановления.');
       }
     }
-  };
+  }, [editorRef]);
 
   // Listen for Escape key to select the Selection tool
   useEffect(() => {

@@ -30,6 +30,31 @@ export const CanvasEditorWrapper = forwardRef<any, unknown>(
       editorRef.current?.onMouseUp();
     };
 
+    const adaptTouchEvent = (e: React.TouchEvent<HTMLCanvasElement>): { offsetX: number; offsetY: number } => {
+      const touch = e.touches[0] || e.changedTouches[0];
+      const bounding = canvasRef.current?.getBoundingClientRect();
+      const offsetX = bounding && touch ? touch.clientX - bounding.left : 0;
+      const offsetY = bounding && touch ? touch.clientY - bounding.top : 0;
+      return { offsetX, offsetY };
+    };
+
+    const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      editorRef.current?.onMouseDown(adaptTouchEvent(e));
+    };
+    const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      editorRef.current?.onMouseMove(adaptTouchEvent(e));
+    };
+    const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      editorRef.current?.onMouseUp();
+    };
+    const handleTouchCancel = (e: React.TouchEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      editorRef.current?.onMouseUp();
+    };
+
     return (
       <div className={styles.canvasWrapper}>
         <canvas
@@ -38,6 +63,10 @@ export const CanvasEditorWrapper = forwardRef<any, unknown>(
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchCancel}
         />
       </div>
     );

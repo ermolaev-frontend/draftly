@@ -317,8 +317,11 @@ export class CanvasEditor {
     }
 
     
-    private getMousePos(e: MouseEvent): { x: number; y: number } {
-        return { x: e.offsetX, y: e.offsetY };
+    private getMousePos(e: MouseEvent | { offsetX: number; offsetY: number }): { x: number; y: number } {
+        if ('offsetX' in e && 'offsetY' in e) {
+            return { x: e.offsetX, y: e.offsetY };
+        }
+        return { x: (e as MouseEvent).offsetX, y: (e as MouseEvent).offsetY };
     }
 
     
@@ -624,7 +627,7 @@ export class CanvasEditor {
         this.drawShapes();
     }
 
-    public onMouseDown(e: MouseEvent): void {
+    public onMouseDown(e: MouseEvent | { offsetX: number; offsetY: number }): void {
         const mouse = this.getMousePos(e);
         if (this.currentTool === 'pencil') {
             // Start a new line
@@ -828,7 +831,7 @@ export class CanvasEditor {
     }
 
     
-    public onMouseMove(e: MouseEvent): void {
+    public onMouseMove(e: MouseEvent | { offsetX: number; offsetY: number }): void {
         const mouse = this.getMousePos(e);
         let cursor = 'default';
         const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];

@@ -11,23 +11,26 @@ interface ToolbarProps {
   onRestore: () => void;
 }
 
+const toolButtons = [
+  { tool: 'rectangle', icon: faSquareRegular, title: 'Прямоугольник' },
+  { tool: 'circle', icon: faCircleRegular, title: 'Круг' },
+  { tool: 'line', icon: faSlash, title: 'Линия', iconProps: { rotation: 270 as 270 } },
+  { tool: 'select', icon: faArrowPointer, title: 'Выделение' },
+  { tool: 'pencil', icon: faPencil, title: 'Карандаш' },
+];
+
 export const Toolbar: React.FC<ToolbarProps> = ({ activeTool, onToolChange, onClear, onRestore }) => (
   <div className={styles.toolbar}>
-    <button className={activeTool === 'rectangle' ? styles.active : ''} onClick={() => onToolChange('rectangle')} title="Прямоугольник">
-      <FontAwesomeIcon icon={faSquareRegular} />
-    </button>
-    <button className={activeTool === 'circle' ? styles.active : ''} onClick={() => onToolChange('circle')} title="Круг">
-      <FontAwesomeIcon icon={faCircleRegular} />
-    </button>
-    <button className={activeTool === 'line' ? styles.active : ''} onClick={() => onToolChange('line')} title="Линия">
-      <FontAwesomeIcon icon={faSlash} rotation={270} />
-    </button>
-    <button className={activeTool === 'select' ? styles.active : ''} onClick={() => onToolChange('select')} title="Выделение">
-      <FontAwesomeIcon icon={faArrowPointer} />
-    </button>
-    <button className={activeTool === 'pencil' ? styles.active : ''} onClick={() => onToolChange('pencil')} title="Карандаш">
-      <FontAwesomeIcon icon={faPencil} />
-    </button>
+    {toolButtons.map(({ tool, icon, title, iconProps }) => (
+      <button
+        key={tool}
+        className={activeTool === tool ? styles.active : ''}
+        onClick={() => onToolChange(tool)}
+        title={title}
+      >
+        <FontAwesomeIcon icon={icon} {...(iconProps || {})} />
+      </button>
+    ))}
     <button className={styles['btn-restore']} onClick={onRestore} title="Восстановить">
       <FontAwesomeIcon icon={faRotateLeft} />
     </button>
