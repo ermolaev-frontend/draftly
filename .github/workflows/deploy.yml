@@ -37,6 +37,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            cd /home/${{ secrets.SERVER_USER }}/draftly
+            cd $HOME/draftly
             docker-compose pull
             docker-compose up -d 
