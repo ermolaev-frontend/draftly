@@ -21,14 +21,14 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.CR_PAT }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ghcr.io/ermolaev-frontend/draftly:latest
+          tags: ghcr.io/${{ github.actor }}/draftly:latest
 
       - name: SSH and deploy on server
         uses: appleboy/ssh-action@v1.0.3
