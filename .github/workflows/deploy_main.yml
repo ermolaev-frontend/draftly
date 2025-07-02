@@ -37,6 +37,6 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            cd $HOME/draftly
+            cd $HOME/docker/draftly
             docker-compose pull
             docker-compose up -d 
