@@ -1,4 +1,4 @@
-import type { ToolType, RectangleShape, CircleShape, LineShape, PencilShape, Shape, InteractionState } from '../../shared/types/canvas';
+import type { ToolType, RectangleShape, CircleShape, LineShape, PencilShape, Shape, InteractionState, BaseShape } from '../../shared/types/canvas';
 
 export class CanvasEditor {
     canvas: HTMLCanvasElement;
@@ -6,6 +6,7 @@ export class CanvasEditor {
     shapes: Shape[];
     currentTool: ToolType;
     interaction: InteractionState;
+    public onShapesChanged?: () => void;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -632,6 +633,7 @@ export class CanvasEditor {
         if (this.currentTool === 'pencil') {
             // Start a new line
             const newShape: PencilShape = {
+                id: this.generateId(),
                 type: 'pencil',
                 color: this.getRandomColor(),
                 strokeWidth: this.getRandomStrokeWidth(),
@@ -949,14 +951,22 @@ export class CanvasEditor {
 
     
     public onMouseUp(): void {
+        let changed = true;
+        
         if (this.interaction.isDrawingPencil) {
             this.interaction = { ...this.interaction, isDrawingPencil: false, drawingShape: null };
         } else if (["isDrawingRectangle", "isDrawingCircle", "isDrawingLine"].some(key => this.interaction[key])) {
             this.interaction = { ...this.interaction, isDrawingRectangle: false, isDrawingCircle: false, isDrawingLine: false, drawingShape: null, startPoint: null };
+        } else if (this.interaction.isDragging || this.interaction.isResizing) {
+            this.interaction = { isDragging: false, isResizing: false, selectedShape: null, dragOffset: { x: 0, y: 0 }, resizeHandle: null };
         } else {
+            changed = false;
             this.interaction = { isDragging: false, isResizing: false, selectedShape: null, dragOffset: { x: 0, y: 0 }, resizeHandle: null };
         }
         this.autoSave();
+        if (changed && this.onShapesChanged) {
+            this.onShapesChanged();
+        }
     }
 
     
@@ -1063,23 +1073,43 @@ export class CanvasEditor {
     }
 
     
+    private generateId(): string {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        return Math.random().toString(36).substr(2, 9);
+    }
+
+    private findSelectedIds(): Set<string> {
+        return new Set(this.shapes.filter(s => s.selected).map(s => s.id));
+    }
+
+    public setShapes(shapes: Shape[]): void {
+        // Preserve selection state by id
+        const selectedIds = this.findSelectedIds();
+        this.shapes = shapes.map(s => ({ ...s, selected: selectedIds.has(s.id) }));
+        this.drawShapes();
+    }
+
     private createRectangle(options: Partial<RectangleShape> = {}): RectangleShape {
-        return {
+        const shape = {
+            id: this.generateId(),
             type: 'rectangle' as const,
             color: this.getRandomColor(),
             strokeWidth: this.getRandomStrokeWidth(),
             selected: false,
-            x: typeof options.x === 'number' ? options.x : (Math.random() * 600 + 50),
-            y: typeof options.y === 'number' ? options.y : (Math.random() * 400 + 50),
-            width: typeof options.width === 'number' ? options.width : (Math.random() * 150 + 100),
-            height: typeof options.height === 'number' ? options.height : (Math.random() * 100 + 80),
-            rotation: typeof options.rotation === 'number' ? options.rotation : 0
+            x: typeof options.x === 'number' ? options.x : (Math.random() * 600 + 100),
+            y: typeof options.y === 'number' ? options.y : (Math.random() * 400 + 100),
+            width: typeof options.width === 'number' ? options.width : (Math.random() * 60 + 40),
+            height: typeof options.height === 'number' ? options.height : (Math.random() * 60 + 40),
+            rotation: options.rotation ?? 0
         };
+        return shape;
     }
 
-    
     private createCircle(options: Partial<CircleShape> = {}): CircleShape {
-        return {
+        const shape = {
+            id: this.generateId(),
             type: 'circle' as const,
             color: this.getRandomColor(),
             strokeWidth: this.getRandomStrokeWidth(),
@@ -1088,53 +1118,34 @@ export class CanvasEditor {
             y: typeof options.y === 'number' ? options.y : (Math.random() * 400 + 100),
             radius: typeof options.radius === 'number' ? options.radius : (Math.random() * 60 + 40)
         };
+        return shape;
     }
 
-    
     private createLine(options: Partial<LineShape> & { angle?: number; length?: number } = {}): LineShape {
-        const x1 = typeof options.x1 === 'number' ? options.x1 : (Math.random() * 600 + 100);
-        const y1 = typeof options.y1 === 'number' ? options.y1 : (Math.random() * 400 + 100);
-        const angle = typeof options.angle === 'number' ? options.angle : (Math.random() * Math.PI * 2);
-        const length = typeof options.length === 'number' ? options.length : (Math.random() * 120 + 60);
-        const x2 = typeof options.x2 === 'number' ? options.x2 : (x1 + Math.cos(angle) * length);
-        const y2 = typeof options.y2 === 'number' ? options.y2 : (y1 + Math.sin(angle) * length);
-        return {
+        const shape = {
+            id: this.generateId(),
             type: 'line' as const,
             color: this.getRandomColor(),
             strokeWidth: this.getRandomStrokeWidth(),
             selected: false,
-            x1, y1, x2, y2
+            x1: typeof options.x1 === 'number' ? options.x1 : (Math.random() * 600 + 100),
+            y1: typeof options.y1 === 'number' ? options.y1 : (Math.random() * 400 + 100),
+            x2: typeof options.x2 === 'number' ? options.x2 : (Math.random() * 600 + 100),
+            y2: typeof options.y2 === 'number' ? options.y2 : (Math.random() * 400 + 100)
         };
+        return shape;
     }
 
-    
-    private getRectangleHandles(shape: RectangleShape, offset: number = 5): Array<{ x: number; y: number; type: string }> {
-        const w = shape.width, h = shape.height;
-        return [
-            {x: -w/2 - offset, y: -h/2 - offset, type: 'nw'},
-            {x: +w/2 + offset, y: -h/2 - offset, type: 'ne'},
-            {x: +w/2 + offset, y: +h/2 + offset, type: 'se'},
-            {x: -w/2 - offset, y: +h/2 + offset, type: 'sw'},
-            {x: 0, y: -h/2 - offset, type: 'n'},
-            {x: +w/2 + offset, y: 0, type: 'e'},
-            {x: 0, y: +h/2 + offset, type: 's'},
-            {x: -w/2 - offset, y: 0, type: 'w'},
-            {x: 0, y: -h/2 - offset - 30, type: 'rotate'}
-        ];
-    }
-
-    
-    private getPencilHandles(bounds: { x: number; y: number; width: number; height: number }): Array<{ x: number; y: number; type: string }> {
-        return [
-            {x: bounds.x, y: bounds.y, type: 'nw'},
-            {x: bounds.x + bounds.width, y: bounds.y, type: 'ne'},
-            {x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se'},
-            {x: bounds.x, y: bounds.y + bounds.height, type: 'sw'},
-            {x: bounds.x + bounds.width/2, y: bounds.y, type: 'n'},
-            {x: bounds.x + bounds.width, y: bounds.y + bounds.height/2, type: 'e'},
-            {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height, type: 's'},
-            {x: bounds.x, y: bounds.y + bounds.height/2, type: 'w'}
-        ];
+    private createPencil(options: Partial<PencilShape> = {}): PencilShape {
+        const shape = {
+            id: this.generateId(),
+            type: 'pencil' as const,
+            color: this.getRandomColor(),
+            strokeWidth: this.getRandomStrokeWidth(),
+            selected: false,
+            points: options.points ?? []
+        };
+        return shape;
     }
 
     // --- Helper methods for shapes ---
@@ -1165,5 +1176,37 @@ export class CanvasEditor {
             this.canvas.height = rect.height;
             this.drawShapes();
         }
+    }
+
+    public getShapes(): Shape[] {
+        return this.shapes;
+    }
+
+    private getRectangleHandles(shape: RectangleShape, offset: number = 5): Array<{ x: number; y: number; type: string }> {
+        const w = shape.width, h = shape.height;
+        return [
+            {x: -w/2 - offset, y: -h/2 - offset, type: 'nw'},
+            {x: +w/2 + offset, y: -h/2 - offset, type: 'ne'},
+            {x: +w/2 + offset, y: +h/2 + offset, type: 'se'},
+            {x: -w/2 - offset, y: +h/2 + offset, type: 'sw'},
+            {x: 0, y: -h/2 - offset, type: 'n'},
+            {x: +w/2 + offset, y: 0, type: 'e'},
+            {x: 0, y: +h/2 + offset, type: 's'},
+            {x: -w/2 - offset, y: 0, type: 'w'},
+            {x: 0, y: -h/2 - offset - 30, type: 'rotate'}
+        ];
+    }
+
+    private getPencilHandles(bounds: { x: number; y: number; width: number; height: number }): Array<{ x: number; y: number; type: string }> {
+        return [
+            {x: bounds.x, y: bounds.y, type: 'nw'},
+            {x: bounds.x + bounds.width, y: bounds.y, type: 'ne'},
+            {x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se'},
+            {x: bounds.x, y: bounds.y + bounds.height, type: 'sw'},
+            {x: bounds.x + bounds.width/2, y: bounds.y, type: 'n'},
+            {x: bounds.x + bounds.width, y: bounds.y + bounds.height/2, type: 'e'},
+            {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height, type: 's'},
+            {x: bounds.x, y: bounds.y + bounds.height/2, type: 'w'}
+        ];
     }
 } 

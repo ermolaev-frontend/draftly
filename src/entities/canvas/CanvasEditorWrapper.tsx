@@ -3,16 +3,22 @@ import type { MouseEvent } from 'react';
 import { CanvasEditor } from './CanvasEditor';
 import styles from './CanvasEditorWrapper.module.scss';
 
-export const CanvasEditorWrapper = forwardRef<any, unknown>(
-  (_, ref) => {
+export const CanvasEditorWrapper = forwardRef<any, { onShapesChanged?: () => void }>(
+  (props, ref) => {
+    const { onShapesChanged } = props;
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const editorRef = useRef<CanvasEditor | null>(null);
 
     useEffect(() => {
       if (canvasRef.current && !editorRef.current) {
         editorRef.current = new CanvasEditor(canvasRef.current);
+        if (onShapesChanged) {
+          editorRef.current.onShapesChanged = onShapesChanged;
+        }
+      } else if (editorRef.current && onShapesChanged) {
+        editorRef.current.onShapesChanged = onShapesChanged;
       }
-    }, []);
+    }, [onShapesChanged]);
 
     useImperativeHandle(ref, () => editorRef.current as CanvasEditor, []);
 
