@@ -1,7 +1,23 @@
 import type { ToolType, RectangleShape, CircleShape, LineShape, PencilShape, Shape, InteractionState } from 'shared/types/canvas';
 import { catmullRom2bezier, simplifyDouglasPeucker } from './canvasUtils';
 
+// --- Strong types for pencil cache ---
+type Point = { x: number; y: number };
+type BezierSegment = {
+    start: Point;
+    cp1: Point;
+    cp2: Point;
+    end: Point;
+};
+type PencilCache = {
+    original: Point[];
+    simplified: Point[];
+    beziers: BezierSegment[];
+};
+
 export class CanvasEditor {
+    // WeakMap for caching pencil shape simplification and bezier conversion
+    private pencilCache = new WeakMap<PencilShape, PencilCache>();
     private canvas: HTMLCanvasElement;
     private readonly ctx: CanvasRenderingContext2D;
     private shapes: Shape[];
@@ -43,7 +59,7 @@ export class CanvasEditor {
         const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
         // Create 100 shapes distributed across 6 zones
         this.shapes = [];
-        for (let i = 0; i < 1000; i++) {
+        for (let i = 0; i < 999; i++) {
             const zone = zones[i % zones.length];
             const typeRand = Math.random();
             let newShape: Shape;
@@ -193,8 +209,17 @@ export class CanvasEditor {
             }
             case 'pencil': {
                 if (shape.points && shape.points.length > 1) {
-                    const simplified = simplifyDouglasPeucker(shape.points, 1.5);
-                    const beziers = catmullRom2bezier(simplified);
+                    let cache = this.pencilCache.get(shape);
+
+                    if (!cache || cache.original !== shape.points) {
+                        const simplified = simplifyDouglasPeucker(shape.points, 1.5);
+                        const beziers = catmullRom2bezier(simplified);
+                        cache = { original: shape.points, simplified, beziers };
+                        this.pencilCache.set(shape, cache);
+                    }
+
+                    const beziers = cache.beziers;
+                    
                     if (beziers.length > 0) {
                         ctx.moveTo(beziers[0].start.x, beziers[0].start.y);
                         for (const seg of beziers) {
@@ -611,6 +636,7 @@ export class CanvasEditor {
                             y: newY + relY * newH
                         };
                     });
+                    this.pencilCache.delete(shape);
                     this.requestDraw();
                     return;
                 }
@@ -837,6 +863,7 @@ export class CanvasEditor {
             const shape = this.interaction.drawingShape as PencilShape | undefined | null;
             if (shape && shape.points) {
                 shape.points.push(mouse);
+                this.pencilCache.delete(shape);
             }
             this.requestDraw();
             this.canvas.style.cursor = 'crosshair';
@@ -896,6 +923,7 @@ export class CanvasEditor {
                         x: pt.x + dx,
                         y: pt.y + dy
                     }));
+                    this.pencilCache.delete(shape);
                 }
             } else if (shape && ('x' in shape) && ('y' in shape)) {
                 (shape as RectangleShape | CircleShape).x = mouse.x - this.interaction.dragOffset.x;
