@@ -6,7 +6,6 @@ export interface BaseShape {
   type: ToolType;
   color: string;
   strokeWidth: number;
-  selected: boolean;
 }
 
 export interface RectangleShape extends BaseShape {

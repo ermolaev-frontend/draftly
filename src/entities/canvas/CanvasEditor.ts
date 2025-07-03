@@ -55,7 +55,6 @@ export class CanvasEditor {
                     color: colors[Math.floor(this.getRandom(0, colors.length))],
                     strokeWidth: this.getRandom(3, 6),
                     type: 'rectangle' as const,
-                    selected: false,
                     rotation: 0
                 });
             } else if (typeRand < 0.5) {
@@ -66,8 +65,7 @@ export class CanvasEditor {
                     radius: this.getRandom(40, Math.min(80, (zone.xMax - zone.xMin) / 2, (zone.yMax - zone.yMin) / 2)),
                     color: colors[Math.floor(this.getRandom(0, colors.length))],
                     strokeWidth: this.getRandom(3, 6),
-                    type: 'circle' as const,
-                    selected: false
+                    type: 'circle' as const
                 });
             } else if (typeRand < 0.75) {
                 // Line
@@ -83,22 +81,18 @@ export class CanvasEditor {
                     x1, y1, x2, y2,
                     color: colors[Math.floor(this.getRandom(0, colors.length))],
                     strokeWidth: this.getRandom(3, 6),
-                    type: 'line' as const,
-                    selected: false
+                    type: 'line' as const
                 });
             } else {
                 // Pencil
                 const numPoints = Math.floor(this.getRandom(5, 20));
                 const points = [];
-                // Start at a random point in the zone
                 let px = this.getRandom(zone.xMin + 10, zone.xMax - 10);
                 let py = this.getRandom(zone.yMin + 10, zone.yMax - 10);
                 points.push({ x: px, y: py });
                 for (let p = 1; p < numPoints; p++) {
-                    // Small random walk
                     px += this.getRandom(-20, 20);
                     py += this.getRandom(-20, 20);
-                    // Clamp to zone
                     px = Math.max(zone.xMin + 5, Math.min(zone.xMax - 5, px));
                     py = Math.max(zone.yMin + 5, Math.min(zone.yMax - 5, py));
                     points.push({ x: px, y: py });
@@ -107,7 +101,6 @@ export class CanvasEditor {
                     type: 'pencil',
                     color: colors[Math.floor(this.getRandom(0, colors.length))],
                     strokeWidth: this.getRandom(3, 6),
-                    selected: false,
                     points
                 };
             }
@@ -137,7 +130,6 @@ export class CanvasEditor {
         if (selected) {
             this.shapes = this.shapes.filter(s => s !== selected);
             this.interaction.selectedShape = null;
-            this.shapes.forEach(s => s.selected = false); // Deselect all
             this.drawShapes();
             this.autoSave?.();
         }
@@ -195,7 +187,7 @@ export class CanvasEditor {
 
     
     private drawSelection(shape: Shape): void {
-        if (!shape.selected) return;
+        if (shape !== this.interaction.selectedShape) return;
 
         const ctx = this.ctx;
         const bounds = this.getShapeBounds(shape);
@@ -396,7 +388,7 @@ export class CanvasEditor {
 
     
     private getHandleAt(x: number, y: number, shape: Shape): { type: string } | null {
-        if (!shape.selected) return null;
+        if (shape !== this.interaction.selectedShape) return null;
         switch (shape.type) {
             case 'line': {
                 if (Math.abs(x - shape.x1) <= 8 && Math.abs(y - shape.y1) <= 8) return {type: 'start'};
@@ -606,7 +598,6 @@ export class CanvasEditor {
                 type: 'pencil',
                 color: this.getRandomColor(),
                 strokeWidth: this.getRandomStrokeWidth(),
-                selected: false,
                 points: [mouse]
             };
             this.shapes.push(newShape);
@@ -693,7 +684,7 @@ export class CanvasEditor {
         }
 
         for (const shape of this.shapes) {
-            if (shape.selected) {
+            if (shape === this.interaction.selectedShape) {
                 const handle = this.getHandleAt(mouse.x, mouse.y, shape);
                 if (handle) {
                     let initialRadius = null;
@@ -745,12 +736,10 @@ export class CanvasEditor {
             }
         }
 
-        this.shapes.forEach(s => s.selected = false);
-
         for (let i = this.shapes.length - 1; i >= 0; i--) {
             if (this.isPointInShape(mouse.x, mouse.y, this.shapes[i])) {
-                this.shapes[i].selected = true;
                 const shape = this.shapes[i];
+                this.interaction.selectedShape = shape;
 
                 if (shape.type === 'line') {
                     const centerX = (shape.x1 + shape.x2) / 2;
@@ -884,7 +873,7 @@ export class CanvasEditor {
             // Check if mouse is hovering over a handle
             let hoveredHandle = null;
             for (const shape of this.shapes) {
-                if (shape.selected) {
+                if (shape === this.interaction.selectedShape) {
                     hoveredHandle = this.getHandleAt(mouse.x, mouse.y, shape);
                     if (hoveredHandle) break;
                 }
@@ -898,7 +887,7 @@ export class CanvasEditor {
                     const shape = this.shapes[i];
                     if (this.isPointInShape(mouse.x, mouse.y, shape)) {
                         hovered = true;
-                        if (shape.selected) {
+                        if (shape === this.interaction.selectedShape) {
                             hoveredSelected = true;
                         }
                         break;
@@ -1040,7 +1029,6 @@ export class CanvasEditor {
             type: 'rectangle' as const,
             color: this.getRandomColor(),
             strokeWidth: this.getRandomStrokeWidth(),
-            selected: false,
             x: typeof options.x === 'number' ? options.x : (Math.random() * 600 + 50),
             y: typeof options.y === 'number' ? options.y : (Math.random() * 400 + 50),
             width: typeof options.width === 'number' ? options.width : (Math.random() * 150 + 100),
@@ -1055,7 +1043,6 @@ export class CanvasEditor {
             type: 'circle' as const,
             color: this.getRandomColor(),
             strokeWidth: this.getRandomStrokeWidth(),
-            selected: false,
             x: typeof options.x === 'number' ? options.x : (Math.random() * 600 + 100),
             y: typeof options.y === 'number' ? options.y : (Math.random() * 400 + 100),
             radius: typeof options.radius === 'number' ? options.radius : (Math.random() * 60 + 40)
@@ -1074,7 +1061,6 @@ export class CanvasEditor {
             type: 'line' as const,
             color: this.getRandomColor(),
             strokeWidth: this.getRandomStrokeWidth(),
-            selected: false,
             x1, y1, x2, y2
         };
     }
