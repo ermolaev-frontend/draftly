@@ -1,9 +1,9 @@
 import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import type { MouseEvent } from 'react';
+import type { TouchEvent, MouseEvent } from 'react';
 import { CanvasEditor } from './CanvasEditor';
 import styles from './CanvasEditorWrapper.module.scss';
 
-export const CanvasEditorWrapper = forwardRef<any, unknown>(
+export const CanvasEditorWrapper = forwardRef<CanvasEditor | null, unknown>(
   (_, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const editorRef = useRef<CanvasEditor | null>(null);
@@ -30,7 +30,7 @@ export const CanvasEditorWrapper = forwardRef<any, unknown>(
       editorRef.current?.onMouseUp();
     };
 
-    const adaptTouchEvent = (e: React.TouchEvent<HTMLCanvasElement>): { offsetX: number; offsetY: number } => {
+    const adaptTouchEvent = (e: TouchEvent<HTMLCanvasElement>): { offsetX: number; offsetY: number } => {
       const touch = e.touches[0] || e.changedTouches[0];
       const bounding = canvasRef.current?.getBoundingClientRect();
       const offsetX = bounding && touch ? touch.clientX - bounding.left : 0;
@@ -38,19 +38,19 @@ export const CanvasEditorWrapper = forwardRef<any, unknown>(
       return { offsetX, offsetY };
     };
 
-    const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const handleTouchStart = (e: TouchEvent<HTMLCanvasElement>) => {
       e.preventDefault();
       editorRef.current?.onMouseDown(adaptTouchEvent(e));
     };
-    const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const handleTouchMove = (e: TouchEvent<HTMLCanvasElement>) => {
       e.preventDefault();
       editorRef.current?.onMouseMove(adaptTouchEvent(e));
     };
-    const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const handleTouchEnd = (e: TouchEvent<HTMLCanvasElement>) => {
       e.preventDefault();
       editorRef.current?.onMouseUp();
     };
-    const handleTouchCancel = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const handleTouchCancel = (e: TouchEvent<HTMLCanvasElement>) => {
       e.preventDefault();
       editorRef.current?.onMouseUp();
     };

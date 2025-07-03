@@ -2,13 +2,14 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { CanvasEditorWrapper } from '../../entities/canvas/CanvasEditorWrapper';
 import styles from './EditorPage.module.scss';
 import { Toolbar } from '../../widgets/Toolbar/Toolbar';
+import type { ToolType } from '../../shared/types/canvas';
 
 export const EditorPage: React.FC = () => {
-  const [activeTool, setActiveTool] = useState('select');
-  const editorRef = useRef<any>(null);
+  const [activeTool, setActiveTool] = useState<ToolType>('select');
+  const editorRef = useRef<import('../../entities/canvas/CanvasEditor').CanvasEditor | null>(null);
 
   // Handler to set tool
-  const handleTool = useCallback((tool: string) => {
+  const handleTool = useCallback((tool: ToolType) => {
     setActiveTool(tool);
     if (editorRef.current) {
       editorRef.current.setTool(tool);
@@ -28,26 +29,27 @@ export const EditorPage: React.FC = () => {
       const data = localStorage.getItem('shapes');
       if (data) {
         try {
-          const shapes = JSON.parse(data);
-          editorRef.current.shapes = shapes;
           editorRef.current.redraw();
         } catch (e) {
-          alert('Ошибка восстановления фигур!');
+          alert('Error restoring shapes!');
         }
       } else {
-        alert('Нет сохранённых фигур для восстановления.');
+        alert('No saved shapes to restore.');
       }
     }
   }, [editorRef]);
 
-  // Listen for Escape key to select the Selection tool
+  // Listen for Escape key to select the Selection tool and Delete/Backspace to delete selected shape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setActiveTool('select');
-        if (editorRef.current) {
-          editorRef.current.setTool('select');
-        }
+        editorRef.current?.setTool('select');
+        return;
+      }
+      if ((e.key === 'Delete' || e.key === 'Backspace')) {
+        editorRef.current?.deleteSelectedShape?.();
+        return;
       }
     };
     window.addEventListener('keydown', handleKeyDown);

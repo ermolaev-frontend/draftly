@@ -1,11 +1,11 @@
 import type { ToolType, RectangleShape, CircleShape, LineShape, PencilShape, Shape, InteractionState } from '../../shared/types/canvas';
 
 export class CanvasEditor {
-    canvas: HTMLCanvasElement;
-    ctx: CanvasRenderingContext2D;
-    shapes: Shape[];
-    currentTool: ToolType;
-    interaction: InteractionState;
+    private canvas: HTMLCanvasElement;
+    private readonly ctx: CanvasRenderingContext2D;
+    private shapes: Shape[];
+    private currentTool: ToolType;
+    private interaction: InteractionState;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -23,104 +23,97 @@ export class CanvasEditor {
         const canvasWidth = this.canvas.width;
         const canvasHeight = this.canvas.height;
         const margin = 40; // inner margin for shapes
-        // 6 zones for 6 shapes (2 rows of 3 columns)
-        const zones = [
-            { xMin: margin, xMax: canvasWidth / 3 - margin, yMin: margin, yMax: canvasHeight / 2 - margin },
-            { xMin: canvasWidth / 3 + margin, xMax: 2 * canvasWidth / 3 - margin, yMin: margin, yMax: canvasHeight / 2 - margin },
-            { xMin: 2 * canvasWidth / 3 + margin, xMax: canvasWidth - margin, yMin: margin, yMax: canvasHeight / 2 - margin },
-            { xMin: margin, xMax: canvasWidth / 3 - margin, yMin: canvasHeight / 2 + margin, yMax: canvasHeight - margin },
-            { xMin: canvasWidth / 3 + margin, xMax: 2 * canvasWidth / 3 - margin, yMin: canvasHeight / 2 + margin, yMax: canvasHeight - margin },
-            { xMin: 2 * canvasWidth / 3 + margin, xMax: canvasWidth - margin, yMin: canvasHeight / 2 + margin, yMax: canvasHeight - margin }
-        ];
-        const getRandom = (min: number, max: number): number => Math.random() * (max - min) + min;
+        const zoneRows = 6;
+        const zoneCols = 6;
+        const zoneWidth = (canvasWidth - 2 * margin) / zoneCols;
+        const zoneHeight = (canvasHeight - 2 * margin) / zoneRows;
+        const zones = [];
+        for (let row = 0; row < zoneRows; row++) {
+            for (let col = 0; col < zoneCols; col++) {
+                zones.push({
+                    xMin: margin + col * zoneWidth,
+                    xMax: margin + (col + 1) * zoneWidth,
+                    yMin: margin + row * zoneHeight,
+                    yMax: margin + (row + 1) * zoneHeight
+                });
+            }
+        }
         const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
-        this.shapes = [
-            this.createRectangle({
-                x: getRandom(zones[0].xMin, zones[0].xMax - 120),
-                y: getRandom(zones[0].yMin, zones[0].yMax - 100),
-                width: getRandom(100, Math.min(180, zones[0].xMax - zones[0].xMin)),
-                height: getRandom(80, Math.min(140, zones[0].yMax - zones[0].yMin)),
-                color: colors[Math.floor(getRandom(0, colors.length))],
-                strokeWidth: getRandom(2, 5),
-                type: 'rectangle' as const,
-                selected: false,
-                rotation: 0
-            }),
-            this.createRectangle({
-                x: getRandom(zones[1].xMin, zones[1].xMax - 120),
-                y: getRandom(zones[1].yMin, zones[1].yMax - 100),
-                width: getRandom(100, Math.min(180, zones[1].xMax - zones[1].xMin)),
-                height: getRandom(80, Math.min(140, zones[1].yMax - zones[1].yMin)),
-                color: colors[Math.floor(getRandom(0, colors.length))],
-                strokeWidth: getRandom(2, 5),
-                type: 'rectangle' as const,
-                selected: false,
-                rotation: 0
-            }),
-            this.createCircle({
-                x: getRandom(zones[2].xMin + 60, zones[2].xMax - 60),
-                y: getRandom(zones[2].yMin + 60, zones[2].yMax - 60),
-                radius: getRandom(40, Math.min(80, (zones[2].xMax - zones[2].xMin) / 2, (zones[2].yMax - zones[2].yMin) / 2)),
-                color: colors[Math.floor(getRandom(0, colors.length))],
-                strokeWidth: getRandom(2, 5),
-                type: 'circle' as const,
-                selected: false
-            }),
-            this.createCircle({
-                x: getRandom(zones[3].xMin + 60, zones[3].xMax - 60),
-                y: getRandom(zones[3].yMin + 60, zones[3].yMax - 60),
-                radius: getRandom(40, Math.min(80, (zones[3].xMax - zones[3].xMin) / 2, (zones[3].yMax - zones[3].yMin) / 2)),
-                color: colors[Math.floor(getRandom(0, colors.length))],
-                strokeWidth: getRandom(2, 5),
-                type: 'circle' as const,
-                selected: false
-            }),
-            (() => {
-                // Line with random angle in zone 4
-                const zone = zones[4];
+        // Create 100 shapes distributed across 6 zones
+        this.shapes = [];
+        for (let i = 0; i < 100; i++) {
+            const zone = zones[i % zones.length];
+            const typeRand = Math.random();
+            let newShape: Shape;
+            if (typeRand < 0.25) {
+                // Rectangle
+                newShape = this.createRectangle({
+                    x: this.getRandom(zone.xMin, zone.xMax - 120),
+                    y: this.getRandom(zone.yMin, zone.yMax - 100),
+                    width: this.getRandom(100, Math.min(180, zone.xMax - zone.xMin)),
+                    height: this.getRandom(80, Math.min(140, zone.yMax - zone.yMin)),
+                    color: colors[Math.floor(this.getRandom(0, colors.length))],
+                    strokeWidth: this.getRandom(3, 6),
+                    type: 'rectangle' as const,
+                    selected: false,
+                    rotation: 0
+                });
+            } else if (typeRand < 0.5) {
+                // Circle
+                newShape = this.createCircle({
+                    x: this.getRandom(zone.xMin + 60, zone.xMax - 60),
+                    y: this.getRandom(zone.yMin + 60, zone.yMax - 60),
+                    radius: this.getRandom(40, Math.min(80, (zone.xMax - zone.xMin) / 2, (zone.yMax - zone.yMin) / 2)),
+                    color: colors[Math.floor(this.getRandom(0, colors.length))],
+                    strokeWidth: this.getRandom(3, 6),
+                    type: 'circle' as const,
+                    selected: false
+                });
+            } else if (typeRand < 0.75) {
+                // Line
                 const cx = (zone.xMin + zone.xMax) / 2;
                 const cy = (zone.yMin + zone.yMax) / 2;
-                const length = getRandom(80, Math.min(zone.xMax - zone.xMin, zone.yMax - zone.yMin) - 20);
-                const angle = getRandom(0, Math.PI * 2);
+                const length = this.getRandom(80, Math.min(zone.xMax - zone.xMin, zone.yMax - zone.yMin) - 20);
+                const angle = this.getRandom(0, Math.PI * 2);
                 const x1 = cx - Math.cos(angle) * length / 2;
                 const y1 = cy - Math.sin(angle) * length / 2;
                 const x2 = cx + Math.cos(angle) * length / 2;
                 const y2 = cy + Math.sin(angle) * length / 2;
-                return this.createLine({ x1, y1, x2, y2, color: colors[Math.floor(getRandom(0, colors.length))], strokeWidth: getRandom(2, 5), type: 'line' as const, selected: false });
-            })(),
-            (() => {
-                // Line with random angle in zone 5
-                const zone = zones[5];
-                const cx = (zone.xMin + zone.xMax) / 2;
-                const cy = (zone.yMin + zone.yMax) / 2;
-                const length = getRandom(80, Math.min(zone.xMax - zone.xMin, zone.yMax - zone.yMin) - 20);
-                const angle = getRandom(0, Math.PI * 2);
-                const x1 = cx - Math.cos(angle) * length / 2;
-                const y1 = cy - Math.sin(angle) * length / 2;
-                const x2 = cx + Math.cos(angle) * length / 2;
-                const y2 = cy + Math.sin(angle) * length / 2;
-                return this.createLine({ x1, y1, x2, y2, color: colors[Math.floor(getRandom(0, colors.length))], strokeWidth: getRandom(2, 5), type: 'line' as const, selected: false });
-            })()
-        ];
+                newShape = this.createLine({
+                    x1, y1, x2, y2,
+                    color: colors[Math.floor(this.getRandom(0, colors.length))],
+                    strokeWidth: this.getRandom(3, 6),
+                    type: 'line' as const,
+                    selected: false
+                });
+            } else {
+                // Pencil
+                const numPoints = Math.floor(this.getRandom(5, 20));
+                const points = [];
+                // Start at a random point in the zone
+                let px = this.getRandom(zone.xMin + 10, zone.xMax - 10);
+                let py = this.getRandom(zone.yMin + 10, zone.yMax - 10);
+                points.push({ x: px, y: py });
+                for (let p = 1; p < numPoints; p++) {
+                    // Small random walk
+                    px += this.getRandom(-20, 20);
+                    py += this.getRandom(-20, 20);
+                    // Clamp to zone
+                    px = Math.max(zone.xMin + 5, Math.min(zone.xMax - 5, px));
+                    py = Math.max(zone.yMin + 5, Math.min(zone.yMax - 5, py));
+                    points.push({ x: px, y: py });
+                }
+                newShape = {
+                    type: 'pencil',
+                    color: colors[Math.floor(this.getRandom(0, colors.length))],
+                    strokeWidth: this.getRandom(3, 6),
+                    selected: false,
+                    points
+                };
+            }
+            this.shapes.push(newShape);
+        }
         window.addEventListener('resize', () => this.resizeCanvasToWrapper());
-        this.drawShapes();
-    }
-
-    
-    addRectangle(): void {
-        this.shapes.push(this.createRectangle());
-        this.drawShapes();
-    }
-
-    
-    addCircle(): void {
-        this.shapes.push(this.createCircle());
-        this.drawShapes();
-    }
-
-    
-    addLine(): void {
-        this.shapes.push(this.createLine());
         this.drawShapes();
     }
 
@@ -131,24 +124,23 @@ export class CanvasEditor {
     }
 
     
-    addRandomShape(): void {
-        const types: Array<'rectangle' | 'circle' | 'line'> = ['rectangle', 'circle', 'line'];
-        const type = types[Math.floor(Math.random() * types.length)];
-        let newShape: Shape;
-        if (type === 'rectangle') {
-            newShape = this.createRectangle();
-        } else if (type === 'circle') {
-            newShape = this.createCircle();
-        } else {
-            newShape = this.createLine();
-        }
-        this.shapes.push(newShape);
-        this.drawShapes();
-    }
-
-    
     setTool(toolName: ToolType): void {
         this.currentTool = toolName;
+    }
+
+    /**
+     * Deletes the currently selected shape (if any) from the shapes array and redraws the canvas.
+     */
+    public deleteSelectedShape(): void {
+        const selected = this.interaction.selectedShape;
+
+        if (selected) {
+            this.shapes = this.shapes.filter(s => s !== selected);
+            this.interaction.selectedShape = null;
+            this.shapes.forEach(s => s.selected = false); // Deselect all
+            this.drawShapes();
+            this.autoSave?.();
+        }
     }
 
     // === Private methods ===
@@ -284,18 +276,7 @@ export class CanvasEditor {
             );
             ctx.fillStyle = borderColor;
             // 8 handles: 4 corner and 4 side
-            const handles = [
-                {x: bounds.x - offset, y: bounds.y - offset, type: 'nw'},
-                {x: bounds.x + bounds.width + offset, y: bounds.y - offset, type: 'ne'},
-                {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height + offset, type: 'se'},
-                {x: bounds.x - offset, y: bounds.y + bounds.height + offset, type: 'sw'},
-                {x: bounds.x + bounds.width/2, y: bounds.y - offset, type: 'n'},
-                {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height/2, type: 'e'},
-                {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height + offset, type: 's'},
-                {x: bounds.x - offset, y: bounds.y + bounds.height/2, type: 'w'}
-            ];
-
-            handles.forEach((h) => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
+            this.getBoundingBoxHandles(bounds, offset).forEach((h) => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
         }
 
         ctx.restore();
@@ -459,17 +440,7 @@ export class CanvasEditor {
                 const bounds = this.getShapeBounds(shape);
                 if (!bounds) return null;
                 const offset = 5;
-                const handles = [
-                    {x: bounds.x - offset, y: bounds.y - offset, type: 'nw'},
-                    {x: bounds.x + bounds.width + offset, y: bounds.y - offset, type: 'ne'},
-                    {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height + offset, type: 'se'},
-                    {x: bounds.x - offset, y: bounds.y + bounds.height + offset, type: 'sw'},
-                    {x: bounds.x + bounds.width/2, y: bounds.y - offset, type: 'n'},
-                    {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height/2, type: 'e'},
-                    {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height + offset, type: 's'},
-                    {x: bounds.x - offset, y: bounds.y + bounds.height/2, type: 'w'}
-                ];
-                return handles.find(h => Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) ?? null;
+                return this.getBoundingBoxHandles(bounds, offset).find(h => Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) ?? null;
             }
         }
     }
@@ -954,8 +925,9 @@ export class CanvasEditor {
         } else if (["isDrawingRectangle", "isDrawingCircle", "isDrawingLine"].some(key => this.interaction[key])) {
             this.interaction = { ...this.interaction, isDrawingRectangle: false, isDrawingCircle: false, isDrawingLine: false, drawingShape: null, startPoint: null };
         } else {
-            this.interaction = { isDragging: false, isResizing: false, selectedShape: null, dragOffset: { x: 0, y: 0 }, resizeHandle: null };
+            this.interaction = { ...this.interaction, isDragging: false, isResizing: false, dragOffset: { x: 0, y: 0 }, resizeHandle: null };
         }
+        
         this.autoSave();
     }
 
@@ -984,7 +956,7 @@ export class CanvasEditor {
 
     
     private getRandomStrokeWidth(): number {
-        return Math.random() * 3 + 2;
+        return this.getRandom(3, 6);
     }
 
     // === Static fields ===
@@ -1137,6 +1109,22 @@ export class CanvasEditor {
         ];
     }
 
+    /**
+     * Returns the 8 bounding box handles for a given bounds and offset.
+     */
+    private getBoundingBoxHandles(bounds: { x: number; y: number; width: number; height: number }, offset: number = 5): Array<{ x: number; y: number; type: string }> {
+        return [
+            {x: bounds.x - offset, y: bounds.y - offset, type: 'nw'},
+            {x: bounds.x + bounds.width + offset, y: bounds.y - offset, type: 'ne'},
+            {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height + offset, type: 'se'},
+            {x: bounds.x - offset, y: bounds.y + bounds.height + offset, type: 'sw'},
+            {x: bounds.x + bounds.width/2, y: bounds.y - offset, type: 'n'},
+            {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height/2, type: 'e'},
+            {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height + offset, type: 's'},
+            {x: bounds.x - offset, y: bounds.y + bounds.height/2, type: 'w'}
+        ];
+    }
+
     // --- Helper methods for shapes ---
     
     private getRectangleCenter(shape: RectangleShape): { x: number; y: number } {
@@ -1165,5 +1153,9 @@ export class CanvasEditor {
             this.canvas.height = rect.height;
             this.drawShapes();
         }
+    }
+
+    private getRandom(min: number, max: number): number {
+        return Math.random() * (max - min) + min;
     }
 } 
