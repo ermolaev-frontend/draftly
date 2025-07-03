@@ -67,13 +67,13 @@ wss.on('connection', (ws) => {
       if (data.type === 'add_shape') {
         shapes.push(data.shape);
         // Broadcast new shape to all clients
-        broadcast({ type: 'add_shape', shape: data.shape });
+        broadcast({ type: 'add_shape', shape: data.shape }, ws);
       } else if (data.type === 'set_shapes') {
         shapes = data.shapes;
-        broadcast({ type: 'set_shapes', shapes });
+        broadcast({ type: 'set_shapes', shapes }, ws);
       } else if (data.type === 'clear_shapes') {
         shapes = [];
-        broadcast({ type: 'clear_shapes' });
+        broadcast({ type: 'clear_shapes' }, ws);
       }
     } catch (e) {
       console.error('Invalid message', e);
@@ -85,11 +85,11 @@ wss.on('connection', (ws) => {
   });
 });
 
-function broadcast(data) {
+function broadcast(data, ws) {
   const msg = JSON.stringify(data);
   wss.clients.forEach((client) => {
     // 1 === WebSocket.OPEN
-    if (client.readyState === 1) {
+    if (client.readyState === 1 && client !== ws) {
       client.send(msg);
     }
   });

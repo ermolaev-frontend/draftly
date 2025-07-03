@@ -51,7 +51,9 @@ function useShapeSync(editorRef: React.RefObject<any>) {
         isRemoteUpdate.current = false;
       }
     };
+
     window.addEventListener('mouseup', sendShapes);
+    
     return () => {
       window.removeEventListener('mouseup', sendShapes);
     };

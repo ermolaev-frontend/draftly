@@ -109,6 +109,7 @@ export class CanvasEditor {
 
     
     addRectangle(): void {
+        console.log('addRectangle');
         this.shapes.push(this.createRectangle());
         this.drawShapes();
     }
@@ -632,14 +633,7 @@ export class CanvasEditor {
         const mouse = this.getMousePos(e);
         if (this.currentTool === 'pencil') {
             // Start a new line
-            const newShape: PencilShape = {
-                id: this.generateId(),
-                type: 'pencil',
-                color: this.getRandomColor(),
-                strokeWidth: this.getRandomStrokeWidth(),
-                selected: false,
-                points: [mouse]
-            };
+            const newShape = this.createPencil({ points: [mouse] });
             this.shapes.push(newShape);
             this.interaction = {
                 ...this.interaction,
@@ -1104,6 +1098,7 @@ export class CanvasEditor {
             height: typeof options.height === 'number' ? options.height : (Math.random() * 60 + 40),
             rotation: options.rotation ?? 0
         };
+
         return shape;
     }
 
