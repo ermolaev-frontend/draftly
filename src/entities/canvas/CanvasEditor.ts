@@ -36,8 +36,10 @@ export class CanvasEditor {
             resizeHandle: null
         };
         this.currentTool = 'select'; // New tool: select, pencil, ...
+        this.requestDraw();
+        // ВАЖНО: выставить размеры canvas по wrapper'у
         this.resizeCanvasToWrapper();
-        // Now canvas.width and height are actual!
+        // Теперь canvas.width и height актуальны!
         const canvasWidth = this.canvas.width;
         const canvasHeight = this.canvas.height;
         const margin = 40; // inner margin for shapes
@@ -124,7 +126,6 @@ export class CanvasEditor {
             }
             this.shapes.push(newShape);
         }
-        window.addEventListener('resize', () => this.resizeCanvasToWrapper());
         this.requestDraw();
     }
 
@@ -1049,7 +1050,7 @@ export class CanvasEditor {
     }
     
     
-    private resizeCanvasToWrapper() {
+    public resizeCanvasToWrapper() {
         const wrapper = this.canvas.parentElement;
         if (wrapper) {
             const rect = wrapper.getBoundingClientRect();

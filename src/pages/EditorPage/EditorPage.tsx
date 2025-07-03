@@ -3,10 +3,24 @@ import { CanvasEditorWrapper } from 'entities/canvas/CanvasEditorWrapper';
 import styles from './EditorPage.module.scss';
 import { Toolbar } from 'widgets/Toolbar/Toolbar';
 import type { ToolType } from 'shared/types/canvas';
+import { CanvasEditor } from 'entities/canvas/CanvasEditor';
 
 export const EditorPage: React.FC = () => {
   const [activeTool, setActiveTool] = useState<ToolType>('select');
-  const editorRef = useRef<import('entities/canvas/CanvasEditor').CanvasEditor | null>(null);
+  const editorRef = useRef<CanvasEditor | null>(null);
+
+  useEffect(() => {
+    function handleResize() {
+      editorRef.current?.resizeCanvasToWrapper();
+    }
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   // Handler to set tool
   const handleTool = useCallback((tool: ToolType) => {
