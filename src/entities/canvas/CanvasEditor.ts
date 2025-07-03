@@ -1,4 +1,5 @@
 import type { ToolType, RectangleShape, CircleShape, LineShape, PencilShape, Shape, InteractionState } from 'shared/types/canvas';
+import { catmullRom2bezier, simplifyDouglasPeucker } from './canvasUtils';
 
 export class CanvasEditor {
     private canvas: HTMLCanvasElement;
@@ -42,7 +43,7 @@ export class CanvasEditor {
         const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
         // Create 100 shapes distributed across 6 zones
         this.shapes = [];
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 1000; i++) {
             const zone = zones[i % zones.length];
             const typeRand = Math.random();
             let newShape: Shape;
@@ -192,8 +193,8 @@ export class CanvasEditor {
             }
             case 'pencil': {
                 if (shape.points && shape.points.length > 1) {
-                    const simplified = this.simplifyDouglasPeucker(shape.points, 1.5);
-                    const beziers = this.catmullRom2bezier(simplified);
+                    const simplified = simplifyDouglasPeucker(shape.points, 1.5);
+                    const beziers = catmullRom2bezier(simplified);
                     if (beziers.length > 0) {
                         ctx.moveTo(beziers[0].start.x, beziers[0].start.y);
                         for (const seg of beziers) {
@@ -1000,153 +1001,6 @@ export class CanvasEditor {
         ['radius', 'ew-resize']
     ]);
 
-    // --- Catmull-Rom Spline to Bezier for smoothing pencil lines ---
-    
-    private catmullRom2bezier(points: { x: number; y: number }[]): Array<{ start: { x: number; y: number }; cp1: { x: number; y: number }; cp2: { x: number; y: number }; end: { x: number; y: number } }> {
-        if (points.length < 2) return [];
-        const beziers = [];
-        for (let i = 0; i < points.length - 1; i++) {
-            const p0 = points[i - 1] || points[i];
-            const p1 = points[i];
-            const p2 = points[i + 1] || points[i];
-            const p3 = points[i + 2] || p2;
-            // Catmull-Rom to Bezier conversion
-            const cp1 = {
-                x: p1.x + (p2.x - p0.x) / 6,
-                y: p1.y + (p2.y - p0.y) / 6
-            };
-            const cp2 = {
-                x: p2.x - (p3.x - p1.x) / 6,
-                y: p2.y - (p3.y - p1.y) / 6
-            };
-            beziers.push({
-                start: { x: p1.x, y: p1.y },
-                cp1,
-                cp2,
-                end: { x: p2.x, y: p2.y }
-            });
-        }
-        return beziers;
-    }
-
-    // --- Douglas-Peucker simplification for points ---
-    
-    private simplifyDouglasPeucker(points: { x: number; y: number }[], epsilon: number): { x: number; y: number }[] {
-        if (points.length < 3) return points;
-        const dmax = { dist: 0, idx: 0 };
-        const sq = (a: { x: number; y: number }, b: { x: number; y: number }) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
-        function getPerpendicularDistance(pt: { x: number; y: number }, lineStart: { x: number; y: number }, lineEnd: { x: number; y: number }): number {
-            const dx = lineEnd.x - lineStart.x;
-            const dy = lineEnd.y - lineStart.y;
-            if (dx === 0 && dy === 0) return Math.sqrt(sq(pt, lineStart));
-            const t = ((pt.x - lineStart.x) * dx + (pt.y - lineStart.y) * dy) / (dx * dx + dy * dy);
-            const proj = { x: lineStart.x + t * dx, y: lineStart.y + t * dy };
-            return Math.sqrt(sq(pt, proj));
-        }
-        for (let i = 1; i < points.length - 1; i++) {
-            const d = getPerpendicularDistance(points[i], points[0], points[points.length - 1]);
-            if (d > dmax.dist) {
-                dmax.dist = d;
-                dmax.idx = i;
-            }
-        }
-        if (dmax.dist > epsilon) {
-            const rec1 = this.simplifyDouglasPeucker(points.slice(0, dmax.idx + 1), epsilon);
-            const rec2 = this.simplifyDouglasPeucker(points.slice(dmax.idx), epsilon);
-            return rec1.slice(0, -1).concat(rec2);
-        } else {
-            return [points[0], points[points.length - 1]];
-        }
-    }
-
-    
-    private createRectangle(options: Partial<RectangleShape> = {}): RectangleShape {
-        return {
-            type: 'rectangle' as const,
-            color: this.getRandomColor(),
-            strokeWidth: this.getRandomStrokeWidth(),
-            x: typeof options.x === 'number' ? options.x : (Math.random() * 600 + 50),
-            y: typeof options.y === 'number' ? options.y : (Math.random() * 400 + 50),
-            width: typeof options.width === 'number' ? options.width : (Math.random() * 150 + 100),
-            height: typeof options.height === 'number' ? options.height : (Math.random() * 100 + 80),
-            rotation: typeof options.rotation === 'number' ? options.rotation : 0
-        };
-    }
-
-    
-    private createCircle(options: Partial<CircleShape> = {}): CircleShape {
-        return {
-            type: 'circle' as const,
-            color: this.getRandomColor(),
-            strokeWidth: this.getRandomStrokeWidth(),
-            x: typeof options.x === 'number' ? options.x : (Math.random() * 600 + 100),
-            y: typeof options.y === 'number' ? options.y : (Math.random() * 400 + 100),
-            radius: typeof options.radius === 'number' ? options.radius : (Math.random() * 60 + 40)
-        };
-    }
-
-    
-    private createLine(options: Partial<LineShape> & { angle?: number; length?: number } = {}): LineShape {
-        const x1 = typeof options.x1 === 'number' ? options.x1 : (Math.random() * 600 + 100);
-        const y1 = typeof options.y1 === 'number' ? options.y1 : (Math.random() * 400 + 100);
-        const angle = typeof options.angle === 'number' ? options.angle : (Math.random() * Math.PI * 2);
-        const length = typeof options.length === 'number' ? options.length : (Math.random() * 120 + 60);
-        const x2 = typeof options.x2 === 'number' ? options.x2 : (x1 + Math.cos(angle) * length);
-        const y2 = typeof options.y2 === 'number' ? options.y2 : (y1 + Math.sin(angle) * length);
-        return {
-            type: 'line' as const,
-            color: this.getRandomColor(),
-            strokeWidth: this.getRandomStrokeWidth(),
-            x1, y1, x2, y2
-        };
-    }
-
-    
-    private getRectangleHandles(shape: RectangleShape, offset: number = 5): Array<{ x: number; y: number; type: string }> {
-        const w = shape.width, h = shape.height;
-        return [
-            {x: -w/2 - offset, y: -h/2 - offset, type: 'nw'},
-            {x: +w/2 + offset, y: -h/2 - offset, type: 'ne'},
-            {x: +w/2 + offset, y: +h/2 + offset, type: 'se'},
-            {x: -w/2 - offset, y: +h/2 + offset, type: 'sw'},
-            {x: 0, y: -h/2 - offset, type: 'n'},
-            {x: +w/2 + offset, y: 0, type: 'e'},
-            {x: 0, y: +h/2 + offset, type: 's'},
-            {x: -w/2 - offset, y: 0, type: 'w'},
-            {x: 0, y: -h/2 - offset - 30, type: 'rotate'}
-        ];
-    }
-
-    
-    private getPencilHandles(bounds: { x: number; y: number; width: number; height: number }): Array<{ x: number; y: number; type: string }> {
-        return [
-            {x: bounds.x, y: bounds.y, type: 'nw'},
-            {x: bounds.x + bounds.width, y: bounds.y, type: 'ne'},
-            {x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se'},
-            {x: bounds.x, y: bounds.y + bounds.height, type: 'sw'},
-            {x: bounds.x + bounds.width/2, y: bounds.y, type: 'n'},
-            {x: bounds.x + bounds.width, y: bounds.y + bounds.height/2, type: 'e'},
-            {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height, type: 's'},
-            {x: bounds.x, y: bounds.y + bounds.height/2, type: 'w'}
-        ];
-    }
-
-    /**
-     * Returns the 8 bounding box handles for a given bounds and offset.
-     */
-    private getBoundingBoxHandles(bounds: { x: number; y: number; width: number; height: number }, offset: number = 5): Array<{ x: number; y: number; type: string }> {
-        return [
-            {x: bounds.x - offset, y: bounds.y - offset, type: 'nw'},
-            {x: bounds.x + bounds.width + offset, y: bounds.y - offset, type: 'ne'},
-            {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height + offset, type: 'se'},
-            {x: bounds.x - offset, y: bounds.y + bounds.height + offset, type: 'sw'},
-            {x: bounds.x + bounds.width/2, y: bounds.y - offset, type: 'n'},
-            {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height/2, type: 'e'},
-            {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height + offset, type: 's'},
-            {x: bounds.x - offset, y: bounds.y + bounds.height/2, type: 'w'}
-        ];
-    }
-
     // --- Helper methods for shapes ---
     
     private getRectangleCenter(shape: RectangleShape): { x: number; y: number } {
@@ -1179,5 +1033,87 @@ export class CanvasEditor {
 
     private getRandom(min: number, max: number): number {
         return Math.random() * (max - min) + min;
+    }
+
+    // --- Helper methods for handles ---
+    private getRectangleHandles(shape: RectangleShape, offset: number = 5): Array<{ x: number; y: number; type: string }> {
+        const w = shape.width, h = shape.height;
+        return [
+            {x: -w/2 - offset, y: -h/2 - offset, type: 'nw'},
+            {x: +w/2 + offset, y: -h/2 - offset, type: 'ne'},
+            {x: +w/2 + offset, y: +h/2 + offset, type: 'se'},
+            {x: -w/2 - offset, y: +h/2 + offset, type: 'sw'},
+            {x: 0, y: -h/2 - offset, type: 'n'},
+            {x: +w/2 + offset, y: 0, type: 'e'},
+            {x: 0, y: +h/2 + offset, type: 's'},
+            {x: -w/2 - offset, y: 0, type: 'w'},
+            {x: 0, y: -h/2 - offset - 30, type: 'rotate'}
+        ];
+    }
+
+    private getPencilHandles(bounds: { x: number; y: number; width: number; height: number }): Array<{ x: number; y: number; type: string }> {
+        return [
+            {x: bounds.x, y: bounds.y, type: 'nw'},
+            {x: bounds.x + bounds.width, y: bounds.y, type: 'ne'},
+            {x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se'},
+            {x: bounds.x, y: bounds.y + bounds.height, type: 'sw'},
+            {x: bounds.x + bounds.width/2, y: bounds.y, type: 'n'},
+            {x: bounds.x + bounds.width, y: bounds.y + bounds.height/2, type: 'e'},
+            {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height, type: 's'},
+            {x: bounds.x, y: bounds.y + bounds.height/2, type: 'w'}
+        ];
+    }
+
+    private getBoundingBoxHandles(bounds: { x: number; y: number; width: number; height: number }, offset: number = 5): Array<{ x: number; y: number; type: string }> {
+        return [
+            {x: bounds.x - offset, y: bounds.y - offset, type: 'nw'},
+            {x: bounds.x + bounds.width + offset, y: bounds.y - offset, type: 'ne'},
+            {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height + offset, type: 'se'},
+            {x: bounds.x - offset, y: bounds.y + bounds.height + offset, type: 'sw'},
+            {x: bounds.x + bounds.width/2, y: bounds.y - offset, type: 'n'},
+            {x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height/2, type: 'e'},
+            {x: bounds.x + bounds.width/2, y: bounds.y + bounds.height + offset, type: 's'},
+            {x: bounds.x - offset, y: bounds.y + bounds.height/2, type: 'w'}
+        ];
+    }
+
+    // --- Helper methods for creating shapes ---
+    private createRectangle(options: Partial<RectangleShape> = {}): RectangleShape {
+        return {
+            type: 'rectangle' as const,
+            color: this.getRandomColor(),
+            strokeWidth: this.getRandomStrokeWidth(),
+            x: typeof options.x === 'number' ? options.x : (Math.random() * 600 + 50),
+            y: typeof options.y === 'number' ? options.y : (Math.random() * 400 + 50),
+            width: typeof options.width === 'number' ? options.width : (Math.random() * 150 + 100),
+            height: typeof options.height === 'number' ? options.height : (Math.random() * 100 + 80),
+            rotation: typeof options.rotation === 'number' ? options.rotation : 0
+        };
+    }
+
+    private createCircle(options: Partial<CircleShape> = {}): CircleShape {
+        return {
+            type: 'circle' as const,
+            color: this.getRandomColor(),
+            strokeWidth: this.getRandomStrokeWidth(),
+            x: typeof options.x === 'number' ? options.x : (Math.random() * 600 + 100),
+            y: typeof options.y === 'number' ? options.y : (Math.random() * 400 + 100),
+            radius: typeof options.radius === 'number' ? options.radius : (Math.random() * 60 + 40)
+        };
+    }
+
+    private createLine(options: Partial<LineShape> & { angle?: number; length?: number } = {}): LineShape {
+        const x1 = typeof options.x1 === 'number' ? options.x1 : (Math.random() * 600 + 100);
+        const y1 = typeof options.y1 === 'number' ? options.y1 : (Math.random() * 400 + 100);
+        const angle = typeof options.angle === 'number' ? options.angle : (Math.random() * Math.PI * 2);
+        const length = typeof options.length === 'number' ? options.length : (Math.random() * 120 + 60);
+        const x2 = typeof options.x2 === 'number' ? options.x2 : (x1 + Math.cos(angle) * length);
+        const y2 = typeof options.y2 === 'number' ? options.y2 : (y1 + Math.sin(angle) * length);
+        return {
+            type: 'line' as const,
+            color: this.getRandomColor(),
+            strokeWidth: this.getRandomStrokeWidth(),
+            x1, y1, x2, y2
+        };
     }
 } 
