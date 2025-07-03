@@ -1,4 +1,4 @@
-import type { ToolType, RectangleShape, CircleShape, LineShape, PencilShape, Shape, InteractionState } from '../../shared/types/canvas';
+import type { ToolType, RectangleShape, CircleShape, LineShape, PencilShape, Shape, InteractionState } from 'shared/types/canvas';
 
 export class CanvasEditor {
     private canvas: HTMLCanvasElement;
@@ -6,6 +6,7 @@ export class CanvasEditor {
     private shapes: Shape[];
     private currentTool: ToolType;
     private interaction: InteractionState;
+    private animationFrameId: number | null = null;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -107,13 +108,22 @@ export class CanvasEditor {
             this.shapes.push(newShape);
         }
         window.addEventListener('resize', () => this.resizeCanvasToWrapper());
-        this.drawShapes();
+        this.requestDraw();
+    }
+
+    private requestDraw(): void {
+        if (this.animationFrameId !== null) return;
+
+        this.animationFrameId = requestAnimationFrame(() => {
+            this.drawShapes();
+            this.animationFrameId = null;
+        });
     }
 
     
     clearCanvas(): void {
         this.shapes = [];
-        this.drawShapes();
+        this.requestDraw();
     }
 
     
@@ -130,9 +140,24 @@ export class CanvasEditor {
         if (selected) {
             this.shapes = this.shapes.filter(s => s !== selected);
             this.interaction.selectedShape = null;
-            this.drawShapes();
+            this.requestDraw();
             this.autoSave?.();
         }
+    }
+
+    /**
+     * Deselects the currently selected shape (if any) and redraws the canvas.
+     */
+    public deselectShape(): void {
+        this.interaction = {
+            ...this.interaction,
+            selectedShape: null,
+            isDragging: false,
+            isResizing: false,
+            resizeHandle: null
+        };
+
+        this.canvas.style.cursor = 'default';
     }
 
     // === Private methods ===
@@ -277,16 +302,21 @@ export class CanvasEditor {
     
     private drawShapes(): void {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
         if (!Array.isArray(this.shapes)) return;
+
         this.shapes.forEach(shape => {
             this.drawShape(shape);
-            this.drawSelection(shape);
         });
+
+        if (this.interaction?.selectedShape) {
+            this.drawSelection(this.interaction.selectedShape);
+        }
     }
 
     
     redraw(): void {
-        this.drawShapes();
+        this.requestDraw();
     }
 
     
@@ -442,6 +472,7 @@ export class CanvasEditor {
         const shape = this.interaction.selectedShape;
         const handle = this.interaction.resizeHandle;
         if (!shape || !handle) return;
+        
         switch (shape.type) {
             case 'rectangle': {
                 if (handle.type === 'rotate') {
@@ -453,7 +484,7 @@ export class CanvasEditor {
                     } else {
                         shape.rotation = angle;
                     }
-                    this.drawShapes();
+                    this.requestDraw();
                     return;
                 }
                 if (handle.type) {
@@ -502,7 +533,7 @@ export class CanvasEditor {
                     shape.height = newHeight;
                     shape.x = newCx - newWidth/2;
                     shape.y = newCy - newHeight/2;
-                    this.drawShapes();
+                    this.requestDraw();
                     return;
                 }
                 break;
@@ -513,7 +544,7 @@ export class CanvasEditor {
                     const dy = mouse.y - shape.y;
                     const newRadius = Math.sqrt(dx * dx + dy * dy);
                     shape.radius = Math.max(20, newRadius);
-                    this.drawShapes();
+                    this.requestDraw();
                     return;
                 }
                 break;
@@ -526,7 +557,7 @@ export class CanvasEditor {
                     shape.x2 = mouse.x;
                     shape.y2 = mouse.y;
                 }
-                this.drawShapes();
+                this.requestDraw();
                 return;
             }
             case 'pencil': {
@@ -579,7 +610,7 @@ export class CanvasEditor {
                             y: newY + relY * newH
                         };
                     });
-                    this.drawShapes();
+                    this.requestDraw();
                     return;
                 }
                 break;
@@ -587,7 +618,7 @@ export class CanvasEditor {
             default:
                 break;
         }
-        this.drawShapes();
+        this.requestDraw();
     }
 
     public onMouseDown(e: MouseEvent | { offsetX: number; offsetY: number }): void {
@@ -611,7 +642,7 @@ export class CanvasEditor {
                 isDrawingPencil: true,
                 drawingShape: newShape
             };
-            this.drawShapes();
+            this.requestDraw();
             return;
         }
         // --- New code for rectangle ---
@@ -634,7 +665,7 @@ export class CanvasEditor {
                 drawingShape: newShape,
                 startPoint: { ...mouse }
             };
-            this.drawShapes();
+            this.requestDraw();
             return;
         }
         // --- New code for circle ---
@@ -656,7 +687,7 @@ export class CanvasEditor {
                 drawingShape: newShape,
                 startPoint: { ...mouse }
             };
-            this.drawShapes();
+            this.requestDraw();
             return;
         }
         // --- New code for line ---
@@ -679,7 +710,7 @@ export class CanvasEditor {
                 drawingShape: newShape,
                 startPoint: { ...mouse }
             };
-            this.drawShapes();
+            this.requestDraw();
             return;
         }
 
@@ -736,6 +767,7 @@ export class CanvasEditor {
             }
         }
 
+        let shapeSelected = false;
         for (let i = this.shapes.length - 1; i >= 0; i--) {
             if (this.isPointInShape(mouse.x, mouse.y, this.shapes[i])) {
                 const shape = this.shapes[i];
@@ -782,12 +814,16 @@ export class CanvasEditor {
                 }
 
                 this.canvas.style.cursor = 'move';
-
+                shapeSelected = true;
                 break;
             }
         }
 
-        this.drawShapes();
+        if (!shapeSelected) {
+            this.deselectShape();
+        }
+
+        this.requestDraw();
     }
 
     
@@ -801,7 +837,7 @@ export class CanvasEditor {
             if (shape && shape.points) {
                 shape.points.push(mouse);
             }
-            this.drawShapes();
+            this.requestDraw();
             this.canvas.style.cursor = 'crosshair';
             return;
         }
@@ -814,7 +850,7 @@ export class CanvasEditor {
                 shape.width = Math.abs(mouse.x - start.x);
                 shape.height = Math.abs(mouse.y - start.y);
             }
-            this.drawShapes();
+            this.requestDraw();
             this.canvas.style.cursor = 'crosshair';
             return;
         }
@@ -824,7 +860,7 @@ export class CanvasEditor {
             if (shape && start) {
                 shape.radius = Math.sqrt((mouse.x - start.x) ** 2 + (mouse.y - start.y) ** 2);
             }
-            this.drawShapes();
+            this.requestDraw();
             this.canvas.style.cursor = 'crosshair';
             return;
         }
@@ -834,7 +870,7 @@ export class CanvasEditor {
                 shape.x2 = mouse.x;
                 shape.y2 = mouse.y;
             }
-            this.drawShapes();
+            this.requestDraw();
             this.canvas.style.cursor = 'crosshair';
             return;
         }
@@ -864,7 +900,7 @@ export class CanvasEditor {
                 (shape as RectangleShape | CircleShape).x = mouse.x - this.interaction.dragOffset.x;
                 (shape as RectangleShape | CircleShape).y = mouse.y - this.interaction.dragOffset.y;
             }
-            this.drawShapes();
+            this.requestDraw();
             cursor = 'move';
         } else if (this.interaction.isResizing) {
             this.resizeShape(mouse);
@@ -1137,7 +1173,7 @@ export class CanvasEditor {
             const rect = wrapper.getBoundingClientRect();
             this.canvas.width = rect.width;
             this.canvas.height = rect.height;
-            this.drawShapes();
+            this.requestDraw();
         }
     }
 

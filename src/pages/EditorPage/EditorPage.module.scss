@@ -59,31 +59,4 @@
   background: var(--primary-hover, #0056b3);
   color: #fff;
   box-shadow: 0 2px 8px rgba(0,123,255,0.12);
-}
-
-.toolbar .btn-clear {
-  background: #e74c3c;
-  color: #fff;
-  font-weight: bold;
-  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.08);
-}
-.toolbar .btn-clear:hover, .toolbar .btn-clear:focus {
-  background: #c0392b;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(231, 76, 60, 0.18);
-}
-.toolbar .btn-clear.active, .toolbar .btn-clear:focus.active {
-  background: #fff;
-  color: #e74c3c;
-  border: 2px solid #e74c3c;
-}
-
-.toolbar .btn-restore {
-  color: #fff;
-  background: #4ecdc4;
-  border: none;
-  transition: background 0.2s;
-}
-.toolbar .btn-restore:hover, .toolbar .btn-restore:focus {
-  background: #38b2ac;
 } 
