@@ -1247,8 +1247,13 @@ export class CanvasEditor {
 
     if (wrapper) {
       const rect = wrapper.getBoundingClientRect();
-      this.canvas.width = rect.width;
-      this.canvas.height = rect.height;
+      const dpr = window.devicePixelRatio || 1;
+      this.canvas.width = rect.width * dpr;
+      this.canvas.height = rect.height * dpr;
+      this.canvas.style.width = rect.width + 'px';
+      this.canvas.style.height = rect.height + 'px';
+      this.ctx.setTransform(1, 0, 0, 1, 0, 0); // reset any existing transforms
+      this.ctx.scale(dpr, dpr);
       this.requestDraw();
     }
   }
