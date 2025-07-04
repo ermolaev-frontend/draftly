@@ -19,16 +19,6 @@ jobs:
           cache: 'pnpm'
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8.15.6
-          add-to-path: true
-
-      - name: Ensure pnpm is in PATH
-        run: pnpm --version
-
-      - name: Install pnpm manually (fallback)
-        if: failure()
         run: npm install -g pnpm@8.15.6
 
       - name: Install dependencies
