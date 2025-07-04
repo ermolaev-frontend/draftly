@@ -24,6 +24,7 @@ export class CanvasEditor {
     private currentTool: ToolType;
     private interaction: InteractionState;
     private animationFrameId: number | null = null;
+    private INITIAL_SHAPES_COUNT = 300;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -61,7 +62,7 @@ export class CanvasEditor {
         const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
         // Create 100 shapes distributed across 6 zones
         this.shapes = [];
-        for (let i = 0; i < 999; i++) {
+        for (let i = 0; i < this.INITIAL_SHAPES_COUNT; i++) {
             const zone = zones[i % zones.length];
             const typeRand = Math.random();
             let newShape: Shape;

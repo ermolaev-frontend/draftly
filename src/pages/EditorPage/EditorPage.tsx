@@ -9,6 +9,14 @@ export const EditorPage: React.FC = () => {
   const [activeTool, setActiveTool] = useState<ToolType>('select');
   const editorRef = useRef<CanvasEditor | null>(null);
 
+  // Handler to set tool
+  const handleTool = useCallback((tool: ToolType) => {
+    setActiveTool(tool);
+    if (editorRef.current) {
+      editorRef.current.setTool(tool);
+    }
+  }, [editorRef]);
+
   useEffect(() => {
     function handleResize() {
       editorRef.current?.resizeCanvasToWrapper();
@@ -21,14 +29,6 @@ export const EditorPage: React.FC = () => {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
-
-  // Handler to set tool
-  const handleTool = useCallback((tool: ToolType) => {
-    setActiveTool(tool);
-    if (editorRef.current) {
-      editorRef.current.setTool(tool);
-    }
-  }, [editorRef]);
 
   // Listen for Escape key to select the Selection tool and Delete/Backspace to delete selected shape
   useEffect(() => {
@@ -61,6 +61,7 @@ export const EditorPage: React.FC = () => {
       <Toolbar
         activeTool={activeTool}
         onToolChange={handleTool}
+        onClearCanvas={() => editorRef.current?.clearCanvas()}
       />
       <CanvasEditorWrapper ref={editorRef} />
     </div>
