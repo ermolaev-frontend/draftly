@@ -7,6 +7,8 @@ import { CanvasEditor } from 'entities/canvas/CanvasEditor';
 
 export const EditorPage: React.FC = () => {
   const [activeTool, setActiveTool] = useState<ToolType>('select');
+  const getSystemTheme = () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const [isDarkMode, setIsDarkMode] = useState(getSystemTheme());
   const editorRef = useRef<CanvasEditor | null>(null);
 
   // Handler to set tool
@@ -16,6 +18,11 @@ export const EditorPage: React.FC = () => {
       editorRef.current.setTool(tool);
     }
   }, [editorRef]);
+
+  // Toggle dark mode
+  const handleToggleDarkMode = useCallback(() => {
+    setIsDarkMode((prev) => !prev);
+  }, []);
 
   useEffect(() => {
     function handleResize() {
@@ -56,12 +63,22 @@ export const EditorPage: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    // Listen for system theme changes
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
+    mq.addEventListener('change', handleChange);
+    return () => mq.removeEventListener('change', handleChange);
+  }, []);
+
   return (
-    <div className={styles.editorPage}>
+    <div className={styles.editorPage} data-theme={isDarkMode ? 'dark' : 'light'}>
       <Toolbar
         activeTool={activeTool}
         onToolChange={handleTool}
         onClearCanvas={() => editorRef.current?.clearCanvas()}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={handleToggleDarkMode}
       />
       <CanvasEditorWrapper ref={editorRef} />
     </div>
