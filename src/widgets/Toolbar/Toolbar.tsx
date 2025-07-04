@@ -28,7 +28,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onToolChange,
   onClearCanvas,
   isDarkMode,
-  onToggleDarkMode,,,
+  onToggleDarkMode,
 }) => (
   <div className={styles.toolbar}>
     {toolButtons.map(({ tool, icon, title }) => (
