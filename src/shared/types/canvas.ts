@@ -1,5 +1,7 @@
 // Canvas/editor types for use across the app
 
+import type { Drawable } from 'roughjs/bin/core';
+
 export type ToolType = 'select' | 'pencil' | 'rectangle' | 'circle' | 'line';
 
 export interface BaseShape {
@@ -36,6 +38,9 @@ export interface LineShape extends BaseShape {
 export interface PencilShape extends BaseShape {
   type: 'pencil';
   points: { x: number; y: number }[];
+  // Allow custom properties for roughjs caching
+  _roughDrawable?: Drawable;
+  _roughDrawablePoints?: { x: number; y: number }[];
 }
 
 export type Shape = RectangleShape | CircleShape | LineShape | PencilShape;

@@ -10,8 +10,6 @@ import type {
   InteractionState,
 } from 'shared/types/canvas';
 
-import { catmullRom2bezier, simplifyDouglasPeucker } from './canvasUtils';
-
 // --- Strong types for pencil cache ---
 type Point = { x: number; y: number };
 type BezierSegment = {
@@ -299,29 +297,54 @@ export class CanvasEditor {
 
       case 'pencil': {
         if (shape.points && shape.points.length > 1) {
-          let cache = this.pencilCache.get(shape);
+          const isLiveDrawing = this.interaction.isDrawingPencil && this.interaction.drawingShape === shape;
 
-          if (!cache || cache.original !== shape.points) {
-            const simplified = simplifyDouglasPeucker(shape.points, 1.5);
-            const beziers = catmullRom2bezier(simplified);
-            cache = { original: shape.points, simplified, beziers };
-            this.pencilCache.set(shape, cache);
-          }
+          if (isLiveDrawing) {
+            // Draw a simple polyline for live preview (no rough effect)
+            ctx.beginPath();
 
-          const beziers = cache.beziers;
-                    
-          if (beziers.length > 0) {
-            ctx.moveTo(beziers[0].start.x, beziers[0].start.y);
-
-            for (const seg of beziers) {
-              ctx.bezierCurveTo(seg.cp1.x, seg.cp1.y, seg.cp2.x, seg.cp2.y, seg.end.x, seg.end.y);
+            ctx.moveTo(shape.points[0].x, shape.points[0].y);
+            
+            for (let i = 1; i < shape.points.length; i++) {
+              ctx.lineTo(shape.points[i].x, shape.points[i].y);
             }
 
+            ctx.strokeStyle = shape.color;
+            ctx.lineWidth = shape.strokeWidth * 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
             ctx.stroke();
+          } else {
+            // Cache the roughjs drawable for stability after drawing is finished
+            const pointsChanged =
+              !shape._roughDrawablePoints ||
+              shape._roughDrawablePoints.length !== shape.points.length ||
+              !shape._roughDrawablePoints.every((pt, i) => pt.x === shape.points[i].x && pt.y === shape.points[i].y);
+
+            if (!shape._roughDrawable || pointsChanged) {
+              shape._roughDrawable = this.roughCanvas.generator.linearPath(
+                shape.points.map(pt => [pt.x, pt.y]),
+                {
+                  stroke: shape.color,
+                  strokeWidth: shape.strokeWidth * 2,
+                  roughness: 0.5,
+                  bowing: 2,
+                  seed: shape.id ? this.hashStringToSeed(shape.id) : undefined,
+                },
+              );
+
+              // Store a shallow copy of the points
+              shape._roughDrawablePoints = shape.points.map(pt => ({ ...pt }));
+            }
+
+            this.roughCanvas.draw(shape._roughDrawable);
           }
         }
 
-        break;
+        ctx.restore();
+
+        return;
       }
 
       default:
