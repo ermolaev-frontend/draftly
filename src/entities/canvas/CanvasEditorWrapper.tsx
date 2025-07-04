@@ -1,5 +1,7 @@
 import { useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
+
 import type { TouchEvent, MouseEvent } from 'react';
+
 import { CanvasEditor } from './CanvasEditor';
 import styles from './CanvasEditorWrapper.module.scss';
 
@@ -11,6 +13,7 @@ export const CanvasEditorWrapper = forwardRef<CanvasEditor | null, unknown>(
     // Create CanvasEditor as soon as canvas is available
     const setCanvasRef = useCallback((node: HTMLCanvasElement | null) => {
       canvasRef.current = node;
+
       if (node && !editorRef.current) {
         editorRef.current = new CanvasEditor(node);
       }
@@ -20,6 +23,7 @@ export const CanvasEditorWrapper = forwardRef<CanvasEditor | null, unknown>(
     const handleMouseDown = (e: MouseEvent<HTMLCanvasElement>) => {
       editorRef.current?.onMouseDown(e.nativeEvent);
     };
+
     const handleMouseMove = (e: MouseEvent<HTMLCanvasElement>) => {
       editorRef.current?.onMouseMove(e.nativeEvent);
     };
@@ -38,6 +42,7 @@ export const CanvasEditorWrapper = forwardRef<CanvasEditor | null, unknown>(
       const bounding = canvasRef.current.getBoundingClientRect();
       const offsetX = touch.clientX - bounding.left;
       const offsetY = touch.clientY - bounding.top;
+
       return { offsetX, offsetY };
     };
 
@@ -63,7 +68,6 @@ export const CanvasEditorWrapper = forwardRef<CanvasEditor | null, unknown>(
 
     useImperativeHandle(ref, () => editorRef.current as CanvasEditor, []);
 
-
     return (
       <div className={styles.canvasWrapper}>
         <canvas
@@ -79,5 +83,5 @@ export const CanvasEditorWrapper = forwardRef<CanvasEditor | null, unknown>(
         />
       </div>
     );
-  }
+  },
 ); 

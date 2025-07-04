@@ -1,9 +1,11 @@
 import React, { memo } from 'react';
-import styles from './Toolbar.module.scss';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSquare as faSquareRegular, faCircle as faCircleRegular } from '@fortawesome/free-regular-svg-icons';
 import { faSlash, faArrowPointer, faPencil, faBroom, faMoon, faLightbulb } from '@fortawesome/free-solid-svg-icons';
+
 import type { ToolType } from 'shared/types/canvas';
+
+import styles from './Toolbar.module.scss';
 
 interface ToolbarProps {
   activeTool: ToolType;
@@ -16,21 +18,31 @@ interface ToolbarProps {
 const toolButtons = [
   { tool: 'rectangle', icon: faSquareRegular, title: 'Rectangle' },
   { tool: 'circle', icon: faCircleRegular, title: 'Circle' },
-  { tool: 'line', icon: faSlash, title: 'Line', iconProps: { rotation: 270 as const } },
+  { tool: 'line', icon: faSlash, title: 'Line' },
   { tool: 'select', icon: faArrowPointer, title: 'Select' },
   { tool: 'pencil', icon: faPencil, title: 'Pencil' },
 ];
 
-export const Toolbar: React.FC<ToolbarProps> = ({ activeTool, onToolChange, onClearCanvas, isDarkMode, onToggleDarkMode }) => (
+export const Toolbar: React.FC<ToolbarProps> = ({
+  activeTool,
+  onToolChange,
+  onClearCanvas,
+  isDarkMode,
+  onToggleDarkMode,
+}) => (
   <div className={styles.toolbar}>
-    {toolButtons.map(({ tool, icon, title, iconProps }) => (
+    {toolButtons.map(({ tool, icon, title }) => (
       <button
         key={tool}
-        className={activeTool === tool ? `${styles.toolbarButton} ${styles.active}` : styles.toolbarButton}
+        className={
+          activeTool === tool
+            ? `${styles.toolbarButton} ${styles.active}`
+            : styles.toolbarButton
+        }
         onClick={() => onToolChange(tool as ToolType)}
         title={title}
       >
-        <FontAwesomeIcon icon={icon} {...(iconProps || {})} />
+        <FontAwesomeIcon icon={icon} />
       </button>
     ))}
     {onClearCanvas && (

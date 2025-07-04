@@ -1,9 +1,11 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { CanvasEditorWrapper } from 'entities/canvas/CanvasEditorWrapper';
-import styles from './EditorPage.module.scss';
 import { Toolbar } from 'widgets/Toolbar/Toolbar';
-import type { ToolType } from 'shared/types/canvas';
 import { CanvasEditor } from 'entities/canvas/CanvasEditor';
+
+import type { ToolType } from 'shared/types/canvas';
+
+import styles from './EditorPage.module.scss';
 
 const getSystemTheme = () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
@@ -23,7 +25,7 @@ export const EditorPage: React.FC = () => {
 
   // Toggle dark mode
   const handleToggleDarkMode = useCallback(() => {
-    setIsDarkMode((prev) => !prev);
+    setIsDarkMode(prev => !prev);
   }, []);
 
   const handleClearCanvas = useCallback(() => {
@@ -52,10 +54,12 @@ export const EditorPage: React.FC = () => {
           editorRef.current?.setTool('select');
           editorRef.current?.deselectShape();
           editorRef.current?.redraw();
+
           return;
         case 'Delete':
         case 'Backspace':
           editorRef.current?.deleteSelectedShape?.();
+
           return;
         default:
           break;
@@ -74,6 +78,7 @@ export const EditorPage: React.FC = () => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
     mq.addEventListener('change', handleChange);
+
     return () => mq.removeEventListener('change', handleChange);
   }, []);
 
