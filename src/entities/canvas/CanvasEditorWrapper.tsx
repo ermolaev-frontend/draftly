@@ -20,7 +20,6 @@ export const CanvasEditorWrapper = forwardRef<CanvasEditor | null, unknown>(
     const handleMouseDown = (e: MouseEvent<HTMLCanvasElement>) => {
       editorRef.current?.onMouseDown(e.nativeEvent);
     };
-    
     const handleMouseMove = (e: MouseEvent<HTMLCanvasElement>) => {
       editorRef.current?.onMouseMove(e.nativeEvent);
     };
