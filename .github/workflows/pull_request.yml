@@ -19,7 +19,10 @@ jobs:
           cache: 'pnpm'
 
       - name: Install pnpm
-        run: corepack enable && corepack prepare pnpm@8.15.6 --activate
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.15.6
+          run_install: false
 
       - name: Install dependencies
         run: pnpm install
