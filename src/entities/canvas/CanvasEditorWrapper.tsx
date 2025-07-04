@@ -32,9 +32,10 @@ export const CanvasEditorWrapper = forwardRef<CanvasEditor | null, unknown>(
 
     const adaptTouchEvent = (e: TouchEvent<HTMLCanvasElement>): { offsetX: number; offsetY: number } => {
       const touch = e.touches[0] || e.changedTouches[0];
-      const bounding = canvasRef.current?.getBoundingClientRect();
-      const offsetX = bounding && touch ? touch.clientX - bounding.left : 0;
-      const offsetY = bounding && touch ? touch.clientY - bounding.top : 0;
+      if (!touch || !canvasRef.current) return { offsetX: 0, offsetY: 0 };
+      const bounding = canvasRef.current.getBoundingClientRect();
+      const offsetX = touch.clientX - bounding.left;
+      const offsetY = touch.clientY - bounding.top;
       return { offsetX, offsetY };
     };
 

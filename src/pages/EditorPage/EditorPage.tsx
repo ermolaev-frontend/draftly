@@ -5,23 +5,29 @@ import { Toolbar } from 'widgets/Toolbar/Toolbar';
 import type { ToolType } from 'shared/types/canvas';
 import { CanvasEditor } from 'entities/canvas/CanvasEditor';
 
+const getSystemTheme = () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
 export const EditorPage: React.FC = () => {
   const [activeTool, setActiveTool] = useState<ToolType>('select');
-  const getSystemTheme = () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   const [isDarkMode, setIsDarkMode] = useState(getSystemTheme());
   const editorRef = useRef<CanvasEditor | null>(null);
 
   // Handler to set tool
   const handleTool = useCallback((tool: ToolType) => {
     setActiveTool(tool);
+    
     if (editorRef.current) {
       editorRef.current.setTool(tool);
     }
-  }, [editorRef]);
+  }, []);
 
   // Toggle dark mode
   const handleToggleDarkMode = useCallback(() => {
     setIsDarkMode((prev) => !prev);
+  }, []);
+
+  const handleClearCanvas = useCallback(() => {
+    editorRef.current?.clearCanvas();
   }, []);
 
   useEffect(() => {
@@ -76,7 +82,7 @@ export const EditorPage: React.FC = () => {
       <Toolbar
         activeTool={activeTool}
         onToolChange={handleTool}
-        onClearCanvas={() => editorRef.current?.clearCanvas()}
+        onClearCanvas={handleClearCanvas}
         isDarkMode={isDarkMode}
         onToggleDarkMode={handleToggleDarkMode}
       />

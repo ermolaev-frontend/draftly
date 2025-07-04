@@ -47,7 +47,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ activeTool, onToolChange, onCl
         onClick={onToggleDarkMode}
         title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         className={styles.toolbarButton}
-        style={{ marginTop: 16 }}
+        style={{ marginTop: 48 }}
       >
         <FontAwesomeIcon icon={isDarkMode ? faLightbulb : faMoon} />
       </button>

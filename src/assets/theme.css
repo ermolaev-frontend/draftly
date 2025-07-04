@@ -10,6 +10,11 @@
   --canvas-border: 1px solid #ddd;
   --canvas-radius: 8px;
   --canvas-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  --panel-active-bg: #fff;
+  --panel-active-color: #007bff;
+  --clear-btn-bg: #e74c3c;
+  --clear-btn-hover-bg: #c0392b;
+  --clear-btn-color: #fff;
 }
 
 /* Dark theme overrides */
@@ -24,6 +29,11 @@
   --canvas-border: 1px solid #444;
   --canvas-radius: 8px;
   --canvas-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  --panel-active-bg: #23272a;
+  --panel-active-color: #4f8cff;
+  --clear-btn-bg: #b94a48;
+  --clear-btn-hover-bg: #a93226;
+  --clear-btn-color: #fff;
 }
 
 body {
