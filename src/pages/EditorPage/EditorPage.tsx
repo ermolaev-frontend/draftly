@@ -1,68 +1,95 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { CanvasEditorWrapper } from '../../entities/canvas/CanvasEditorWrapper';
+import { CanvasEditorWrapper } from 'entities/canvas/CanvasEditorWrapper';
+import { Toolbar } from 'widgets/Toolbar/Toolbar';
+import { CanvasEditor } from 'entities/canvas/CanvasEditor';
+
+import type { ToolType } from 'shared/types/canvas';
+
 import styles from './EditorPage.module.scss';
-import { Toolbar } from '../../widgets/Toolbar/Toolbar';
+
+const getSystemTheme = () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 export const EditorPage: React.FC = () => {
-  const [activeTool, setActiveTool] = useState('select');
-  const editorRef = useRef<any>(null);
+  const [activeTool, setActiveTool] = useState<ToolType>('select');
+  const [isDarkMode, setIsDarkMode] = useState(getSystemTheme());
+  const editorRef = useRef<CanvasEditor | null>(null);
 
   // Handler to set tool
-  const handleTool = useCallback((tool: string) => {
+  const handleTool = useCallback((tool: ToolType) => {
     setActiveTool(tool);
+    
     if (editorRef.current) {
       editorRef.current.setTool(tool);
     }
-  }, [editorRef]);
+  }, []);
 
-  // Handler to clear canvas
-  const handleClear = useCallback(() => {
-    if (editorRef.current) {
-      editorRef.current.clearCanvas();
+  // Toggle dark mode
+  const handleToggleDarkMode = useCallback(() => {
+    setIsDarkMode(prev => !prev);
+  }, []);
+
+  const handleClearCanvas = useCallback(() => {
+    editorRef.current?.clearCanvas();
+  }, []);
+
+  useEffect(() => {
+    function handleResize() {
+      editorRef.current?.resizeCanvasToWrapper();
     }
-  }, [editorRef]);
 
-  // Handler to restore shapes
-  const handleRestore = useCallback(() => {
-    if (editorRef.current) {
-      const data = localStorage.getItem('shapes');
-      if (data) {
-        try {
-          const shapes = JSON.parse(data);
-          editorRef.current.shapes = shapes;
-          editorRef.current.redraw();
-        } catch (e) {
-          alert('Ошибка восстановления фигур!');
-        }
-      } else {
-        alert('Нет сохранённых фигур для восстановления.');
-      }
-    }
-  }, [editorRef]);
+    window.addEventListener('resize', handleResize);
+    handleResize();
 
-  // Listen for Escape key to select the Selection tool
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  // Listen for Escape key to select the Selection tool and Delete/Backspace to delete selected shape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setActiveTool('select');
-        if (editorRef.current) {
-          editorRef.current.setTool('select');
-        }
+      switch (e.key) {
+        case 'Escape':
+          setActiveTool('select');
+          editorRef.current?.setTool('select');
+          editorRef.current?.deselectShape();
+          editorRef.current?.redraw();
+
+          return;
+        case 'Delete':
+        case 'Backspace':
+          editorRef.current?.deleteSelectedShape?.();
+
+          return;
+        default:
+          break;
       }
     };
+    
     window.addEventListener('keydown', handleKeyDown);
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
+  useEffect(() => {
+    // Listen for system theme changes
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
+    mq.addEventListener('change', handleChange);
+
+    return () => mq.removeEventListener('change', handleChange);
+  }, []);
+
   return (
-    <div className={styles.editorPage}>
+    <div className={styles.editorPage} data-theme={isDarkMode ? 'dark' : 'light'}>
       <Toolbar
         activeTool={activeTool}
         onToolChange={handleTool}
-        onClear={handleClear}
-        onRestore={handleRestore}
+        onClearCanvas={handleClearCanvas}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={handleToggleDarkMode}
       />
       <CanvasEditorWrapper ref={editorRef} />
     </div>

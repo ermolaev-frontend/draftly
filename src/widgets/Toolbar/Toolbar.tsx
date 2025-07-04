@@ -1,42 +1,69 @@
 import React, { memo } from 'react';
-import styles from '../../pages/EditorPage/EditorPage.module.scss';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSquare as faSquareRegular, faCircle as faCircleRegular } from '@fortawesome/free-regular-svg-icons';
-import { faSlash, faArrowPointer, faPencil, faRotateLeft, faBroom } from '@fortawesome/free-solid-svg-icons';
+import { faSlash, faArrowPointer, faPencil, faBroom, faMoon, faLightbulb } from '@fortawesome/free-solid-svg-icons';
+
+import type { ToolType } from 'shared/types/canvas';
+
+import styles from './Toolbar.module.scss';
 
 interface ToolbarProps {
-  activeTool: string;
-  onToolChange: (tool: string) => void;
-  onClear: () => void;
-  onRestore: () => void;
+  activeTool: ToolType;
+  onToolChange: (tool: ToolType) => void;
+  onClearCanvas?: () => void;
+  isDarkMode?: boolean;
+  onToggleDarkMode?: () => void;
 }
 
 const toolButtons = [
-  { tool: 'rectangle', icon: faSquareRegular, title: 'Прямоугольник' },
-  { tool: 'circle', icon: faCircleRegular, title: 'Круг' },
-  { tool: 'line', icon: faSlash, title: 'Линия', iconProps: { rotation: 270 as 270 } },
-  { tool: 'select', icon: faArrowPointer, title: 'Выделение' },
-  { tool: 'pencil', icon: faPencil, title: 'Карандаш' },
+  { tool: 'rectangle', icon: faSquareRegular, title: 'Rectangle' },
+  { tool: 'circle', icon: faCircleRegular, title: 'Circle' },
+  { tool: 'line', icon: faSlash, title: 'Line' },
+  { tool: 'select', icon: faArrowPointer, title: 'Select' },
+  { tool: 'pencil', icon: faPencil, title: 'Pencil' },
 ];
 
-export const Toolbar: React.FC<ToolbarProps> = ({ activeTool, onToolChange, onClear, onRestore }) => (
+export const Toolbar: React.FC<ToolbarProps> = ({
+  activeTool,
+  onToolChange,
+  onClearCanvas,
+  isDarkMode,
+  onToggleDarkMode,
+}) => (
   <div className={styles.toolbar}>
-    {toolButtons.map(({ tool, icon, title, iconProps }) => (
+    {toolButtons.map(({ tool, icon, title }) => (
       <button
         key={tool}
-        className={activeTool === tool ? styles.active : ''}
-        onClick={() => onToolChange(tool)}
+        className={
+          activeTool === tool
+            ? `${styles.toolbarButton} ${styles.active}`
+            : styles.toolbarButton
+        }
+        onClick={() => onToolChange(tool as ToolType)}
         title={title}
       >
-        <FontAwesomeIcon icon={icon} {...(iconProps || {})} />
+        <FontAwesomeIcon icon={icon} />
       </button>
     ))}
-    <button className={styles['btn-restore']} onClick={onRestore} title="Восстановить">
-      <FontAwesomeIcon icon={faRotateLeft} />
-    </button>
-    <button className={styles['btn-clear']} onClick={onClear} title="Очистить">
-      <FontAwesomeIcon icon={faBroom} />
-    </button>
+    {onClearCanvas && (
+      <button
+        onClick={onClearCanvas}
+        title="Clear Canvas"
+        className={styles.clearButton}
+      >
+        <FontAwesomeIcon icon={faBroom} />
+      </button>
+    )}
+    {onToggleDarkMode && (
+      <button
+        onClick={onToggleDarkMode}
+        title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        className={styles.toolbarButton}
+        style={{ marginTop: 48 }}
+      >
+        <FontAwesomeIcon icon={isDarkMode ? faLightbulb : faMoon} />
+      </button>
+    )}
   </div>
 );
 
