@@ -1,31 +1,34 @@
-import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 import type { TouchEvent, MouseEvent } from 'react';
 import { CanvasEditor } from './CanvasEditor';
 import styles from './CanvasEditorWrapper.module.scss';
 
 export const CanvasEditorWrapper = forwardRef<CanvasEditor | null, unknown>(
   (_, ref) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const editorRef = useRef<CanvasEditor | null>(null);
 
-    useEffect(() => {
-      if (canvasRef.current && !editorRef.current) {
-        editorRef.current = new CanvasEditor(canvasRef.current);
+    // Create CanvasEditor as soon as canvas is available
+    const setCanvasRef = useCallback((node: HTMLCanvasElement | null) => {
+      canvasRef.current = node;
+      if (node && !editorRef.current) {
+        editorRef.current = new CanvasEditor(node);
       }
     }, []);
-
-    useImperativeHandle(ref, () => editorRef.current as CanvasEditor, []);
 
     // --- Event Handlers ---
     const handleMouseDown = (e: MouseEvent<HTMLCanvasElement>) => {
       editorRef.current?.onMouseDown(e.nativeEvent);
     };
+    
     const handleMouseMove = (e: MouseEvent<HTMLCanvasElement>) => {
       editorRef.current?.onMouseMove(e.nativeEvent);
     };
+
     const handleMouseUp = () => {
       editorRef.current?.onMouseUp();
     };
+
     const handleMouseLeave = () => {
       editorRef.current?.onMouseUp();
     };
@@ -43,23 +46,29 @@ export const CanvasEditorWrapper = forwardRef<CanvasEditor | null, unknown>(
       e.preventDefault();
       editorRef.current?.onMouseDown(adaptTouchEvent(e));
     };
+
     const handleTouchMove = (e: TouchEvent<HTMLCanvasElement>) => {
       e.preventDefault();
       editorRef.current?.onMouseMove(adaptTouchEvent(e));
     };
+
     const handleTouchEnd = (e: TouchEvent<HTMLCanvasElement>) => {
       e.preventDefault();
       editorRef.current?.onMouseUp();
     };
+
     const handleTouchCancel = (e: TouchEvent<HTMLCanvasElement>) => {
       e.preventDefault();
       editorRef.current?.onMouseUp();
     };
 
+    useImperativeHandle(ref, () => editorRef.current as CanvasEditor, []);
+
+
     return (
       <div className={styles.canvasWrapper}>
         <canvas
-          ref={canvasRef}
+          ref={setCanvasRef}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
