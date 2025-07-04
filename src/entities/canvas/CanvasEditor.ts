@@ -1,3 +1,5 @@
+import rough from 'roughjs';
+
 import type {
   ToolType,
   RectangleShape,
@@ -33,11 +35,14 @@ export class CanvasEditor {
   private currentTool: ToolType;
   private interaction: InteractionState;
   private animationFrameId: number | null = null;
-  private INITIAL_SHAPES_COUNT = 300;
+  private INITIAL_SHAPES_COUNT = 100;
+  private roughCanvas: any | null = null;
+  private shapeIdCounter = 1;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
+    this.roughCanvas = rough.canvas(this.canvas);
 
     this.interaction = {
       isDragging: false,
@@ -223,24 +228,73 @@ export class CanvasEditor {
     switch (shape.type) {
       case 'rectangle': {
         const center = this.getRectangleCenter(shape);
+        const rotation = this.getRectangleRotation(shape);
         ctx.translate(center.x, center.y);
-        ctx.rotate(this.getRectangleRotation(shape));
-        ctx.strokeRect(-shape.width / 2, -shape.height / 2, shape.width, shape.height);
-        break;
+        ctx.rotate(rotation);
+
+        this.roughCanvas.rectangle(
+          -shape.width / 2,
+          -shape.height / 2,
+          shape.width,
+          shape.height,
+          {
+            stroke: shape.color,
+            strokeWidth: shape.strokeWidth,
+            fill: undefined,
+            roughness: 1.5,
+            bowing: 2,
+            seed: shape.id ? this.hashStringToSeed(shape.id) : undefined,
+          },
+        );
+
+        ctx.restore();
+
+        return;
       }
 
       case 'circle': {
+        // Use roughjs for circles
         const center = this.getCircleCenter(shape);
-        ctx.arc(center.x, center.y, shape.radius, 0, Math.PI * 2);
-        ctx.stroke();
-        break;
+
+        this.roughCanvas.ellipse(
+          center.x,
+          center.y,
+          shape.radius * 2,
+          shape.radius * 2,
+          {
+            stroke: shape.color,
+            strokeWidth: shape.strokeWidth,
+            fill: undefined,
+            roughness: 1.5,
+            bowing: 2,
+            seed: shape.id ? this.hashStringToSeed(shape.id) : undefined,
+          },
+        );
+
+        ctx.restore();
+
+        return;
       }
 
       case 'line': {
-        ctx.moveTo(shape.x1, shape.y1);
-        ctx.lineTo(shape.x2, shape.y2);
-        ctx.stroke();
-        break;
+        // Use roughjs for lines
+        this.roughCanvas.line(
+          shape.x1,
+          shape.y1,
+          shape.x2,
+          shape.y2,
+          {
+            stroke: shape.color,
+            strokeWidth: shape.strokeWidth,
+            roughness: 1.5,
+            bowing: 2,
+            seed: shape.id ? this.hashStringToSeed(shape.id) : undefined,
+          },
+        );
+
+        ctx.restore();
+
+        return;
       }
 
       case 'pencil': {
@@ -1324,6 +1378,7 @@ export class CanvasEditor {
       width: typeof options.width === 'number' ? options.width : (Math.random() * 150 + 100),
       height: typeof options.height === 'number' ? options.height : (Math.random() * 100 + 80),
       rotation: typeof options.rotation === 'number' ? options.rotation : 0,
+      id: `shape-${this.shapeIdCounter++}`,
     };
   }
 
@@ -1335,6 +1390,7 @@ export class CanvasEditor {
       x: typeof options.x === 'number' ? options.x : (Math.random() * 600 + 100),
       y: typeof options.y === 'number' ? options.y : (Math.random() * 400 + 100),
       radius: typeof options.radius === 'number' ? options.radius : (Math.random() * 60 + 40),
+      id: `shape-${this.shapeIdCounter++}`,
     };
   }
 
@@ -1351,6 +1407,19 @@ export class CanvasEditor {
       color: this.getRandomColor(),
       strokeWidth: this.getRandomStrokeWidth(),
       x1, y1, x2, y2,
+      id: `shape-${this.shapeIdCounter++}`,
     };
+  }
+
+  // Add a helper to convert string id to a numeric seed
+  private hashStringToSeed(str: string): number {
+    let hash = 0;
+    
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0; // Convert to 32bit integer
+    }
+
+    return Math.abs(hash);
   }
 } 

@@ -17,6 +17,7 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "roughjs": "^4.6.6",
     "sass": "^1.89.2"
   },
   "devDependencies": {
