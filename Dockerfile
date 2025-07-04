@@ -4,6 +4,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN npm install -g pnpm && pnpm install
 COPY . .
+RUN pnpm test
 RUN pnpm run build
 
 # Stage 2: Serve with Caddy
