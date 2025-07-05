@@ -10,23 +10,8 @@ import type {
   InteractionState,
 } from 'shared/types/canvas';
 
-// --- Strong types for pencil cache ---
-type Point = { x: number; y: number };
-type BezierSegment = {
-  start: Point;
-  cp1: Point;
-  cp2: Point;
-  end: Point;
-};
-type PencilCache = {
-  original: Point[];
-  simplified: Point[];
-  beziers: BezierSegment[];
-};
-
 export class CanvasEditor {
   // WeakMap for caching pencil shape simplification and bezier conversion
-  private pencilCache = new WeakMap<PencilShape, PencilCache>();
   private canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
   private shapes: Shape[];
@@ -297,6 +282,7 @@ export class CanvasEditor {
 
       case 'pencil': {
         if (shape.points && shape.points.length > 1) {
+          //const foo = false;
           const isLiveDrawing = this.interaction.isDrawingPencil && this.interaction.drawingShape === shape;
 
           if (isLiveDrawing) {
@@ -838,7 +824,6 @@ export class CanvasEditor {
             };
           });
 
-          this.pencilCache.delete(shape);
           this.requestDraw();
 
           return;
@@ -1103,7 +1088,6 @@ export class CanvasEditor {
 
       if (shape && shape.points) {
         shape.points.push(mouse);
-        this.pencilCache.delete(shape);
       }
 
       this.requestDraw();
@@ -1180,8 +1164,6 @@ export class CanvasEditor {
             x: pt.x + dx,
             y: pt.y + dy,
           }));
-
-          this.pencilCache.delete(shape);
         }
       } else if (shape && ('x' in shape) && ('y' in shape)) {
         (shape as RectangleShape | CircleShape).x = mouse.x - this.interaction.dragOffset.x;
