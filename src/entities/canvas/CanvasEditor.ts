@@ -8,10 +8,35 @@ import type {
   PencilShape,
   Shape,
   InteractionState,
+  Point,
 } from 'shared/types/canvas';
 
+export interface Interaction {
+  isDragging: boolean;
+  isResizing: boolean;
+  selectedShape: Shape | null;
+  dragOffset: Point;
+  resizeHandle: { type: string } | null;
+  isDrawingPencil?: boolean;
+  isDrawingRectangle?: boolean;
+  isDrawingCircle?: boolean;
+  isDrawingLine?: boolean;
+  drawingShape?: Shape | null;
+  startPoint?: Point | null;
+  initialAngle?: number | null;
+  startRotation?: number | null;
+  pencilResize?: {
+    initialPoints: Point[];
+    initialBounds: { x: number; y: number; width: number; height: number };
+  } | null;
+  initialRadius?: number | null;
+  initialDistance?: number | null;
+  initialPoints?: Point[];
+  lineCenter?: Point;
+  [key: string]: any;
+}
+
 export class CanvasEditor {
-  // WeakMap for caching pencil shape simplification and bezier conversion
   private canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
   private shapes: Shape[];
@@ -61,7 +86,7 @@ export class CanvasEditor {
     }
 
     const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
-    // Create 100 shapes distributed across 6 zones
+    // Create INITIAL_SHAPES_COUNT shapes distributed across 6 zones
     this.shapes = [];
 
     for (let i = 0; i < this.INITIAL_SHAPES_COUNT; i++) {
@@ -462,7 +487,7 @@ export class CanvasEditor {
     this.requestDraw();
   }
     
-  private getMousePos(e: MouseEvent | { offsetX: number; offsetY: number }): { x: number; y: number } {
+  private getMousePos(e: MouseEvent | { offsetX: number; offsetY: number }): Point {
     if ('offsetX' in e && 'offsetY' in e) {
       return { x: e.offsetX, y: e.offsetY };
     }
@@ -653,7 +678,7 @@ export class CanvasEditor {
     }
   }
     
-  private resizeShape(mouse: { x: number; y: number }): void {
+  private resizeShape(mouse: Point): void {
     const shape = this.interaction.selectedShape;
     const handle = this.interaction.resizeHandle;
     if (!shape || !handle) return;
@@ -814,7 +839,7 @@ export class CanvasEditor {
           newW = Math.max(10, newW);
           newH = Math.max(10, newH);
 
-          shape.points = initialPoints.map((pt: { x: number; y: number }) => {
+          shape.points = initialPoints.map((pt: Point) => {
             const relX = (pt.x - initialBounds.x) / initialBounds.width;
             const relY = (pt.y - initialBounds.y) / initialBounds.height;
 
@@ -1286,7 +1311,7 @@ export class CanvasEditor {
 
   // --- Helper methods for shapes ---
     
-  private getRectangleCenter(shape: RectangleShape): { x: number; y: number } {
+  private getRectangleCenter(shape: RectangleShape): Point {
     return {
       x: shape.x + shape.width / 2,
       y: shape.y + shape.height / 2,
@@ -1297,7 +1322,7 @@ export class CanvasEditor {
     return shape.rotation ?? 0;
   }
     
-  private getCircleCenter(shape: CircleShape): { x: number; y: number } {
+  private getCircleCenter(shape: CircleShape): Point {
     return { x: shape.x, y: shape.y };
   }
     
@@ -1378,11 +1403,11 @@ export class CanvasEditor {
       type: 'rectangle' as const,
       color: this.getRandomColor(),
       strokeWidth: this.getRandomStrokeWidth(),
-      x: typeof options.x === 'number' ? options.x : (Math.random() * 600 + 50),
-      y: typeof options.y === 'number' ? options.y : (Math.random() * 400 + 50),
-      width: typeof options.width === 'number' ? options.width : (Math.random() * 150 + 100),
-      height: typeof options.height === 'number' ? options.height : (Math.random() * 100 + 80),
-      rotation: typeof options.rotation === 'number' ? options.rotation : 0,
+      x: options.x ?? this.getRandom(50, 650),
+      y: options.y ?? this.getRandom(50, 450),
+      width: options.width ?? this.getRandom(100, 250),
+      height: options.height ?? this.getRandom(80, 180),
+      rotation: options.rotation ?? 0,
       id: `shape-${this.shapeIdCounter++}`,
     };
   }
@@ -1392,25 +1417,23 @@ export class CanvasEditor {
       type: 'circle' as const,
       color: this.getRandomColor(),
       strokeWidth: this.getRandomStrokeWidth(),
-      x: typeof options.x === 'number' ? options.x : (Math.random() * 600 + 100),
-      y: typeof options.y === 'number' ? options.y : (Math.random() * 400 + 100),
-      radius: typeof options.radius === 'number' ? options.radius : (Math.random() * 60 + 40),
+      x: options.x ?? this.getRandom(100, 700),
+      y: options.y ?? this.getRandom(100, 500),
+      radius: options.radius ?? this.getRandom(40, 100),
       id: `shape-${this.shapeIdCounter++}`,
     };
   }
 
-  private createLine(options: Partial<LineShape> & { angle?: number; length?: number } = {}): LineShape {
-    const x1 = typeof options.x1 === 'number' ? options.x1 : (Math.random() * 600 + 100);
-    const y1 = typeof options.y1 === 'number' ? options.y1 : (Math.random() * 400 + 100);
-    const angle = typeof options.angle === 'number' ? options.angle : (Math.random() * Math.PI * 2);
-    const length = typeof options.length === 'number' ? options.length : (Math.random() * 120 + 60);
-    const x2 = typeof options.x2 === 'number' ? options.x2 : (x1 + Math.cos(angle) * length);
-    const y2 = typeof options.y2 === 'number' ? options.y2 : (y1 + Math.sin(angle) * length);
+  private createLine(options: Partial<LineShape>): LineShape {
+    const x1 = options.x1 ?? this.getRandom(100, 700);
+    const y1 = options.y1 ?? this.getRandom(100, 500);
+    const x2 = options.x2 ?? this.getRandom(100, 700);
+    const y2 = options.y2 ?? this.getRandom(100, 500);
 
     return {
       type: 'line' as const,
-      color: this.getRandomColor(),
-      strokeWidth: this.getRandomStrokeWidth(),
+      color: options.color ?? this.getRandomColor(),
+      strokeWidth: options.strokeWidth ?? this.getRandomStrokeWidth(),
       x1, y1, x2, y2,
       id: `shape-${this.shapeIdCounter++}`,
     };

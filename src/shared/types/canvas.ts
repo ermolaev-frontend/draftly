@@ -4,6 +4,11 @@ import type { Drawable } from 'roughjs/bin/core';
 
 export type ToolType = 'select' | 'pencil' | 'rectangle' | 'circle' | 'line';
 
+export interface Point {
+  x: number;
+  y: number;
+}
+
 export interface BaseShape {
   type: ToolType;
   color: string;
@@ -11,19 +16,15 @@ export interface BaseShape {
   id?: string;
 }
 
-export interface RectangleShape extends BaseShape {
+export interface RectangleShape extends BaseShape, Point {
   type: 'rectangle';
-  x: number;
-  y: number;
   width: number;
   height: number;
   rotation?: number;
 }
 
-export interface CircleShape extends BaseShape {
+export interface CircleShape extends BaseShape, Point {
   type: 'circle';
-  x: number;
-  y: number;
   radius: number;
 }
 
@@ -37,10 +38,10 @@ export interface LineShape extends BaseShape {
 
 export interface PencilShape extends BaseShape {
   type: 'pencil';
-  points: { x: number; y: number }[];
+  points: Point[];
   // Allow custom properties for roughjs caching
   _roughDrawable?: Drawable;
-  _roughDrawablePoints?: { x: number; y: number }[];
+  _roughDrawablePoints?: Point[];
 }
 
 export type Shape = RectangleShape | CircleShape | LineShape | PencilShape;
@@ -49,7 +50,7 @@ export interface InteractionState {
   isDragging: boolean;
   isResizing: boolean;
   selectedShape: Shape | null;
-  dragOffset: { x: number; y: number };
+  dragOffset: Point;
   resizeHandle: { type: string } | null;
   // Dynamic properties for drawing and resizing
   isDrawingPencil?: boolean;
@@ -57,16 +58,16 @@ export interface InteractionState {
   isDrawingCircle?: boolean;
   isDrawingLine?: boolean;
   drawingShape?: Shape | null;
-  startPoint?: { x: number; y: number } | null;
+  startPoint?: Point | null;
   initialAngle?: number | null;
   startRotation?: number | null;
   pencilResize?: {
-    initialPoints: { x: number; y: number }[];
+    initialPoints: Point[];
     initialBounds: { x: number; y: number; width: number; height: number };
   } | null;
   initialRadius?: number | null;
   initialDistance?: number | null;
-  initialPoints?: { x: number; y: number }[];
-  lineCenter?: { x: number; y: number };
+  initialPoints?: Point[];
+  lineCenter?: Point;
   [key: string]: any;
 } 
