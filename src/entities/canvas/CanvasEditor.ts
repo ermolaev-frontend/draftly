@@ -29,8 +29,6 @@ export interface Interaction {
     initialPoints: Point[];
     initialBounds: { x: number; y: number; width: number; height: number };
   } | null;
-  initialRadius?: number | null;
-  initialDistance?: number | null;
   initialPoints?: Point[];
   lineCenter?: Point;
   [key: string]: any;
@@ -977,8 +975,6 @@ export class CanvasEditor {
         const handle = this.getHandleAt(mouse.x, mouse.y, shape);
 
         if (handle) {
-          // let initialRadius = null;
-          // let initialDistance = null;
           let initialAngle = null;
           let startRotation = null;
           // --- pencil ---
@@ -1014,8 +1010,6 @@ export class CanvasEditor {
             resizeHandle: handle,
             selectedShape: shape,
             dragOffset: { x: 0, y: 0 },
-            // initialRadius,
-            // initialDistance,
             initialAngle,
             startRotation,
             pencilResize,
