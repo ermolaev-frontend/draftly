@@ -1,6 +1,6 @@
 /* eslint-env jest */
 
-import { catmullRom2bezier, simplifyDouglasPeucker } from './canvasUtils';
+import { catmullRom2bezier, simplifyDouglasPeucker, hashStringToSeed } from './canvasUtils';
 
 describe('catmullRom2bezier', () => {
   it('returns empty array for less than 2 points', () => {
@@ -79,5 +79,23 @@ describe('simplifyDouglasPeucker', () => {
     expect(simplified).toContainEqual({ x: 5, y: 10 });
     expect(simplified[0]).toEqual({ x: 0, y: 0 });
     expect(simplified[simplified.length - 1]).toEqual({ x: 10, y: 0 });
+  });
+});
+
+describe('hashStringToSeed', () => {
+  it('should return the same seed for the same string', () => {
+    expect(hashStringToSeed('test')).toBe(hashStringToSeed('test'));
+    expect(hashStringToSeed('another')).toBe(hashStringToSeed('another'));
+  });
+
+  it('should return different seeds for different strings', () => {
+    expect(hashStringToSeed('test')).not.toBe(hashStringToSeed('Test'));
+    expect(hashStringToSeed('a')).not.toBe(hashStringToSeed('b'));
+  });
+
+  it('should return a non-negative integer', () => {
+    const seed = hashStringToSeed('test');
+    expect(Number.isInteger(seed)).toBe(true);
+    expect(seed).toBeGreaterThanOrEqual(0);
   });
 }); 

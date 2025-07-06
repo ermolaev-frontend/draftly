@@ -11,6 +11,8 @@ import type {
   Point,
 } from 'shared/types/canvas';
 
+import { hashStringToSeed } from './canvasUtils';
+
 export class CanvasEditor {
   private canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
@@ -224,7 +226,7 @@ export class CanvasEditor {
             fill: undefined,
             roughness: 1.5,
             bowing: 2,
-            seed: shape.id ? this.hashStringToSeed(shape.id) : undefined,
+            seed: shape.id ? hashStringToSeed(shape.id) : undefined,
           },
         );
 
@@ -248,7 +250,7 @@ export class CanvasEditor {
             fill: undefined,
             roughness: 1.5,
             bowing: 2,
-            seed: shape.id ? this.hashStringToSeed(shape.id) : undefined,
+            seed: shape.id ? hashStringToSeed(shape.id) : undefined,
           },
         );
 
@@ -269,7 +271,7 @@ export class CanvasEditor {
             strokeWidth: shape.strokeWidth,
             roughness: 1.5,
             bowing: 2,
-            seed: shape.id ? this.hashStringToSeed(shape.id) : undefined,
+            seed: shape.id ? hashStringToSeed(shape.id) : undefined,
           },
         );
 
@@ -314,7 +316,7 @@ export class CanvasEditor {
                   strokeWidth: shape.strokeWidth * 2,
                   roughness: 0.5,
                   bowing: 2,
-                  seed: shape.id ? this.hashStringToSeed(shape.id) : undefined,
+                  seed: shape.id ? hashStringToSeed(shape.id) : undefined,
                 },
               );
 
@@ -1371,17 +1373,5 @@ export class CanvasEditor {
       x1, y1, x2, y2,
       id: `shape-${this.shapeIdCounter++}`,
     };
-  }
-
-  // Add a helper to convert string id to a numeric seed
-  private hashStringToSeed(str: string): number {
-    let hash = 0;
-    
-    for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) - hash) + str.charCodeAt(i);
-      hash |= 0; // Convert to 32bit integer
-    }
-
-    return Math.abs(hash);
   }
 } 
