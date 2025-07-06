@@ -65,13 +65,11 @@ export class CanvasEditor {
     // ВАЖНО: выставить размеры canvas по wrapper'у
     this.resizeCanvasToWrapper();
     // Теперь canvas.width и height актуальны!
-    const canvasWidth = this.canvas.width;
-    const canvasHeight = this.canvas.height;
     const margin = 40; // inner margin for shapes
     const zoneRows = 6;
     const zoneCols = 6;
-    const zoneWidth = (canvasWidth - 2 * margin) / zoneCols;
-    const zoneHeight = (canvasHeight - 2 * margin) / zoneRows;
+    const zoneWidth = (this.canvas.width - 2 * margin) / zoneCols;
+    const zoneHeight = (this.canvas.height - 2 * margin) / zoneRows;
     const zones = [];
 
     for (let row = 0; row < zoneRows; row++) {
@@ -894,7 +892,6 @@ export class CanvasEditor {
       return;
     }
 
-    // --- New code for rectangle ---
     if (this.currentTool === 'rectangle') {
       const newShape = this.createRectangle({
         x: mouse.x,
@@ -922,7 +919,6 @@ export class CanvasEditor {
       return;
     }
 
-    // --- New code for circle ---
     if (this.currentTool === 'circle') {
       const newShape = this.createCircle({
         x: mouse.x,
@@ -949,7 +945,6 @@ export class CanvasEditor {
       return;
     }
 
-    // --- New code for line ---
     if (this.currentTool === 'line') {
       const newShape = this.createLine({
         x1: mouse.x,
@@ -982,8 +977,8 @@ export class CanvasEditor {
         const handle = this.getHandleAt(mouse.x, mouse.y, shape);
 
         if (handle) {
-          let initialRadius = null;
-          let initialDistance = null;
+          // let initialRadius = null;
+          // let initialDistance = null;
           let initialAngle = null;
           let startRotation = null;
           // --- pencil ---
@@ -1005,12 +1000,6 @@ export class CanvasEditor {
             }
           }
 
-          if (shape.type === 'circle') {
-            initialRadius = shape.radius;
-            const dx = mouse.x - shape.x, dy = mouse.y - shape.y;
-            initialDistance = Math.sqrt(dx * dx + dy * dy);
-          }
-
           if (shape.type === 'rectangle' && handle.type === 'rotate') {
             const cx = shape.x + shape.width / 2;
             const cy = shape.y + shape.height / 2;
@@ -1025,8 +1014,8 @@ export class CanvasEditor {
             resizeHandle: handle,
             selectedShape: shape,
             dragOffset: { x: 0, y: 0 },
-            initialRadius,
-            initialDistance,
+            // initialRadius,
+            // initialDistance,
             initialAngle,
             startRotation,
             pencilResize,
@@ -1078,14 +1067,7 @@ export class CanvasEditor {
             isResizing: false,
             resizeHandle: null,
             selectedShape: shape,
-            dragOffset: {
-              x: (shape as RectangleShape | CircleShape).x !== undefined
-                ? mouse.x - (shape as RectangleShape | CircleShape).x
-                : 0,
-              y: (shape as RectangleShape | CircleShape).y !== undefined
-                ? mouse.y - (shape as RectangleShape | CircleShape).y
-                : 0,
-            },
+            dragOffset: { x: mouse.x - shape.x, y: mouse.y - shape.y },
           };
         }
 
@@ -1106,6 +1088,8 @@ export class CanvasEditor {
     const mouse = this.getMousePos(e);
     let cursor = 'default';
     const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
+
+    console.log(this.interaction.resizeHandle);
 
     if (this.interaction.isDrawingPencil) {
       // Add point to current line
@@ -1250,7 +1234,11 @@ export class CanvasEditor {
   public onMouseUp(): void {
     if (this.interaction.isDrawingPencil) {
       this.interaction = { ...this.interaction, isDrawingPencil: false, drawingShape: null };
-    } else if (['isDrawingRectangle', 'isDrawingCircle', 'isDrawingLine'].some(key => this.interaction[key])) {
+    } else if (
+      this.interaction.isDrawingRectangle || 
+      this.interaction.isDrawingCircle || 
+      this.interaction.isDrawingLine
+    ) {
       this.interaction = {
         ...this.interaction,
         isDrawingRectangle: false,

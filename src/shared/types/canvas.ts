@@ -69,5 +69,4 @@ export interface InteractionState {
   initialDistance?: number | null;
   initialPoints?: Point[];
   lineCenter?: Point;
-  [key: string]: any;
 } 
