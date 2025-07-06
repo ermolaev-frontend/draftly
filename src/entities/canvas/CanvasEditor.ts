@@ -11,29 +11,6 @@ import type {
   Point,
 } from 'shared/types/canvas';
 
-export interface Interaction {
-  isDragging: boolean;
-  isResizing: boolean;
-  selectedShape: Shape | null;
-  dragOffset: Point;
-  resizeHandle: { type: string } | null;
-  isDrawingPencil?: boolean;
-  isDrawingRectangle?: boolean;
-  isDrawingCircle?: boolean;
-  isDrawingLine?: boolean;
-  drawingShape?: Shape | null;
-  startPoint?: Point | null;
-  initialAngle?: number | null;
-  startRotation?: number | null;
-  pencilResize?: {
-    initialPoints: Point[];
-    initialBounds: { x: number; y: number; width: number; height: number };
-  } | null;
-  initialPoints?: Point[];
-  lineCenter?: Point;
-  [key: string]: any;
-}
-
 export class CanvasEditor {
   private canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
@@ -367,7 +344,6 @@ export class CanvasEditor {
     const ctx = this.ctx;
     const bounds = this.getShapeBounds(shape);
     if (!bounds) return;
-    const offset = 5;
     ctx.save();
     // Colors in Excalidraw style
     const borderColor = '#228be6'; // saturated blue
@@ -385,25 +361,25 @@ export class CanvasEditor {
 
       // Fill
       ctx.fillRect(
-        -shape.width/2 - offset,
-        -shape.height/2 - offset,
-        shape.width + offset*2,
-        shape.height + offset*2,
+        -shape.width/2,
+        -shape.height/2,
+        shape.width,
+        shape.height,
       );
 
       // Frame
       ctx.strokeRect(
-        -shape.width/2 - offset,
-        -shape.height/2 - offset,
-        shape.width + offset*2,
-        shape.height + offset*2,
+        -shape.width/2,
+        -shape.height/2,
+        shape.width,
+        shape.height,
       );
 
       // Handles
       ctx.fillStyle = borderColor;
-      this.getRectangleHandles(shape, offset).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
+      this.getRectangleHandles(shape).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
       // Rotation handle (circle)
-      const rotateHandle = { x: 0, y: -shape.height/2 - offset - 30, type: 'rotate' };
+      const rotateHandle = { x: 0, y: -shape.height/2 - 30, type: 'rotate' };
       ctx.beginPath();
       ctx.arc(rotateHandle.x, rotateHandle.y, 8, 0, Math.PI*2);
       ctx.fillStyle = '#fff';
@@ -419,11 +395,11 @@ export class CanvasEditor {
     } else if (shape.type === 'circle') {
       // Fill
       ctx.beginPath();
-      ctx.arc(shape.x, shape.y, shape.radius + offset, 0, Math.PI * 2);
+      ctx.arc(shape.x, shape.y, shape.radius, 0, Math.PI * 2);
       ctx.fill();
       // Frame
       ctx.beginPath();
-      ctx.arc(shape.x, shape.y, shape.radius + offset, 0, Math.PI * 2);
+      ctx.arc(shape.x, shape.y, shape.radius, 0, Math.PI * 2);
       ctx.strokeStyle = borderColor;
       ctx.stroke();
       // Right handle from center (on circle)
@@ -440,26 +416,26 @@ export class CanvasEditor {
       ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
       ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
       ctx.fillStyle = borderColor;
-      this.getPencilHandles(bounds).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
+      this.getBoundingBoxHandles(bounds).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
     } else {
       // For other shapes (if they appear)
       ctx.fillRect(
-        bounds.x - offset,
-        bounds.y - offset,
-        bounds.width + offset * 2,
-        bounds.height + offset * 2,
+        bounds.x,
+        bounds.y,
+        bounds.width,
+        bounds.height,
       );
 
       ctx.strokeRect(
-        bounds.x - offset,
-        bounds.y - offset,
-        bounds.width + offset * 2,
-        bounds.height + offset * 2,
+        bounds.x,
+        bounds.y,
+        bounds.width,
+        bounds.height,
       );
 
       ctx.fillStyle = borderColor;
       // 8 handles: 4 corner and 4 side
-      this.getBoundingBoxHandles(bounds, offset).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
+      this.getBoundingBoxHandles(bounds).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
     }
 
     ctx.restore();
@@ -507,11 +483,10 @@ export class CanvasEditor {
       };
 
       case 'line': {
-        const offset = 5;
-        const minX = Math.min(shape.x1, shape.x2) - offset;
-        const minY = Math.min(shape.y1, shape.y2) - offset;
-        const maxX = Math.max(shape.x1, shape.x2) + offset;
-        const maxY = Math.max(shape.y1, shape.y2) + offset;
+        const minX = Math.min(shape.x1, shape.x2);
+        const minY = Math.min(shape.y1, shape.y2);
+        const maxX = Math.max(shape.x1, shape.x2);
+        const maxY = Math.max(shape.y1, shape.y2);
 
         return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
       }
@@ -528,13 +503,11 @@ export class CanvasEditor {
           if (pt.y > maxY) maxY = pt.y;
         }
 
-        const offset = 5;
-
         return {
-          x: minX - offset,
-          y: minY - offset,
-          width: (maxX - minX) + offset * 2,
-          height: (maxY - minY) + offset * 2,
+          x: minX,
+          y: minY,
+          width: (maxX - minX),
+          height: (maxY - minY),
         };
       }
 
@@ -624,13 +597,12 @@ export class CanvasEditor {
       case 'rectangle': {
         const cx = shape.x + shape.width/2;
         const cy = shape.y + shape.height/2;
-        const offset = 5;
         const angle = -(shape.rotation ?? 0);
         const dx = x - cx, dy = y - cy;
         const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
         const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
 
-        for (const h of this.getRectangleHandles(shape, offset)) {
+        for (const h of this.getRectangleHandles(shape)) {
           if (h.type === 'rotate') {
             if ((lx-h.x)**2 + (ly-h.y)**2 <= 10*10) return { type: 'rotate' };
           } else {
@@ -656,7 +628,7 @@ export class CanvasEditor {
         const bounds = this.getShapeBounds(shape);
         if (!bounds) return null;
 
-        for (const h of this.getPencilHandles(bounds)) {
+        for (const h of this.getBoundingBoxHandles(bounds)) {
           if (Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) return { type: h.type };
         }
 
@@ -666,9 +638,8 @@ export class CanvasEditor {
       default: {
         const bounds = this.getShapeBounds(shape);
         if (!bounds) return null;
-        const offset = 5;
 
-        return this.getBoundingBoxHandles(bounds, offset)
+        return this.getBoundingBoxHandles(bounds)
           .find(h => Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) ?? null;
       }
     }
@@ -1083,8 +1054,6 @@ export class CanvasEditor {
     let cursor = 'default';
     const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
 
-    console.log(this.interaction.resizeHandle);
-
     if (this.interaction.isDrawingPencil) {
       // Add point to current line
       const shape = this.interaction.drawingShape as PencilShape | undefined | null;
@@ -1280,14 +1249,14 @@ export class CanvasEditor {
 
   // === Static fields ===
   static handleCursorMap = new Map([
-    ['top-left', 'nwse-resize'],
-    ['top', 'ns-resize'],
-    ['top-right', 'nesw-resize'],
-    ['right', 'ew-resize'],
-    ['bottom-right', 'nwse-resize'],
-    ['bottom', 'ns-resize'],
-    ['bottom-left', 'nesw-resize'],
-    ['left', 'ew-resize'],
+    ['nw', 'nwse-resize'],
+    ['n', 'ns-resize'],
+    ['ne', 'nesw-resize'],
+    ['e', 'ew-resize'],
+    ['se', 'nwse-resize'],
+    ['s', 'ns-resize'],
+    ['sw', 'nesw-resize'],
+    ['w', 'ew-resize'],
     ['rotate', 'grab'],
   ]);
 
@@ -1331,24 +1300,23 @@ export class CanvasEditor {
   // --- Helper methods for handles ---
   private getRectangleHandles(
     shape: RectangleShape,
-    offset: number = 5,
   ): Array<{ x: number; y: number; type: string }> {
     const w = shape.width, h = shape.height;
 
     return [
-      { x: -w/2 - offset, y: -h/2 - offset, type: 'nw' },
-      { x: +w/2 + offset, y: -h/2 - offset, type: 'ne' },
-      { x: +w/2 + offset, y: +h/2 + offset, type: 'se' },
-      { x: -w/2 - offset, y: +h/2 + offset, type: 'sw' },
-      { x: 0, y: -h/2 - offset, type: 'n' },
-      { x: +w/2 + offset, y: 0, type: 'e' },
-      { x: 0, y: +h/2 + offset, type: 's' },
-      { x: -w/2 - offset, y: 0, type: 'w' },
-      { x: 0, y: -h/2 - offset - 30, type: 'rotate' },
+      { x: -w/2, y: -h/2, type: 'nw' },
+      { x: +w/2, y: -h/2, type: 'ne' },
+      { x: +w/2, y: +h/2, type: 'se' },
+      { x: -w/2, y: +h/2, type: 'sw' },
+      { x: 0, y: -h/2, type: 'n' },
+      { x: +w/2, y: 0, type: 'e' },
+      { x: 0, y: +h/2, type: 's' },
+      { x: -w/2, y: 0, type: 'w' },
+      { x: 0, y: -h/2 - 30, type: 'rotate' },
     ];
   }
 
-  private getPencilHandles(
+  private getBoundingBoxHandles(
     bounds: { x: number; y: number; width: number; height: number },
   ): Array<{ x: number; y: number; type: string }> {
     return [
@@ -1360,22 +1328,6 @@ export class CanvasEditor {
       { x: bounds.x + bounds.width, y: bounds.y + bounds.height/2, type: 'e' },
       { x: bounds.x + bounds.width/2, y: bounds.y + bounds.height, type: 's' },
       { x: bounds.x, y: bounds.y + bounds.height/2, type: 'w' },
-    ];
-  }
-
-  private getBoundingBoxHandles(
-    bounds: { x: number; y: number; width: number; height: number },
-    offset: number = 5,
-  ): Array<{ x: number; y: number; type: string }> {
-    return [
-      { x: bounds.x - offset, y: bounds.y - offset, type: 'nw' },
-      { x: bounds.x + bounds.width + offset, y: bounds.y - offset, type: 'ne' },
-      { x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height + offset, type: 'se' },
-      { x: bounds.x - offset, y: bounds.y + bounds.height + offset, type: 'sw' },
-      { x: bounds.x + bounds.width/2, y: bounds.y - offset, type: 'n' },
-      { x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height/2, type: 'e' },
-      { x: bounds.x + bounds.width/2, y: bounds.y + bounds.height + offset, type: 's' },
-      { x: bounds.x - offset, y: bounds.y + bounds.height/2, type: 'w' },
     ];
   }
 
