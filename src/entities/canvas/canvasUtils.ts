@@ -1,12 +1,12 @@
-// Utility functions for canvas shape processing
+import type { Point } from 'shared/types/canvas';
 
 export function catmullRom2bezier(
-  points: { x: number; y: number }[],
+  points: Point[],
 ): Array<{
-  start: { x: number; y: number };
-  cp1: { x: number; y: number };
-  cp2: { x: number; y: number };
-  end: { x: number; y: number };
+  start: Point;
+  cp1: Point;
+  cp2: Point;
+  end: Point;
 }> {
   if (points.length < 2) return [];
   const beziers = [];
@@ -40,23 +40,23 @@ export function catmullRom2bezier(
 }
 
 export function simplifyDouglasPeucker(
-  points: { x: number; y: number }[],
+  points: Point[],
   epsilon: number,
-): { x: number; y: number }[] {
+): Point[] {
   if (points.length < 3) return points;
   const dmax = { dist: 0, idx: 0 };
 
   const sq = (
-    a: { x: number; y: number },
-    b: { x: number; y: number },
+    a: Point,
+    b: Point,
   ) => (
     (a.x - b.x) ** 2 + (a.y - b.y) ** 2
   );
 
   function getPerpendicularDistance(
-    pt: { x: number; y: number },
-    lineStart: { x: number; y: number },
-    lineEnd: { x: number; y: number },
+    pt: Point,
+    lineStart: Point,
+    lineEnd: Point,
   ): number {
     const dx = lineEnd.x - lineStart.x;
     const dy = lineEnd.y - lineStart.y;
@@ -91,4 +91,15 @@ export function simplifyDouglasPeucker(
   } else {
     return [points[0], points[points.length - 1]];
   }
+}
+
+export function hashStringToSeed(str: string): number {
+  let hash = 0;
+
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0; // Convert to 32bit integer
+  }
+
+  return Math.abs(hash);
 } 

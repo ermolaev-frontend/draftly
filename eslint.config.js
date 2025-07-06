@@ -29,7 +29,7 @@ export default tseslint.config([
     },
     rules: {
       'no-restricted-imports': [
-        'warn',
+        'error',
         {
           patterns: [
             {
@@ -40,14 +40,14 @@ export default tseslint.config([
         },
       ],
       'import/no-anonymous-default-export': 'off',
-      '@stylistic/indent': ['warn', 2],
-      '@stylistic/array-bracket-spacing': ['warn', 'never'],
-      '@stylistic/arrow-spacing': 'warn',
-      '@stylistic/block-spacing': 'warn',
-      '@stylistic/comma-spacing': ['warn', { before: false, after: true }],
-      '@stylistic/key-spacing': ['warn', { beforeColon: false, afterColon: true }],
-      '@stylistic/keyword-spacing': ['warn', { before: true, after: true }],
-      '@stylistic/no-multi-spaces': 'warn',
+      '@stylistic/indent': ['error', 2],
+      '@stylistic/array-bracket-spacing': ['error', 'never'],
+      '@stylistic/arrow-spacing': 'error',
+      '@stylistic/block-spacing': 'error',
+      '@stylistic/comma-spacing': ['error', { before: false, after: true }],
+      '@stylistic/key-spacing': ['error', { beforeColon: false, afterColon: true }],
+      '@stylistic/keyword-spacing': ['error', { before: true, after: true }],
+      '@stylistic/no-multi-spaces': 'error',
       'comma-dangle': [
         'error',
         'always-multiline',
@@ -101,20 +101,20 @@ export default tseslint.config([
       ],
       '@typescript-eslint/camelcase': 'off',
       '@typescript-eslint/no-unused-vars': [
-        'warn',
+        'error',
         {
           ignoreRestSiblings: true,
         },
       ],
       'no-unused-vars': [
-        'warn',
+        'error',
         {
           ignoreRestSiblings: true,
         },
       ],
       'no-extra-boolean-cast': 'off',
       'import/order': [
-        'warn',
+        'error',
         {
           groups: [
             'builtin',
@@ -131,9 +131,9 @@ export default tseslint.config([
           'warnOnUnassignedImports': true,
         },
       ],
-      'no-nested-ternary': 'warn',
+      'no-nested-ternary': 'error',
       'padding-line-between-statements': [
-        'warn',
+        'error',
         { blankLine: 'always', prev: '*', next: 'return' },
         { blankLine: 'always', prev: '*', next: 'multiline-block-like' },
         { blankLine: 'always', prev: 'multiline-block-like', next: '*' },

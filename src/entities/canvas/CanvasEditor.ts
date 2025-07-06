@@ -1,3 +1,5 @@
+import rough from 'roughjs';
+
 import type {
   ToolType,
   RectangleShape,
@@ -6,38 +8,26 @@ import type {
   PencilShape,
   Shape,
   InteractionState,
+  Point,
 } from 'shared/types/canvas';
 
-import { catmullRom2bezier, simplifyDouglasPeucker } from './canvasUtils';
-
-// --- Strong types for pencil cache ---
-type Point = { x: number; y: number };
-type BezierSegment = {
-  start: Point;
-  cp1: Point;
-  cp2: Point;
-  end: Point;
-};
-type PencilCache = {
-  original: Point[];
-  simplified: Point[];
-  beziers: BezierSegment[];
-};
+import { hashStringToSeed } from './canvasUtils';
 
 export class CanvasEditor {
-  // WeakMap for caching pencil shape simplification and bezier conversion
-  private pencilCache = new WeakMap<PencilShape, PencilCache>();
   private canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
   private shapes: Shape[];
   private currentTool: ToolType;
   private interaction: InteractionState;
   private animationFrameId: number | null = null;
-  private INITIAL_SHAPES_COUNT = 300;
+  private INITIAL_SHAPES_COUNT = 100;
+  private roughCanvas: any | null = null;
+  private shapeIdCounter = 1;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
+    this.roughCanvas = rough.canvas(this.canvas);
 
     this.interaction = {
       isDragging: false,
@@ -52,13 +42,11 @@ export class CanvasEditor {
     // ВАЖНО: выставить размеры canvas по wrapper'у
     this.resizeCanvasToWrapper();
     // Теперь canvas.width и height актуальны!
-    const canvasWidth = this.canvas.width;
-    const canvasHeight = this.canvas.height;
     const margin = 40; // inner margin for shapes
     const zoneRows = 6;
     const zoneCols = 6;
-    const zoneWidth = (canvasWidth - 2 * margin) / zoneCols;
-    const zoneHeight = (canvasHeight - 2 * margin) / zoneRows;
+    const zoneWidth = (this.canvas.width - 2 * margin) / zoneCols;
+    const zoneHeight = (this.canvas.height - 2 * margin) / zoneRows;
     const zones = [];
 
     for (let row = 0; row < zoneRows; row++) {
@@ -73,7 +61,7 @@ export class CanvasEditor {
     }
 
     const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
-    // Create 100 shapes distributed across 6 zones
+    // Create INITIAL_SHAPES_COUNT shapes distributed across 6 zones
     this.shapes = [];
 
     for (let i = 0; i < this.INITIAL_SHAPES_COUNT; i++) {
@@ -223,51 +211,126 @@ export class CanvasEditor {
     switch (shape.type) {
       case 'rectangle': {
         const center = this.getRectangleCenter(shape);
+        const rotation = this.getRectangleRotation(shape);
         ctx.translate(center.x, center.y);
-        ctx.rotate(this.getRectangleRotation(shape));
-        ctx.strokeRect(-shape.width / 2, -shape.height / 2, shape.width, shape.height);
-        break;
+        ctx.rotate(rotation);
+
+        this.roughCanvas.rectangle(
+          -shape.width / 2,
+          -shape.height / 2,
+          shape.width,
+          shape.height,
+          {
+            stroke: shape.color,
+            strokeWidth: shape.strokeWidth,
+            fill: undefined,
+            roughness: 1.5,
+            bowing: 2,
+            seed: shape.id ? hashStringToSeed(shape.id) : undefined,
+          },
+        );
+
+        ctx.restore();
+
+        return;
       }
 
       case 'circle': {
+        // Use roughjs for circles
         const center = this.getCircleCenter(shape);
-        ctx.arc(center.x, center.y, shape.radius, 0, Math.PI * 2);
-        ctx.stroke();
-        break;
+
+        this.roughCanvas.ellipse(
+          center.x,
+          center.y,
+          shape.radius * 2,
+          shape.radius * 2,
+          {
+            stroke: shape.color,
+            strokeWidth: shape.strokeWidth,
+            fill: undefined,
+            roughness: 1.5,
+            bowing: 2,
+            seed: shape.id ? hashStringToSeed(shape.id) : undefined,
+          },
+        );
+
+        ctx.restore();
+
+        return;
       }
 
       case 'line': {
-        ctx.moveTo(shape.x1, shape.y1);
-        ctx.lineTo(shape.x2, shape.y2);
-        ctx.stroke();
-        break;
+        // Use roughjs for lines
+        this.roughCanvas.line(
+          shape.x1,
+          shape.y1,
+          shape.x2,
+          shape.y2,
+          {
+            stroke: shape.color,
+            strokeWidth: shape.strokeWidth,
+            roughness: 1.5,
+            bowing: 2,
+            seed: shape.id ? hashStringToSeed(shape.id) : undefined,
+          },
+        );
+
+        ctx.restore();
+
+        return;
       }
 
       case 'pencil': {
         if (shape.points && shape.points.length > 1) {
-          let cache = this.pencilCache.get(shape);
+          //const foo = false;
+          const isLiveDrawing = this.interaction.isDrawingPencil && this.interaction.drawingShape === shape;
 
-          if (!cache || cache.original !== shape.points) {
-            const simplified = simplifyDouglasPeucker(shape.points, 1.5);
-            const beziers = catmullRom2bezier(simplified);
-            cache = { original: shape.points, simplified, beziers };
-            this.pencilCache.set(shape, cache);
-          }
+          if (isLiveDrawing) {
+            // Draw a simple polyline for live preview (no rough effect)
+            ctx.beginPath();
 
-          const beziers = cache.beziers;
-                    
-          if (beziers.length > 0) {
-            ctx.moveTo(beziers[0].start.x, beziers[0].start.y);
-
-            for (const seg of beziers) {
-              ctx.bezierCurveTo(seg.cp1.x, seg.cp1.y, seg.cp2.x, seg.cp2.y, seg.end.x, seg.end.y);
+            ctx.moveTo(shape.points[0].x, shape.points[0].y);
+            
+            for (let i = 1; i < shape.points.length; i++) {
+              ctx.lineTo(shape.points[i].x, shape.points[i].y);
             }
 
+            ctx.strokeStyle = shape.color;
+            ctx.lineWidth = shape.strokeWidth * 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
             ctx.stroke();
+          } else {
+            // Cache the roughjs drawable for stability after drawing is finished
+            const pointsChanged =
+              !shape._roughDrawablePoints ||
+              shape._roughDrawablePoints.length !== shape.points.length ||
+              !shape._roughDrawablePoints.every((pt, i) => pt.x === shape.points[i].x && pt.y === shape.points[i].y);
+
+            if (!shape._roughDrawable || pointsChanged) {
+              shape._roughDrawable = this.roughCanvas.generator.linearPath(
+                shape.points.map(pt => [pt.x, pt.y]),
+                {
+                  stroke: shape.color,
+                  strokeWidth: shape.strokeWidth * 2,
+                  roughness: 0.5,
+                  bowing: 2,
+                  seed: shape.id ? hashStringToSeed(shape.id) : undefined,
+                },
+              );
+
+              // Store a shallow copy of the points
+              shape._roughDrawablePoints = shape.points.map(pt => ({ ...pt }));
+            }
+
+            this.roughCanvas.draw(shape._roughDrawable);
           }
         }
 
-        break;
+        ctx.restore();
+
+        return;
       }
 
       default:
@@ -283,7 +346,6 @@ export class CanvasEditor {
     const ctx = this.ctx;
     const bounds = this.getShapeBounds(shape);
     if (!bounds) return;
-    const offset = 5;
     ctx.save();
     // Colors in Excalidraw style
     const borderColor = '#228be6'; // saturated blue
@@ -301,25 +363,25 @@ export class CanvasEditor {
 
       // Fill
       ctx.fillRect(
-        -shape.width/2 - offset,
-        -shape.height/2 - offset,
-        shape.width + offset*2,
-        shape.height + offset*2,
+        -shape.width/2,
+        -shape.height/2,
+        shape.width,
+        shape.height,
       );
 
       // Frame
       ctx.strokeRect(
-        -shape.width/2 - offset,
-        -shape.height/2 - offset,
-        shape.width + offset*2,
-        shape.height + offset*2,
+        -shape.width/2,
+        -shape.height/2,
+        shape.width,
+        shape.height,
       );
 
       // Handles
       ctx.fillStyle = borderColor;
-      this.getRectangleHandles(shape, offset).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
+      this.getRectangleHandles(shape).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
       // Rotation handle (circle)
-      const rotateHandle = { x: 0, y: -shape.height/2 - offset - 30, type: 'rotate' };
+      const rotateHandle = { x: 0, y: -shape.height/2 - 30, type: 'rotate' };
       ctx.beginPath();
       ctx.arc(rotateHandle.x, rotateHandle.y, 8, 0, Math.PI*2);
       ctx.fillStyle = '#fff';
@@ -335,11 +397,11 @@ export class CanvasEditor {
     } else if (shape.type === 'circle') {
       // Fill
       ctx.beginPath();
-      ctx.arc(shape.x, shape.y, shape.radius + offset, 0, Math.PI * 2);
+      ctx.arc(shape.x, shape.y, shape.radius, 0, Math.PI * 2);
       ctx.fill();
       // Frame
       ctx.beginPath();
-      ctx.arc(shape.x, shape.y, shape.radius + offset, 0, Math.PI * 2);
+      ctx.arc(shape.x, shape.y, shape.radius, 0, Math.PI * 2);
       ctx.strokeStyle = borderColor;
       ctx.stroke();
       // Right handle from center (on circle)
@@ -356,26 +418,26 @@ export class CanvasEditor {
       ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
       ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
       ctx.fillStyle = borderColor;
-      this.getPencilHandles(bounds).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
+      this.getBoundingBoxHandles(bounds).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
     } else {
       // For other shapes (if they appear)
       ctx.fillRect(
-        bounds.x - offset,
-        bounds.y - offset,
-        bounds.width + offset * 2,
-        bounds.height + offset * 2,
+        bounds.x,
+        bounds.y,
+        bounds.width,
+        bounds.height,
       );
 
       ctx.strokeRect(
-        bounds.x - offset,
-        bounds.y - offset,
-        bounds.width + offset * 2,
-        bounds.height + offset * 2,
+        bounds.x,
+        bounds.y,
+        bounds.width,
+        bounds.height,
       );
 
       ctx.fillStyle = borderColor;
       // 8 handles: 4 corner and 4 side
-      this.getBoundingBoxHandles(bounds, offset).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
+      this.getBoundingBoxHandles(bounds).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
     }
 
     ctx.restore();
@@ -399,7 +461,7 @@ export class CanvasEditor {
     this.requestDraw();
   }
     
-  private getMousePos(e: MouseEvent | { offsetX: number; offsetY: number }): { x: number; y: number } {
+  private getMousePos(e: MouseEvent | { offsetX: number; offsetY: number }): Point {
     if ('offsetX' in e && 'offsetY' in e) {
       return { x: e.offsetX, y: e.offsetY };
     }
@@ -423,11 +485,10 @@ export class CanvasEditor {
       };
 
       case 'line': {
-        const offset = 5;
-        const minX = Math.min(shape.x1, shape.x2) - offset;
-        const minY = Math.min(shape.y1, shape.y2) - offset;
-        const maxX = Math.max(shape.x1, shape.x2) + offset;
-        const maxY = Math.max(shape.y1, shape.y2) + offset;
+        const minX = Math.min(shape.x1, shape.x2);
+        const minY = Math.min(shape.y1, shape.y2);
+        const maxX = Math.max(shape.x1, shape.x2);
+        const maxY = Math.max(shape.y1, shape.y2);
 
         return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
       }
@@ -444,13 +505,11 @@ export class CanvasEditor {
           if (pt.y > maxY) maxY = pt.y;
         }
 
-        const offset = 5;
-
         return {
-          x: minX - offset,
-          y: minY - offset,
-          width: (maxX - minX) + offset * 2,
-          height: (maxY - minY) + offset * 2,
+          x: minX,
+          y: minY,
+          width: (maxX - minX),
+          height: (maxY - minY),
         };
       }
 
@@ -540,13 +599,12 @@ export class CanvasEditor {
       case 'rectangle': {
         const cx = shape.x + shape.width/2;
         const cy = shape.y + shape.height/2;
-        const offset = 5;
         const angle = -(shape.rotation ?? 0);
         const dx = x - cx, dy = y - cy;
         const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
         const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
 
-        for (const h of this.getRectangleHandles(shape, offset)) {
+        for (const h of this.getRectangleHandles(shape)) {
           if (h.type === 'rotate') {
             if ((lx-h.x)**2 + (ly-h.y)**2 <= 10*10) return { type: 'rotate' };
           } else {
@@ -572,7 +630,7 @@ export class CanvasEditor {
         const bounds = this.getShapeBounds(shape);
         if (!bounds) return null;
 
-        for (const h of this.getPencilHandles(bounds)) {
+        for (const h of this.getBoundingBoxHandles(bounds)) {
           if (Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) return { type: h.type };
         }
 
@@ -582,15 +640,14 @@ export class CanvasEditor {
       default: {
         const bounds = this.getShapeBounds(shape);
         if (!bounds) return null;
-        const offset = 5;
 
-        return this.getBoundingBoxHandles(bounds, offset)
+        return this.getBoundingBoxHandles(bounds)
           .find(h => Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) ?? null;
       }
     }
   }
     
-  private resizeShape(mouse: { x: number; y: number }): void {
+  private resizeShape(mouse: Point): void {
     const shape = this.interaction.selectedShape;
     const handle = this.interaction.resizeHandle;
     if (!shape || !handle) return;
@@ -751,7 +808,7 @@ export class CanvasEditor {
           newW = Math.max(10, newW);
           newH = Math.max(10, newH);
 
-          shape.points = initialPoints.map((pt: { x: number; y: number }) => {
+          shape.points = initialPoints.map((pt: Point) => {
             const relX = (pt.x - initialBounds.x) / initialBounds.width;
             const relY = (pt.y - initialBounds.y) / initialBounds.height;
 
@@ -761,7 +818,6 @@ export class CanvasEditor {
             };
           });
 
-          this.pencilCache.delete(shape);
           this.requestDraw();
 
           return;
@@ -807,7 +863,6 @@ export class CanvasEditor {
       return;
     }
 
-    // --- New code for rectangle ---
     if (this.currentTool === 'rectangle') {
       const newShape = this.createRectangle({
         x: mouse.x,
@@ -835,7 +890,6 @@ export class CanvasEditor {
       return;
     }
 
-    // --- New code for circle ---
     if (this.currentTool === 'circle') {
       const newShape = this.createCircle({
         x: mouse.x,
@@ -862,7 +916,6 @@ export class CanvasEditor {
       return;
     }
 
-    // --- New code for line ---
     if (this.currentTool === 'line') {
       const newShape = this.createLine({
         x1: mouse.x,
@@ -895,8 +948,6 @@ export class CanvasEditor {
         const handle = this.getHandleAt(mouse.x, mouse.y, shape);
 
         if (handle) {
-          let initialRadius = null;
-          let initialDistance = null;
           let initialAngle = null;
           let startRotation = null;
           // --- pencil ---
@@ -918,12 +969,6 @@ export class CanvasEditor {
             }
           }
 
-          if (shape.type === 'circle') {
-            initialRadius = shape.radius;
-            const dx = mouse.x - shape.x, dy = mouse.y - shape.y;
-            initialDistance = Math.sqrt(dx * dx + dy * dy);
-          }
-
           if (shape.type === 'rectangle' && handle.type === 'rotate') {
             const cx = shape.x + shape.width / 2;
             const cy = shape.y + shape.height / 2;
@@ -938,8 +983,6 @@ export class CanvasEditor {
             resizeHandle: handle,
             selectedShape: shape,
             dragOffset: { x: 0, y: 0 },
-            initialRadius,
-            initialDistance,
             initialAngle,
             startRotation,
             pencilResize,
@@ -991,14 +1034,7 @@ export class CanvasEditor {
             isResizing: false,
             resizeHandle: null,
             selectedShape: shape,
-            dragOffset: {
-              x: (shape as RectangleShape | CircleShape).x !== undefined
-                ? mouse.x - (shape as RectangleShape | CircleShape).x
-                : 0,
-              y: (shape as RectangleShape | CircleShape).y !== undefined
-                ? mouse.y - (shape as RectangleShape | CircleShape).y
-                : 0,
-            },
+            dragOffset: { x: mouse.x - shape.x, y: mouse.y - shape.y },
           };
         }
 
@@ -1026,7 +1062,6 @@ export class CanvasEditor {
 
       if (shape && shape.points) {
         shape.points.push(mouse);
-        this.pencilCache.delete(shape);
       }
 
       this.requestDraw();
@@ -1103,8 +1138,6 @@ export class CanvasEditor {
             x: pt.x + dx,
             y: pt.y + dy,
           }));
-
-          this.pencilCache.delete(shape);
         }
       } else if (shape && ('x' in shape) && ('y' in shape)) {
         (shape as RectangleShape | CircleShape).x = mouse.x - this.interaction.dragOffset.x;
@@ -1166,7 +1199,11 @@ export class CanvasEditor {
   public onMouseUp(): void {
     if (this.interaction.isDrawingPencil) {
       this.interaction = { ...this.interaction, isDrawingPencil: false, drawingShape: null };
-    } else if (['isDrawingRectangle', 'isDrawingCircle', 'isDrawingLine'].some(key => this.interaction[key])) {
+    } else if (
+      this.interaction.isDrawingRectangle || 
+      this.interaction.isDrawingCircle || 
+      this.interaction.isDrawingLine
+    ) {
       this.interaction = {
         ...this.interaction,
         isDrawingRectangle: false,
@@ -1214,20 +1251,20 @@ export class CanvasEditor {
 
   // === Static fields ===
   static handleCursorMap = new Map([
-    ['top-left', 'nwse-resize'],
-    ['top', 'ns-resize'],
-    ['top-right', 'nesw-resize'],
-    ['right', 'ew-resize'],
-    ['bottom-right', 'nwse-resize'],
-    ['bottom', 'ns-resize'],
-    ['bottom-left', 'nesw-resize'],
-    ['left', 'ew-resize'],
+    ['nw', 'nwse-resize'],
+    ['n', 'ns-resize'],
+    ['ne', 'nesw-resize'],
+    ['e', 'ew-resize'],
+    ['se', 'nwse-resize'],
+    ['s', 'ns-resize'],
+    ['sw', 'nesw-resize'],
+    ['w', 'ew-resize'],
     ['rotate', 'grab'],
   ]);
 
   // --- Helper methods for shapes ---
     
-  private getRectangleCenter(shape: RectangleShape): { x: number; y: number } {
+  private getRectangleCenter(shape: RectangleShape): Point {
     return {
       x: shape.x + shape.width / 2,
       y: shape.y + shape.height / 2,
@@ -1238,7 +1275,7 @@ export class CanvasEditor {
     return shape.rotation ?? 0;
   }
     
-  private getCircleCenter(shape: CircleShape): { x: number; y: number } {
+  private getCircleCenter(shape: CircleShape): Point {
     return { x: shape.x, y: shape.y };
   }
     
@@ -1247,8 +1284,13 @@ export class CanvasEditor {
 
     if (wrapper) {
       const rect = wrapper.getBoundingClientRect();
-      this.canvas.width = rect.width;
-      this.canvas.height = rect.height;
+      const dpr = window.devicePixelRatio || 1;
+      this.canvas.width = rect.width * dpr;
+      this.canvas.height = rect.height * dpr;
+      this.canvas.style.width = rect.width + 'px';
+      this.canvas.style.height = rect.height + 'px';
+      this.ctx.setTransform(1, 0, 0, 1, 0, 0); // reset any existing transforms
+      this.ctx.scale(dpr, dpr);
       this.requestDraw();
     }
   }
@@ -1260,24 +1302,23 @@ export class CanvasEditor {
   // --- Helper methods for handles ---
   private getRectangleHandles(
     shape: RectangleShape,
-    offset: number = 5,
   ): Array<{ x: number; y: number; type: string }> {
     const w = shape.width, h = shape.height;
 
     return [
-      { x: -w/2 - offset, y: -h/2 - offset, type: 'nw' },
-      { x: +w/2 + offset, y: -h/2 - offset, type: 'ne' },
-      { x: +w/2 + offset, y: +h/2 + offset, type: 'se' },
-      { x: -w/2 - offset, y: +h/2 + offset, type: 'sw' },
-      { x: 0, y: -h/2 - offset, type: 'n' },
-      { x: +w/2 + offset, y: 0, type: 'e' },
-      { x: 0, y: +h/2 + offset, type: 's' },
-      { x: -w/2 - offset, y: 0, type: 'w' },
-      { x: 0, y: -h/2 - offset - 30, type: 'rotate' },
+      { x: -w/2, y: -h/2, type: 'nw' },
+      { x: +w/2, y: -h/2, type: 'ne' },
+      { x: +w/2, y: +h/2, type: 'se' },
+      { x: -w/2, y: +h/2, type: 'sw' },
+      { x: 0, y: -h/2, type: 'n' },
+      { x: +w/2, y: 0, type: 'e' },
+      { x: 0, y: +h/2, type: 's' },
+      { x: -w/2, y: 0, type: 'w' },
+      { x: 0, y: -h/2 - 30, type: 'rotate' },
     ];
   }
 
-  private getPencilHandles(
+  private getBoundingBoxHandles(
     bounds: { x: number; y: number; width: number; height: number },
   ): Array<{ x: number; y: number; type: string }> {
     return [
@@ -1292,33 +1333,18 @@ export class CanvasEditor {
     ];
   }
 
-  private getBoundingBoxHandles(
-    bounds: { x: number; y: number; width: number; height: number },
-    offset: number = 5,
-  ): Array<{ x: number; y: number; type: string }> {
-    return [
-      { x: bounds.x - offset, y: bounds.y - offset, type: 'nw' },
-      { x: bounds.x + bounds.width + offset, y: bounds.y - offset, type: 'ne' },
-      { x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height + offset, type: 'se' },
-      { x: bounds.x - offset, y: bounds.y + bounds.height + offset, type: 'sw' },
-      { x: bounds.x + bounds.width/2, y: bounds.y - offset, type: 'n' },
-      { x: bounds.x + bounds.width + offset, y: bounds.y + bounds.height/2, type: 'e' },
-      { x: bounds.x + bounds.width/2, y: bounds.y + bounds.height + offset, type: 's' },
-      { x: bounds.x - offset, y: bounds.y + bounds.height/2, type: 'w' },
-    ];
-  }
-
   // --- Helper methods for creating shapes ---
   private createRectangle(options: Partial<RectangleShape> = {}): RectangleShape {
     return {
       type: 'rectangle' as const,
       color: this.getRandomColor(),
       strokeWidth: this.getRandomStrokeWidth(),
-      x: typeof options.x === 'number' ? options.x : (Math.random() * 600 + 50),
-      y: typeof options.y === 'number' ? options.y : (Math.random() * 400 + 50),
-      width: typeof options.width === 'number' ? options.width : (Math.random() * 150 + 100),
-      height: typeof options.height === 'number' ? options.height : (Math.random() * 100 + 80),
-      rotation: typeof options.rotation === 'number' ? options.rotation : 0,
+      x: options.x ?? this.getRandom(50, 650),
+      y: options.y ?? this.getRandom(50, 450),
+      width: options.width ?? this.getRandom(100, 250),
+      height: options.height ?? this.getRandom(80, 180),
+      rotation: options.rotation ?? 0,
+      id: `shape-${this.shapeIdCounter++}`,
     };
   }
 
@@ -1327,25 +1353,25 @@ export class CanvasEditor {
       type: 'circle' as const,
       color: this.getRandomColor(),
       strokeWidth: this.getRandomStrokeWidth(),
-      x: typeof options.x === 'number' ? options.x : (Math.random() * 600 + 100),
-      y: typeof options.y === 'number' ? options.y : (Math.random() * 400 + 100),
-      radius: typeof options.radius === 'number' ? options.radius : (Math.random() * 60 + 40),
+      x: options.x ?? this.getRandom(100, 700),
+      y: options.y ?? this.getRandom(100, 500),
+      radius: options.radius ?? this.getRandom(40, 100),
+      id: `shape-${this.shapeIdCounter++}`,
     };
   }
 
-  private createLine(options: Partial<LineShape> & { angle?: number; length?: number } = {}): LineShape {
-    const x1 = typeof options.x1 === 'number' ? options.x1 : (Math.random() * 600 + 100);
-    const y1 = typeof options.y1 === 'number' ? options.y1 : (Math.random() * 400 + 100);
-    const angle = typeof options.angle === 'number' ? options.angle : (Math.random() * Math.PI * 2);
-    const length = typeof options.length === 'number' ? options.length : (Math.random() * 120 + 60);
-    const x2 = typeof options.x2 === 'number' ? options.x2 : (x1 + Math.cos(angle) * length);
-    const y2 = typeof options.y2 === 'number' ? options.y2 : (y1 + Math.sin(angle) * length);
+  private createLine(options: Partial<LineShape>): LineShape {
+    const x1 = options.x1 ?? this.getRandom(100, 700);
+    const y1 = options.y1 ?? this.getRandom(100, 500);
+    const x2 = options.x2 ?? this.getRandom(100, 700);
+    const y2 = options.y2 ?? this.getRandom(100, 500);
 
     return {
       type: 'line' as const,
-      color: this.getRandomColor(),
-      strokeWidth: this.getRandomStrokeWidth(),
+      color: options.color ?? this.getRandomColor(),
+      strokeWidth: options.strokeWidth ?? this.getRandomStrokeWidth(),
       x1, y1, x2, y2,
+      id: `shape-${this.shapeIdCounter++}`,
     };
   }
 } 
