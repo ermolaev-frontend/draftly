@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { CanvasEditorWrapper } from 'entities/canvas/CanvasEditorWrapper';
+import { CanvasEditorWrapper } from 'entities/canvas/CanvasWrapper/CanvasEditorWrapper';
 import { Toolbar } from 'widgets/Toolbar/Toolbar';
 import { CanvasEditor } from 'entities/canvas/CanvasEditor';
 
