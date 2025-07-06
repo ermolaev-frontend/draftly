@@ -9,6 +9,11 @@ export interface Point {
   y: number;
 }
 
+export interface Bounds extends Point {
+  width: number;
+  height: number;
+}
+
 export interface BaseShape {
   type: ToolType;
   color: string;
