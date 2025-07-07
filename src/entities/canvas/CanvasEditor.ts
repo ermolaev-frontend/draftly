@@ -163,11 +163,9 @@ export class CanvasEditor {
   /**
      * Deletes the currently selected shape (if any) from the shapes array and redraws the canvas.
      */
-  public deleteSelectedShape(): void {
-    const selected = this.interaction.shape;
-
-    if (selected) {
-      this.shapes = this.shapes.filter(s => s !== selected);
+  deleteSelectedShape(): void {
+    if (this.interaction.shape) {
+      this.shapes = this.shapes.filter(s => s !== this.interaction.shape);
       this.interaction.patch({ shape: null });
       this.requestDraw();
       this.autoSave?.();
@@ -177,7 +175,7 @@ export class CanvasEditor {
   /**
      * Deselects the currently selected shape (if any) and redraws the canvas.
      */
-  public deselectShape(): void {
+  deselectShape(): void {
     this.interaction.patch({ shape: null, handle: null, type: 'idle' });
     this.canvas.style.cursor = 'default';
   }
@@ -633,8 +631,7 @@ export class CanvasEditor {
   }
     
   private resizeShape(mouse: Point): void {
-    const shape = this.interaction.shape;
-    const handle = this.interaction.handle;
+    const { shape, handle, startRotation, initialAngle } = this.interaction;
     if (!shape || !handle) return;
         
     switch (shape.type) {
@@ -643,7 +640,7 @@ export class CanvasEditor {
           const cx = shape.x + shape.width/2;
           const cy = shape.y + shape.height/2;
           const angle = Math.atan2(mouse.y - cy, mouse.x - cx);
-          shape.rotation = angle;
+          shape.rotation = startRotation + angle - initialAngle;
           this.requestDraw();
 
           return;
@@ -817,7 +814,7 @@ export class CanvasEditor {
     this.requestDraw();
   }
 
-  public onMouseDown(e: MouseEvent | { offsetX: number; offsetY: number }): void {
+  onMouseDown(e: MouseEvent | { offsetX: number; offsetY: number }): void {
     const mouse = this.getMousePos(e);
 
     if (this.currentTool === 'pencil') {
@@ -1008,21 +1005,21 @@ export class CanvasEditor {
     this.requestDraw();
   }
     
-  public onMouseMove(e: MouseEvent | { offsetX: number; offsetY: number }): void {
+  onMouseMove(e: MouseEvent | { offsetX: number; offsetY: number }): void {
     const mouse = this.getMousePos(e);
     let cursor = 'default';
     const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
 
-    // console.log({
-    //   initialAngle: radToDeg(this.interaction.initialAngle ?? 0),
-    //   startRotation: radToDeg(this.interaction.startRotation ?? 0),
-    // }, 'interaction');
+    console.log({
+      initialAngle: radToDeg(this.interaction.initialAngle ?? 0),
+      startRotation: radToDeg(this.interaction.startRotation ?? 0),
+    }, 'interaction');
 
-    console.log(this.interaction.type);
+    // console.log(this.interaction.type);
 
     if (this.interaction.type === 'drawing' && this.interaction.shape?.type === 'pencil') {
       // Add point to current line
-      const shape = this.interaction.shape as PencilShape;
+      const { shape } = this.interaction;
 
       shape?.points?.push(mouse);
 
@@ -1033,8 +1030,7 @@ export class CanvasEditor {
     }
 
     if (this.interaction.type === 'drawing' && this.interaction.shape?.type === 'rectangle') {
-      const shape = this.interaction.shape as RectangleShape;
-      const start = this.interaction.startPoint;
+      const { shape, startPoint: start } = this.interaction;
 
       if (shape && start) {
         shape.x = Math.min(start.x, mouse.x);
@@ -1050,8 +1046,7 @@ export class CanvasEditor {
     }
 
     if (this.interaction.type === 'drawing' && this.interaction.shape?.type === 'circle') {
-      const shape = this.interaction.shape as CircleShape;
-      const start = this.interaction.startPoint;
+      const { shape, startPoint: start } = this.interaction;
 
       if (shape && start) {
         shape.radius = Math.sqrt((mouse.x - start.x) ** 2 + (mouse.y - start.y) ** 2);
@@ -1064,7 +1059,7 @@ export class CanvasEditor {
     }
 
     if (this.interaction.type === 'drawing' && this.interaction.shape?.type === 'line') {
-      const shape = this.interaction.shape as LineShape;
+      const { shape } = this.interaction;
 
       if (shape) {
         shape.x2 = mouse.x;
@@ -1078,7 +1073,7 @@ export class CanvasEditor {
     }
 
     if (this.interaction.type === 'dragging') {
-      const shape = this.interaction.shape;
+      const { shape } = this.interaction;
 
       if (shape?.type === 'line') {
         const prevCenterX = (shape.x1 + shape.x2) / 2;
@@ -1155,7 +1150,7 @@ export class CanvasEditor {
     this.canvas.style.cursor = cursor;
   }
     
-  public onMouseUp(): void {
+  onMouseUp(): void {
     if (this.interaction.type === 'drawing') {
       this.interaction.patch({
         shape: null,
@@ -1220,7 +1215,7 @@ export class CanvasEditor {
     return { x: shape.x, y: shape.y };
   }
     
-  public resizeCanvasToWrapper() {
+  resizeCanvasToWrapper() {
     const wrapper = this.canvas.parentElement;
 
     if (wrapper) {
