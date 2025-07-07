@@ -2,7 +2,7 @@ import { useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 
 import type { TouchEvent, MouseEvent } from 'react';
 
-import { CanvasEditor } from '../CanvasEditor';
+import { CanvasEditor } from '../classes/CanvasEditor';
 import styles from './style.module.scss';
 
 export const CanvasEditorWrapper = forwardRef<CanvasEditor | null, unknown>(

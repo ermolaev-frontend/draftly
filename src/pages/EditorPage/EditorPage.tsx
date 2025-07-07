@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { CanvasEditorWrapper } from 'entities/canvas/CanvasWrapper';
+import { CanvasEditor } from 'entities/canvas/classes/CanvasEditor';
 import { Toolbar } from 'widgets/Toolbar/Toolbar';
-import { CanvasEditor } from 'entities/canvas/CanvasEditor';
 
 import type { ToolType } from 'shared/types/canvas';
 

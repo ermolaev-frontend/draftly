@@ -11,7 +11,7 @@ import type {
 } from 'shared/types/canvas';
 
 import Interaction, { type Handle } from './Interaction';
-import { hashStringToSeed } from './canvasUtils';
+import { hashStringToSeed } from '../canvasUtils';
 
 function radToDeg(radians: number): number {
   return radians * (180 / Math.PI);
@@ -34,7 +34,7 @@ export class CanvasEditor {
     this.roughCanvas = rough.canvas(this.canvas);
     this.interaction = new Interaction();
     this.currentTool = 'select'; // New tool: select, pencil, ...
-    this.requestDraw();
+    // this.requestDraw();
     // ВАЖНО: выставить размеры canvas по wrapper'у
     this.resizeCanvasToWrapper();
     // Теперь canvas.width и height актуальны!
@@ -817,192 +817,209 @@ export class CanvasEditor {
   onMouseDown(e: MouseEvent | { offsetX: number; offsetY: number }): void {
     const mouse = this.getMousePos(e);
 
-    if (this.currentTool === 'pencil') {
-      // Start a new line
-      const newShape: PencilShape = {
-        type: 'pencil',
-        color: this.getRandomColor(),
-        strokeWidth: this.getRandomStrokeWidth(),
-        points: [mouse],
-      };
+    if (this.currentTool !== 'select') {
 
-      this.shapes.push(newShape);
+      switch (this.currentTool) {
+        case 'pencil': {
+        // Start a new line
+          const newShape: PencilShape = {
+            type: 'pencil',
+            color: this.getRandomColor(),
+            strokeWidth: this.getRandomStrokeWidth(),
+            points: [mouse],
+          };
 
-      this.interaction.patch({
-        handle: null,
-        shape: newShape,
-        dragOffset: { x: 0, y: 0 },
-        type: 'drawing',
-      });
+          this.shapes.push(newShape);
 
-      this.requestDraw();
+          this.interaction.patch({
+            handle: null,
+            shape: newShape,
+            dragOffset: { x: 0, y: 0 },
+            type: 'drawing',
+          });
 
-      return;
-    }
+          this.requestDraw();
 
-    if (this.currentTool === 'rectangle') {
-      const newShape = this.createRectangle({
-        x: mouse.x,
-        y: mouse.y,
-        width: 1,
-        height: 1,
-      });
+          return;
+        }
 
-      this.shapes.push(newShape);
+        case 'rectangle': {
+          const newShape = this.createRectangle({
+            x: mouse.x,
+            y: mouse.y,
+            width: 1,
+            height: 1,
+          });
 
-      this.interaction.patch({
-        handle: null,
-        shape: newShape,
-        dragOffset: { x: 0, y: 0 },
-        type: 'drawing',
-        startPoint: { ...mouse },
-      });
+          this.shapes.push(newShape);
 
-      this.requestDraw();
+          this.interaction.patch({
+            handle: null,
+            shape: newShape,
+            dragOffset: { x: 0, y: 0 },
+            type: 'drawing',
+            startPoint: { ...mouse },
+          });
 
-      return;
-    }
+          this.requestDraw();
 
-    if (this.currentTool === 'circle') {
-      const newShape = this.createCircle({
-        x: mouse.x,
-        y: mouse.y,
-        radius: 1,
-      });
+          return;
+        }
 
-      this.shapes.push(newShape);
+        case 'circle': {
+          const newShape = this.createCircle({
+            x: mouse.x,
+            y: mouse.y,
+            radius: 1,
+          });
 
-      this.interaction.patch({
-        handle: null,
-        shape: newShape,
-        dragOffset: { x: 0, y: 0 },
-        type: 'drawing',
-        startPoint: { ...mouse },
-      });
+          this.shapes.push(newShape);
 
-      this.requestDraw();
+          this.interaction.patch({
+            handle: null,
+            shape: newShape,
+            dragOffset: { x: 0, y: 0 },
+            type: 'drawing',
+            startPoint: { ...mouse },
+          });
 
-      return;
-    }
+          this.requestDraw();
 
-    if (this.currentTool === 'line') {
-      const newShape = this.createLine({
-        x1: mouse.x,
-        y1: mouse.y,
-        x2: mouse.x,
-        y2: mouse.y,
-      });
+          return;
+        }
 
-      this.shapes.push(newShape);
+        case 'line': {
+          const newShape = this.createLine({
+            x1: mouse.x,
+            y1: mouse.y,
+            x2: mouse.x,
+            y2: mouse.y,
+          });
 
-      this.interaction.patch({
-        handle: null,
-        shape: newShape,
-        dragOffset: { x: 0, y: 0 },
-        type: 'drawing',
-        startPoint: { ...mouse },
-      });
+          this.shapes.push(newShape);
 
-      this.requestDraw();
+          this.interaction.patch({
+            handle: null,
+            shape: newShape,
+            dragOffset: { x: 0, y: 0 },
+            type: 'drawing',
+            startPoint: { ...mouse },
+          });
 
-      return;
-    }
+          this.requestDraw();
 
-    if (this.interaction.shape) {
-      const shape = this.interaction.shape;
-      const handle = this.getHandleAt(mouse.x, mouse.y, shape);
-
-      if (handle) {
-        let initialAngle = 0;
-        let startRotation = 0;
-        let initialPoints = [] as Point[];
-        let initialBounds = {} as Bounds;
-
-        if (shape.type === 'pencil') {
-          const bounds = this.getShapeBounds(shape);
-
-          if (bounds) {
-            initialPoints = shape.points.map(pt => ({ ...pt }));
-
-            initialBounds = {
-              x: bounds.x ?? 0,
-              y: bounds.y ?? 0,
-              width: bounds.width ?? 0,
-              height: bounds.height ?? 0,
-            };
+          return;
+        }
+      }
+    } else {
+      if (this.interaction.shape) {
+        const shape = this.interaction.shape;
+        const handle = this.getHandleAt(mouse.x, mouse.y, shape);
+  
+        if (handle) {
+          let initialAngle = 0;
+          let startRotation = 0;
+          let initialPoints = [] as Point[];
+          let initialBounds = {} as Bounds;
+  
+          if (shape.type === 'pencil') {
+            const bounds = this.getShapeBounds(shape);
+  
+            if (bounds) {
+              initialPoints = shape.points.map(pt => ({ ...pt }));
+  
+              initialBounds = {
+                x: bounds.x ?? 0,
+                y: bounds.y ?? 0,
+                width: bounds.width ?? 0,
+                height: bounds.height ?? 0,
+              };
+            }
           }
+  
+          if (shape.type === 'rectangle' && handle === 'rotate') {
+            const cx = shape.x + shape.width / 2;
+            const cy = shape.y + shape.height / 2;
+            initialAngle = Math.atan2(mouse.y - cy, mouse.x - cx);
+            startRotation = shape.rotation ?? 0;
+          }
+  
+          this.interaction.patch({
+            type: 'resizing',
+            handle,
+            shape,
+            dragOffset: { x: 0, y: 0 },
+            initialAngle,
+            startRotation,
+            initialPoints,
+            initialBounds,
+          });
+  
+          return;
         }
-
-        if (shape.type === 'rectangle' && handle === 'rotate') {
-          const cx = shape.x + shape.width / 2;
-          const cy = shape.y + shape.height / 2;
-          initialAngle = Math.atan2(mouse.y - cy, mouse.x - cx);
-          startRotation = shape.rotation ?? 0;
-        }
-
-        this.interaction.patch({
-          type: 'resizing',
-          handle,
-          shape,
-          dragOffset: { x: 0, y: 0 },
-          initialAngle,
-          startRotation,
-          initialPoints,
-          initialBounds,
-        });
-
-        return;
       }
-    }
+  
+      let shapeSelected = false;
+  
+      for (let i = this.shapes.length - 1; i >= 0; i--) {
+        if (this.isPointInShape(mouse.x, mouse.y, this.shapes[i])) {
+          const shape = this.shapes[i];
+          this.interaction.patch({ shape });
+  
+          switch (shape.type) {
+            case 'line': {
+              const centerX = (shape.x1 + shape.x2) / 2;
+              const centerY = (shape.y1 + shape.y2) / 2;
 
-    let shapeSelected = false;
+              this.interaction.patch({
+                type: 'dragging',
+                handle: null,
+                shape,
+                dragOffset: {
+                  x: mouse.x - centerX,
+                  y: mouse.y - centerY,
+                },
+              });
 
-    for (let i = this.shapes.length - 1; i >= 0; i--) {
-      if (this.isPointInShape(mouse.x, mouse.y, this.shapes[i])) {
-        const shape = this.shapes[i];
-        this.interaction.patch({ shape });
+              break;
+            }
 
-        if (shape.type === 'line') {
-          const centerX = (shape.x1 + shape.x2) / 2;
-          const centerY = (shape.y1 + shape.y2) / 2;
-          
-          this.interaction.patch({
-            type: 'dragging',
-            handle: null,
-            shape,
-            dragOffset: {
-              x: mouse.x - centerX,
-              y: mouse.y - centerY,
-            },
-          });
-        } else if (shape.type === 'pencil') {
-          this.interaction.patch({
-            type: 'dragging',
-            handle: null,
-            shape,
-            dragOffset: { x: mouse.x, y: mouse.y },
-            initialPoints: shape.points.map(pt => ({ ...pt })),
-          });
-        } else {
-          this.interaction.patch({
-            type: 'dragging',
-            handle: null,
-            shape,
-            dragOffset: { x: mouse.x - shape.x, y: mouse.y - shape.y },
-          });
+            case 'pencil': {
+              this.interaction.patch({
+                type: 'dragging',
+                handle: null,
+                shape,
+                dragOffset: { x: mouse.x, y: mouse.y },
+                initialPoints: shape.points.map(pt => ({ ...pt })),
+              });
+
+              break;
+            }
+
+            default: {
+              this.interaction.patch({
+                type: 'dragging',
+                handle: null,
+                shape,
+                dragOffset: { x: mouse.x - shape.x, y: mouse.y - shape.y },
+              });
+
+              break;
+            }
+          }
+  
+          this.canvas.style.cursor = 'move';
+          shapeSelected = true;
+          break;
         }
-
-        this.canvas.style.cursor = 'move';
-        shapeSelected = true;
-        break;
       }
+  
+      if (!shapeSelected) {
+        this.deselectShape();
+      }
+  
+      this.requestDraw();
     }
-
-    if (!shapeSelected) {
-      this.deselectShape();
-    }
-
-    this.requestDraw();
   }
     
   onMouseMove(e: MouseEvent | { offsetX: number; offsetY: number }): void {
