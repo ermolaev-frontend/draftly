@@ -13,6 +13,10 @@ import type {
 import Interaction, { type Handle } from './Interaction';
 import { hashStringToSeed } from './canvasUtils';
 
+function radToDeg(radians: number): number {
+  return radians * (180 / Math.PI);
+}
+
 export class CanvasEditor {
   private readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
@@ -28,13 +32,7 @@ export class CanvasEditor {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
     this.roughCanvas = rough.canvas(this.canvas);
-
-    this.interaction = new Interaction({
-      dragOffset: { x: 0, y: 0 },
-      handle: null,
-      shape: null,
-    });
-
+    this.interaction = new Interaction();
     this.currentTool = 'select'; // New tool: select, pencil, ...
     this.requestDraw();
     // ВАЖНО: выставить размеры canvas по wrapper'у
@@ -200,7 +198,7 @@ export class CanvasEditor {
     switch (shape.type) {
       case 'rectangle': {
         const center = this.getRectangleCenter(shape);
-        const rotation = this.getRectangleRotation(shape);
+        const rotation = shape.rotation ?? 0;
         ctx.translate(center.x, center.y);
         ctx.rotate(rotation);
 
@@ -346,7 +344,7 @@ export class CanvasEditor {
       // Rotate bounding box and handles together with rectangle
       const { x: cx, y: cy } = this.getRectangleCenter(shape);
       ctx.translate(cx, cy);
-      ctx.rotate(this.getRectangleRotation(shape));
+      ctx.rotate(shape.rotation ?? 0);
 
       // Fill
       ctx.fillRect(
@@ -645,13 +643,7 @@ export class CanvasEditor {
           const cx = shape.x + shape.width/2;
           const cy = shape.y + shape.height/2;
           const angle = Math.atan2(mouse.y - cy, mouse.x - cx);
-
-          if (this.interaction && this.interaction.initialAngle != null) {
-            shape.rotation = angle - this.interaction.initialAngle + (this.interaction.startRotation ?? 0);
-          } else {
-            shape.rotation = angle;
-          }
-
+          shape.rotation = angle;
           this.requestDraw();
 
           return;
@@ -755,7 +747,10 @@ export class CanvasEditor {
           const { initialPoints, initialBounds } = this.interaction;
           if (!initialPoints || !initialBounds) break;
           
-          let newX = initialBounds.x, newY = initialBounds.y, newW = initialBounds.width, newH = initialBounds.height;
+          let newX = initialBounds.x,
+            newY = initialBounds.y,
+            newW = initialBounds.width,
+            newH = initialBounds.height;
 
           switch (handle) {
             case 'nw':
@@ -921,10 +916,10 @@ export class CanvasEditor {
       const handle = this.getHandleAt(mouse.x, mouse.y, shape);
 
       if (handle) {
-        let initialAngle = null;
-        let startRotation = null;
-        let initialPoints = null;
-        let initialBounds = null;
+        let initialAngle = 0;
+        let startRotation = 0;
+        let initialPoints = [] as Point[];
+        let initialBounds = {} as Bounds;
 
         if (shape.type === 'pencil') {
           const bounds = this.getShapeBounds(shape);
@@ -1018,7 +1013,12 @@ export class CanvasEditor {
     let cursor = 'default';
     const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
 
-    console.log(this.interaction, 'interaction');
+    // console.log({
+    //   initialAngle: radToDeg(this.interaction.initialAngle ?? 0),
+    //   startRotation: radToDeg(this.interaction.startRotation ?? 0),
+    // }, 'interaction');
+
+    console.log(this.interaction.type);
 
     if (this.interaction.type === 'drawing' && this.interaction.shape?.type === 'pencil') {
       // Add point to current line
@@ -1157,18 +1157,11 @@ export class CanvasEditor {
     
   public onMouseUp(): void {
     if (this.interaction.type === 'drawing') {
-      if (this.interaction.shape?.type === 'pencil') {
-        this.interaction.patch({
-          shape: null,
-          type: 'idle',
-        });
-      } else {
-        this.interaction.patch({
-          shape: null,
-          type: 'idle',
-          startPoint: null,
-        });
-      }
+      this.interaction.patch({
+        shape: null,
+        type: 'idle',
+        startPoint: { x: 0, y: 0 },
+      });
     } else {
       this.interaction.patch({
         handle: null,
@@ -1201,7 +1194,7 @@ export class CanvasEditor {
   }
     
   private getRandomStrokeWidth(): number {
-    return this.getRandom(3, 6);
+    return this.getRandomFromArray([3, 4, 5]);
   }
 
   static handleCursorMap = new Map([
@@ -1221,10 +1214,6 @@ export class CanvasEditor {
       x: shape.x + shape.width / 2,
       y: shape.y + shape.height / 2,
     };
-  }
-    
-  private getRectangleRotation(shape: RectangleShape): number {
-    return shape.rotation ?? 0;
   }
     
   private getCircleCenter(shape: CircleShape): Point {
@@ -1249,6 +1238,16 @@ export class CanvasEditor {
 
   private getRandom(min: number, max: number): number {
     return Math.random() * (max - min) + min;
+  }
+
+  private getRandomFromArray<T>(arr: T[]): T {
+    if (arr.length === 0) {
+      throw new Error('Array must not be empty');
+    }
+
+    const idx = Math.floor(Math.random() * arr.length);
+    
+    return arr[idx];
   }
 
   private getRectangleHandles(

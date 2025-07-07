@@ -3,28 +3,18 @@ import type { Shape, Point, Bounds } from 'shared/types/canvas';
 type InteractionType = 'idle' | 'dragging' | 'resizing' | 'drawing';
 export type Handle = 'nw' | 'n' | 'e' | 'ne' | 'se' | 's' | 'sw' | 'w' | 'rotate' | 'radius' | 'start' | 'end';
 
-export default class Interaction {
-  readonly type: InteractionType;
-  readonly shape: Shape | null;
-  readonly dragOffset: Point;
-  readonly handle: Handle | null;
-  readonly startPoint: Point | null; // for drawing
-  readonly initialAngle: number | null; // angle when rotation is started
-  readonly startRotation: number | null; // shape.rotation when rotation is started
-  readonly initialPoints: Point[] | null; // for pencil?
-  readonly initialBounds: Bounds | null; // for pencil?
+const systemCenter: Point = { x: 0, y: 0 };
 
-  constructor(inter: Partial<Interaction>) {
-    this.type = inter.type ?? 'idle';
-    this.shape = inter.shape ?? null;
-    this.dragOffset = inter.dragOffset ?? { x: 0, y: 0 };
-    this.handle = inter.handle ?? null;
-    this.startPoint = inter.startPoint ?? null;
-    this.initialAngle = inter.initialAngle ?? null;
-    this.startRotation = inter.startRotation ?? null;
-    this.initialPoints = inter.initialPoints ?? null;
-    this.initialBounds = inter.initialBounds ?? null;
-  }
+export default class Interaction {
+  readonly type: InteractionType = 'idle';
+  readonly shape: Shape | null = null;
+  readonly dragOffset: Point = systemCenter;
+  readonly handle: Handle | null = null;
+  readonly startPoint: Point = systemCenter; // for drawing
+  readonly initialAngle: number = 0; // angle between Ox and shape handle in rad when rotation is started
+  readonly startRotation: number = 0; // shape.rotation when rotation is started in rad
+  readonly initialPoints: Point[] = []; // for pencil?
+  readonly initialBounds: Bounds = { x: 0, y: 0, width: 0, height: 0 }; // for pencil?
 
   patch(inter: Partial<Interaction>) {
     Object.assign(this, inter);
