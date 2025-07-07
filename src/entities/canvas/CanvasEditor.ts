@@ -456,7 +456,7 @@ export class CanvasEditor {
     return { x: (e as MouseEvent).offsetX, y: (e as MouseEvent).offsetY };
   }
     
-  private getShapeBounds(shape: Shape): { x: number; y: number; width: number; height: number } | null {
+  private getShapeBounds(shape: Shape): Bounds | null {
     switch (shape.type) {
       case 'rectangle': return {
         x: shape.x,
@@ -916,51 +916,50 @@ export class CanvasEditor {
       return;
     }
 
-    for (const shape of this.shapes) {
-      if (shape === this.interaction.shape) {
-        const handle = this.getHandleAt(mouse.x, mouse.y, shape);
+    if (this.interaction.shape) {
+      const shape = this.interaction.shape;
+      const handle = this.getHandleAt(mouse.x, mouse.y, shape);
 
-        if (handle) {
-          let initialAngle = null;
-          let startRotation = null;
-          let initialPoints = null;
-          let initialBounds = null;
+      if (handle) {
+        let initialAngle = null;
+        let startRotation = null;
+        let initialPoints = null;
+        let initialBounds = null;
 
-          if (shape.type === 'pencil') {
-            const bounds = this.getShapeBounds(shape);
+        if (shape.type === 'pencil') {
+          const bounds = this.getShapeBounds(shape);
 
-            if (bounds) {
-              initialPoints = shape.points.map(pt => ({ ...pt }));
+          if (bounds) {
+            initialPoints = shape.points.map(pt => ({ ...pt }));
 
-              initialBounds = {
-                x: bounds.x ?? 0,
-                y: bounds.y ?? 0,
-                width: bounds.width ?? 0,
-                height: bounds.height ?? 0,
-              };
-            }
+            initialBounds = {
+              x: bounds.x ?? 0,
+              y: bounds.y ?? 0,
+              width: bounds.width ?? 0,
+              height: bounds.height ?? 0,
+            };
           }
-
-          if (shape.type === 'rectangle' && handle === 'rotate') {
-            const cx = shape.x + shape.width / 2;
-            const cy = shape.y + shape.height / 2;
-            initialAngle = Math.atan2(mouse.y - cy, mouse.x - cx);
-            startRotation = shape.rotation ?? 0;
-          }
-
-          this.interaction.patch({
-            type: 'resizing',
-            handle,
-            shape,
-            dragOffset: { x: 0, y: 0 },
-            initialAngle,
-            startRotation,
-            initialPoints,
-            initialBounds,
-          });
-
-          return;
         }
+
+        if (shape.type === 'rectangle' && handle === 'rotate') {
+          const cx = shape.x + shape.width / 2;
+          const cy = shape.y + shape.height / 2;
+          initialAngle = Math.atan2(mouse.y - cy, mouse.x - cx);
+          startRotation = shape.rotation ?? 0;
+        }
+
+        this.interaction.patch({
+          type: 'resizing',
+          handle,
+          shape,
+          dragOffset: { x: 0, y: 0 },
+          initialAngle,
+          startRotation,
+          initialPoints,
+          initialBounds,
+        });
+
+        return;
       }
     }
 
@@ -969,7 +968,6 @@ export class CanvasEditor {
     for (let i = this.shapes.length - 1; i >= 0; i--) {
       if (this.isPointInShape(mouse.x, mouse.y, this.shapes[i])) {
         const shape = this.shapes[i];
-        // this.interaction.selectedShape = shape;
         this.interaction.patch({ shape });
 
         if (shape.type === 'line') {
@@ -1117,11 +1115,8 @@ export class CanvasEditor {
       // Check if mouse is hovering over a handle
       let hoveredHandle = null;
 
-      for (const shape of this.shapes) {
-        if (shape === this.interaction.shape) {
-          hoveredHandle = this.getHandleAt(mouse.x, mouse.y, shape);
-          if (hoveredHandle) break;
-        }
+      if (this.interaction.shape) {
+        hoveredHandle = this.getHandleAt(mouse.x, mouse.y, this.interaction.shape);
       }
 
       if (hoveredHandle) {
@@ -1258,7 +1253,7 @@ export class CanvasEditor {
 
   private getRectangleHandles(
     shape: RectangleShape,
-  ): Array<{ x: number; y: number; type: Handle }> {
+  ): (Point & { type: Handle })[] {
     const w = shape.width, h = shape.height;
 
     return [
@@ -1276,7 +1271,7 @@ export class CanvasEditor {
 
   private getBoundingBoxHandles(
     bounds: Bounds,
-  ): { x: number; y: number; type: Handle }[] {
+  ): (Point & { type: Handle })[] {
     return [
       { x: bounds.x, y: bounds.y, type: 'nw' },
       { x: bounds.x + bounds.width, y: bounds.y, type: 'ne' },
