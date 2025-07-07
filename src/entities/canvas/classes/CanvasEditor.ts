@@ -816,21 +816,21 @@ export class CanvasEditor {
 
   onMouseDown(e: MouseEvent | { offsetX: number; offsetY: number }): void {
     const mouse = this.getMousePos(e);
+    const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
 
-    if (this.currentTool !== 'select') {
+    if (drawingTools.includes(this.currentTool)) {
+      let newShape: Shape | null = null;
 
       switch (this.currentTool) {
         case 'pencil': {
         // Start a new line
-          const newShape: PencilShape = {
+          newShape = {
             type: 'pencil',
             color: this.getRandomColor(),
             strokeWidth: this.getRandomStrokeWidth(),
             points: [mouse],
           };
 
-          this.shapes.push(newShape);
-
           this.interaction.patch({
             handle: null,
             shape: newShape,
@@ -838,21 +838,17 @@ export class CanvasEditor {
             type: 'drawing',
           });
 
-          this.requestDraw();
-
-          return;
+          break;
         }
 
         case 'rectangle': {
-          const newShape = this.createRectangle({
+          newShape = this.createRectangle({
             x: mouse.x,
             y: mouse.y,
             width: 1,
             height: 1,
           });
 
-          this.shapes.push(newShape);
-
           this.interaction.patch({
             handle: null,
             shape: newShape,
@@ -861,20 +857,16 @@ export class CanvasEditor {
             startPoint: { ...mouse },
           });
 
-          this.requestDraw();
-
-          return;
+          break;
         }
 
         case 'circle': {
-          const newShape = this.createCircle({
+          newShape = this.createCircle({
             x: mouse.x,
             y: mouse.y,
             radius: 1,
           });
 
-          this.shapes.push(newShape);
-
           this.interaction.patch({
             handle: null,
             shape: newShape,
@@ -883,21 +875,17 @@ export class CanvasEditor {
             startPoint: { ...mouse },
           });
 
-          this.requestDraw();
-
-          return;
+          break;
         }
 
         case 'line': {
-          const newShape = this.createLine({
+          newShape = this.createLine({
             x1: mouse.x,
             y1: mouse.y,
             x2: mouse.x,
             y2: mouse.y,
           });
 
-          this.shapes.push(newShape);
-
           this.interaction.patch({
             handle: null,
             shape: newShape,
@@ -906,11 +894,15 @@ export class CanvasEditor {
             startPoint: { ...mouse },
           });
 
-          this.requestDraw();
-
-          return;
+          break;
         }
       }
+
+      if (newShape) {
+        this.shapes.push(newShape);
+        this.requestDraw();
+      }
+
     } else {
       if (this.interaction.shape) {
         const shape = this.interaction.shape;
@@ -1027,71 +1019,51 @@ export class CanvasEditor {
     let cursor = 'default';
     const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
 
-    console.log({
-      initialAngle: radToDeg(this.interaction.initialAngle ?? 0),
-      startRotation: radToDeg(this.interaction.startRotation ?? 0),
-    }, 'interaction');
+    // console.log({
+    //   initialAngle: radToDeg(this.interaction.initialAngle ?? 0),
+    //   startRotation: radToDeg(this.interaction.startRotation ?? 0),
+    // }, 'interaction');
 
     // console.log(this.interaction.type);
 
-    if (this.interaction.type === 'drawing' && this.interaction.shape?.type === 'pencil') {
-      // Add point to current line
-      const { shape } = this.interaction;
+    const { shape, startPoint } = this.interaction;
 
-      shape?.points?.push(mouse);
+    if (this.interaction.type === 'drawing') {
+      switch (shape?.type) {
+        case 'pencil':
+          shape.points?.push(mouse);
+          
+          break;
 
-      this.requestDraw();
-      this.canvas.style.cursor = 'crosshair';
+        case 'rectangle':
+          if (shape && startPoint) {
+            shape.x = Math.min(startPoint.x, mouse.x);
+            shape.y = Math.min(startPoint.y, mouse.y);
+            shape.width = Math.abs(mouse.x - startPoint.x);
+            shape.height = Math.abs(mouse.y - startPoint.y);
+          }
 
-      return;
-    }
+          break;
 
-    if (this.interaction.type === 'drawing' && this.interaction.shape?.type === 'rectangle') {
-      const { shape, startPoint: start } = this.interaction;
+        case 'circle':
+          if (shape && startPoint) {
+            shape.radius = Math.sqrt((mouse.x - startPoint.x) ** 2 + (mouse.y - startPoint.y) ** 2);
+          }
 
-      if (shape && start) {
-        shape.x = Math.min(start.x, mouse.x);
-        shape.y = Math.min(start.y, mouse.y);
-        shape.width = Math.abs(mouse.x - start.x);
-        shape.height = Math.abs(mouse.y - start.y);
+          break;
+
+        case 'line':
+          if (shape) {
+            shape.x2 = mouse.x;
+            shape.y2 = mouse.y;
+          }
+
+          break;
       }
 
       this.requestDraw();
       this.canvas.style.cursor = 'crosshair';
-
-      return;
-    }
-
-    if (this.interaction.type === 'drawing' && this.interaction.shape?.type === 'circle') {
-      const { shape, startPoint: start } = this.interaction;
-
-      if (shape && start) {
-        shape.radius = Math.sqrt((mouse.x - start.x) ** 2 + (mouse.y - start.y) ** 2);
-      }
-
-      this.requestDraw();
-      this.canvas.style.cursor = 'crosshair';
-
-      return;
-    }
-
-    if (this.interaction.type === 'drawing' && this.interaction.shape?.type === 'line') {
-      const { shape } = this.interaction;
-
-      if (shape) {
-        shape.x2 = mouse.x;
-        shape.y2 = mouse.y;
-      }
-
-      this.requestDraw();
-      this.canvas.style.cursor = 'crosshair';
-
-      return;
-    }
-
-    if (this.interaction.type === 'dragging') {
-      const { shape } = this.interaction;
-
+    } else if (this.interaction.type === 'dragging') {
       if (shape?.type === 'line') {
         const prevCenterX = (shape.x1 + shape.x2) / 2;
         const prevCenterY = (shape.y1 + shape.y2) / 2;
@@ -1103,7 +1075,7 @@ export class CanvasEditor {
         shape.y1 += dy;
         shape.x2 += dx;
         shape.y2 += dy;
-      } else if (shape && shape.type === 'pencil') {
+      } else if (shape?.type === 'pencil') {
         const dx = mouse.x - this.interaction.dragOffset.x;
         const dy = mouse.y - this.interaction.dragOffset.y;
 
@@ -1113,9 +1085,9 @@ export class CanvasEditor {
             y: pt.y + dy,
           }));
         }
-      } else if (shape && ('x' in shape) && ('y' in shape)) {
-        (shape as RectangleShape | CircleShape).x = mouse.x - this.interaction.dragOffset.x;
-        (shape as RectangleShape | CircleShape).y = mouse.y - this.interaction.dragOffset.y;
+      } else if (shape?.type === 'rectangle' || shape?.type === 'circle') {
+        shape.x = mouse.x - this.interaction.dragOffset.x;
+        shape.y = mouse.y - this.interaction.dragOffset.y;
       }
 
       this.requestDraw();
