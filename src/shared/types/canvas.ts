@@ -3,8 +3,6 @@
 import rough from 'roughjs';
 import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts';
 
-import type { Drawable } from 'roughjs/bin/core';
-
 export type ToolType = 'select' | 'pencil' | 'rectangle' | 'circle' | 'line';
 type ShapeType = 'pencil' | 'rectangle' | 'circle' | 'line';
 
@@ -52,9 +50,6 @@ export interface LineShape extends BaseShape {
 export interface PencilShape extends BaseShape {
   type: 'pencil';
   points: Point[];
-  // Allow custom properties for roughjs caching
-  _roughDrawable?: Drawable;
-  _roughDrawablePoints?: Point[];
 }
 
 export type Shape = RectangleShape | CircleShape | LineShape | PencilShape;

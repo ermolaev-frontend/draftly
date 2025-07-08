@@ -11,7 +11,7 @@ import type {
 } from 'shared/types/canvas';
 
 import Interaction, { type Handle } from './Interaction';
-import { hashStringToSeed } from '../canvasUtils';
+import { generateId, hashStringToSeed } from '../canvasUtils';
 
 // function radToDeg(radians: number): number {
 //   return radians * (180 / Math.PI);
@@ -133,6 +133,7 @@ export class CanvasEditor {
           color: colors[Math.floor(this.getRandom(0, colors.length))],
           strokeWidth: this.getRandom(3, 6),
           points,
+          id: generateId(),
         };
       }
 
@@ -215,9 +216,7 @@ export class CanvasEditor {
           },
         );
 
-        ctx.restore();
-
-        return;
+        break;
       }
 
       case 'circle': {
@@ -239,9 +238,7 @@ export class CanvasEditor {
           },
         );
 
-        ctx.restore();
-
-        return;
+        break;
       }
 
       case 'line': {
@@ -260,64 +257,28 @@ export class CanvasEditor {
           },
         );
 
-        ctx.restore();
-
-        return;
+        break;
       }
 
       case 'pencil': {
         if (shape.points && shape.points.length > 1) {
-          //const foo = false;
-          const isLiveDrawing = this.interaction.type === 'drawing' && this.interaction.shape === shape;
+          const drawable = this.roughCanvas?.generator.curve(
+            shape.points.map(pt => [pt.x, pt.y]),
+            {
+              stroke: shape.color,
+              strokeWidth: shape.strokeWidth * 2,
+              roughness: 0.3,
+              bowing: 0.1,
+              seed: shape.id ? hashStringToSeed(shape.id) : undefined,
+            },
+          );
 
-          if (isLiveDrawing) {
-            // Draw a simple polyline for live preview (no rough effect)
-            ctx.beginPath();
-
-            ctx.moveTo(shape.points[0].x, shape.points[0].y);
-            
-            for (let i = 1; i < shape.points.length; i++) {
-              ctx.lineTo(shape.points[i].x, shape.points[i].y);
-            }
-
-            ctx.strokeStyle = shape.color;
-            ctx.lineWidth = shape.strokeWidth * 2;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-
-            ctx.stroke();
-          } else {
-            // Cache the roughjs drawable for stability after drawing is finished
-            const pointsChanged =
-              !shape._roughDrawablePoints ||
-              shape._roughDrawablePoints.length !== shape.points.length ||
-              !shape._roughDrawablePoints.every((pt, i) => pt.x === shape.points[i].x && pt.y === shape.points[i].y);
-
-            if (!shape._roughDrawable || pointsChanged) {
-              shape._roughDrawable = this.roughCanvas?.generator.linearPath(
-                shape.points.map(pt => [pt.x, pt.y]),
-                {
-                  stroke: shape.color,
-                  strokeWidth: shape.strokeWidth * 2,
-                  roughness: 0.5,
-                  bowing: 2,
-                  seed: shape.id ? hashStringToSeed(shape.id) : undefined,
-                },
-              );
-
-              // Store a shallow copy of the points
-              shape._roughDrawablePoints = shape.points.map(pt => ({ ...pt }));
-            }
-
-            if (shape._roughDrawable) {
-              this.roughCanvas?.draw(shape._roughDrawable);
-            }
+          if (drawable) {
+            this.roughCanvas?.draw(drawable);
           }
         }
 
-        ctx.restore();
-
-        return;
+        break;
       }
 
       default:
@@ -833,6 +794,7 @@ export class CanvasEditor {
             color: this.getRandomColor(),
             strokeWidth: this.getRandomStrokeWidth(),
             points: [mouse],
+            id: generateId(),
           };
 
           this.interaction.patch({
@@ -1272,7 +1234,7 @@ export class CanvasEditor {
       width: options.width ?? this.getRandom(100, 250),
       height: options.height ?? this.getRandom(80, 180),
       rotation: options.rotation ?? 0,
-      id: `shape-${this.shapeIdCounter++}`,
+      id: generateId(),
     };
   }
 
@@ -1284,7 +1246,7 @@ export class CanvasEditor {
       x: options.x ?? this.getRandom(100, 700),
       y: options.y ?? this.getRandom(100, 500),
       radius: options.radius ?? this.getRandom(40, 100),
-      id: `shape-${this.shapeIdCounter++}`,
+      id: generateId(),
     };
   }
 
@@ -1299,7 +1261,7 @@ export class CanvasEditor {
       color: options.color ?? this.getRandomColor(),
       strokeWidth: options.strokeWidth ?? this.getRandomStrokeWidth(),
       x1, y1, x2, y2,
-      id: `shape-${this.shapeIdCounter++}`,
+      id: generateId(),
     };
   }
 } 
