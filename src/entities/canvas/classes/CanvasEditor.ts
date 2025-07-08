@@ -222,10 +222,9 @@ export class CanvasEditor {
         // Use roughjs for circles
         const center = this.getCircleCenter(shape);
 
-        this.roughCanvas?.ellipse(
+        this.roughCanvas?.circle(
           center.x,
           center.y,
-          shape.radius * 2,
           shape.radius * 2,
           {
             stroke: shape.color,
