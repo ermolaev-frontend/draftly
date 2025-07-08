@@ -2,7 +2,7 @@ import rough from 'roughjs';
 
 import type {
   ToolType,
-  Point, Bounds,
+  Point,
   IShape,
 } from 'shared/types/canvas';
 
@@ -113,18 +113,10 @@ export class CanvasEditor {
 
       switch (this.currentTool) {
         case 'pencil': {
-        // Start a new line
           newShape = new Pencil({
             color: getRandomColor(),
             strokeWidth: getRandomStrokeWidth(),
             points: [mouse],
-          });
-
-          this.interaction.patch({
-            handle: null,
-            shape: newShape,
-            dragOffset: { x: 0, y: 0 },
-            type: 'drawing',
           });
 
           break;
@@ -138,14 +130,6 @@ export class CanvasEditor {
             height: 1,
           });
 
-          this.interaction.patch({
-            handle: null,
-            shape: newShape,
-            dragOffset: { x: 0, y: 0 },
-            type: 'drawing',
-            startPoint: { ...mouse },
-          });
-
           break;
         }
 
@@ -154,14 +138,6 @@ export class CanvasEditor {
             x: mouse.x,
             y: mouse.y,
             radius: 1,
-          });
-
-          this.interaction.patch({
-            handle: null,
-            shape: newShape,
-            dragOffset: { x: 0, y: 0 },
-            type: 'drawing',
-            startPoint: { ...mouse },
           });
 
           break;
@@ -175,73 +151,28 @@ export class CanvasEditor {
             y2: mouse.y,
           });
 
-          this.interaction.patch({
-            handle: null,
-            shape: newShape,
-            dragOffset: { x: 0, y: 0 },
-            type: 'drawing',
-            startPoint: { ...mouse },
-          });
-
           break;
         }
       }
 
       if (newShape) {
+        newShape.startDrawing(this.interaction, mouse);
         this.shapes.push(newShape);
         this.requestDraw();
       }
 
-    } else {
-      if (this.interaction.shape) {
-        const shape = this.interaction.shape;
-        const handle = shape.getHandleAt(mouse);
-  
-        if (handle) {
-          let initialAngle = 0;
-          let startRotation = 0;
-          let initialPoints = [] as Point[];
-          let initialBounds = {} as Bounds;
-  
-          if (shape.type === 'pencil') {
-            const bounds = shape.getBounds();
-  
-            if (bounds) {
-              initialPoints = shape.points.map(pt => ({ ...pt }));
-  
-              initialBounds = {
-                x: bounds.x ?? 0,
-                y: bounds.y ?? 0,
-                width: bounds.width ?? 0,
-                height: bounds.height ?? 0,
-              };
-            }
-          }
-  
-          if (shape.type === 'rectangle' && handle === 'rotate') {
-            const cx = shape.x + shape.width / 2;
-            const cy = shape.y + shape.height / 2;
-            initialAngle = Math.atan2(mouse.y - cy, mouse.x - cx);
-            startRotation = shape.rotation ?? 0;
-          }
-  
-          this.interaction.patch({
-            type: 'resizing',
-            handle,
-            shape,
-            dragOffset: { x: 0, y: 0 },
-            initialAngle,
-            startRotation,
-            initialPoints,
-            initialBounds,
-          });
-  
-          return;
-        }
+    } else if (this.interaction.shape) {
+      const shape = this.interaction.shape;
+      const handle = shape.getHandleAt(mouse);
+
+      if (handle) {
+        shape.startResizing(this.interaction, handle);
+
+        return;
       }
-  
+    } else {
       let shapeSelected = false;
-  
+
       for (let i = this.shapes.length - 1; i >= 0; i--) {
         const shape = this.shapes[i];
 
@@ -252,13 +183,13 @@ export class CanvasEditor {
           break;
         }
       }
-  
+
       if (!shapeSelected) {
         this.deselectShape();
       }
-  
-      this.requestDraw();
     }
+  
+    this.requestDraw();
   }
     
   onMouseMove(e: MouseEvent | { offsetX: number; offsetY: number }): void {
@@ -276,7 +207,7 @@ export class CanvasEditor {
       interShape?.move(mouse, this.interaction);
       this.requestDraw();
       cursor = 'move';
-    } else if (this.interaction.type === 'resizing') {
+    } else if (interType === 'resizing') {
       interShape?.resize(mouse, this.interaction);
       cursor = this.getCursorForHandle(this.interaction.handle);
     } else {

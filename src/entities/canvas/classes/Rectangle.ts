@@ -3,7 +3,7 @@ import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts
 
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
-import { generateId, hashStringToSeed, getRandom, getRandomColor, getRandomStrokeWidth } from '../canvasUtils';
+import { generateId, hashStringToSeed } from '../canvasUtils';
 
 export class Rectangle implements IShape {
   readonly type = 'rectangle';
@@ -41,17 +41,35 @@ export class Rectangle implements IShape {
   }
 
   startDrawing(interaction: Interaction, mouse: Point): void {
-
+    interaction.patch({
+      handle: null,
+      shape: this,
+      dragOffset: { x: 0, y: 0 },
+      type: 'drawing',
+      startPoint: { ...mouse },
+    });
   }
 
-  static createRandom(): Rectangle {
-    return new Rectangle ({
-      color: getRandomColor(),
-      strokeWidth: getRandomStrokeWidth(),
-      x: getRandom(50, 650),
-      y: getRandom(50, 450),
-      width: getRandom(100, 250),
-      height: getRandom(80, 180),
+  startResizing(interaction: Interaction, handle: Handle) {
+    let initialAngle = 0;
+    let startRotation = 0;
+
+    if (handle === 'rotate') {
+      const cx = this.x + this.width / 2;
+      const cy = this.y + this.height / 2;
+      initialAngle = Math.atan2(this.y - cy, this.x - cx);
+      startRotation = this.rotation ?? 0;
+    }
+
+    interaction.patch({
+      type: 'resizing',
+      handle,
+      shape: this,
+      dragOffset: { x: 0, y: 0 },
+      initialAngle,
+      startRotation,
+      initialPoints: undefined,
+      initialBounds: undefined,
     });
   }
 
@@ -148,7 +166,15 @@ export class Rectangle implements IShape {
     return lx >= -this.width/2 && lx <= this.width/2 && ly >= -this.height/2 && ly <= this.height/2;
   }
 
-  resize(mouse: Point, { handle }: Interaction): void {
+  resize(mouse: Point, interaction: Interaction): void {
+    const { handle } = interaction;
+
+    if (handle === 'rotate') {
+      this.rotate(mouse, interaction);
+
+      return;
+    }
+
     const cx = this.x + this.width/2;
     const cy = this.y + this.height/2;
     const angle = -(this.rotation ?? 0);

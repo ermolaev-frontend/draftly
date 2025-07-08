@@ -72,4 +72,5 @@ export interface IShape {
   getHandleAt({ x, y }: Point): Handle | null;
   startDragging(interaction: Interaction, mouse: Point): void;
   startDrawing(interaction: Interaction, mouse?: Point): void;
+  startResizing(interaction: Interaction, handle: Handle): void;
 }

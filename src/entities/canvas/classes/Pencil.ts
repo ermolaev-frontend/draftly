@@ -3,7 +3,7 @@ import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts
 
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
-import { generateId, hashStringToSeed, getRandom, getRandomColor, getRandomStrokeWidth } from '../canvasUtils';
+import { generateId, hashStringToSeed } from '../canvasUtils';
 
 export class Pencil implements IShape {
   readonly type = 'pencil';
@@ -42,23 +42,30 @@ export class Pencil implements IShape {
     });
   }
 
-  static createRandom(): Pencil {
-    const numPoints = Math.floor(getRandom(5, 20));
-    const points = [];
-    let px = getRandom(0, 20);
-    let py = getRandom(0, 40);
-    points.push({ x: px, y: py });
+  startResizing(interaction: Interaction, handle: Handle) {
+    let initialPoints, initialBounds;
+    const bounds = this.getBounds();
 
-    for (let p = 1; p < numPoints; p++) {
-      px += getRandom(-20, 20);
-      py += getRandom(-20, 20);
-      points.push({ x: px, y: py });
+    if (bounds) {
+      initialPoints = this.points.map(pt => ({ ...pt }));
+
+      initialBounds = {
+        x: bounds.x ?? 0,
+        y: bounds.y ?? 0,
+        width: bounds.width ?? 0,
+        height: bounds.height ?? 0,
+      };
     }
 
-    return new Pencil ({
-      color: getRandomColor(),
-      strokeWidth: getRandomStrokeWidth(),
-      points,
+    interaction.patch({
+      type: 'resizing',
+      handle,
+      shape: this,
+      dragOffset: { x: 0, y: 0 },
+      initialAngle: 0,
+      startRotation: 0,
+      initialPoints,
+      initialBounds,
     });
   }
 

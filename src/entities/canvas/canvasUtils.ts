@@ -1,4 +1,4 @@
-import type { Point, Shape, IShape } from 'shared/types/canvas';
+import type { Point, IShape } from 'shared/types/canvas';
 
 import { Rectangle } from './classes/Rectangle';
 import { Circle } from './classes/Circle';
@@ -168,7 +168,7 @@ export function getInitialShapes (canvas: HTMLCanvasElement, shapesCount: number
   for (let i = 0; i < shapesCount; i++) {
     const zone = zones[i % zones.length];
     const typeRand = Math.random();
-    let newShape: Shape;
+    let newShape: IShape;
 
     if (typeRand < 0.25) {
       // Rectangle

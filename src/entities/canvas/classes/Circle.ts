@@ -3,7 +3,7 @@ import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts
 
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
-import { generateId, hashStringToSeed, getRandom, getRandomColor, getRandomStrokeWidth } from '../canvasUtils';
+import { generateId, hashStringToSeed } from '../canvasUtils';
 
 export class Circle implements IShape {
   readonly type = 'circle';
@@ -38,16 +38,25 @@ export class Circle implements IShape {
   }
 
   startDrawing(interaction: Interaction, mouse: Point): void {
-
+    interaction.patch({
+      handle: null,
+      shape: this,
+      dragOffset: { x: 0, y: 0 },
+      type: 'drawing',
+      startPoint: { ...mouse },
+    });
   }
 
-  static createRandom(): Circle {
-    return new Circle ({
-      color: getRandomColor(),
-      strokeWidth: getRandomStrokeWidth(),
-      x: getRandom(100, 700),
-      y: getRandom(100, 500),
-      radius: getRandom(40, 100),
+  startResizing(interaction: Interaction, handle: Handle) {
+    interaction.patch({
+      type: 'resizing',
+      handle,
+      shape: this,
+      dragOffset: { x: 0, y: 0 },
+      initialAngle: 0,
+      startRotation: 0,
+      initialPoints: undefined,
+      initialBounds: undefined,
     });
   }
 
