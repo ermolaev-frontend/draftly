@@ -102,4 +102,36 @@ export function hashStringToSeed(str: string): number {
   }
 
   return Math.abs(hash);
-} 
+}
+
+export function generateId(): string {
+  if (crypto?.randomUUID) {
+    return crypto.randomUUID();
+  }
+
+  return Math.random().toString(36).slice(2) + '-' + Date.now();
+}
+
+export function getRandomColor(): string {
+  const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
+
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+  
+export function getRandomStrokeWidth(): number {
+  return getRandomFromArray([3, 4, 5]);
+}
+
+export function getRandom(min: number, max: number): number {
+  return Math.random() * (max - min) + min;
+}
+
+export function getRandomFromArray<T>(arr: T[]): T {
+  if (arr.length === 0) {
+    throw new Error('Array must not be empty');
+  }
+
+  const idx = Math.floor(Math.random() * arr.length);
+  
+  return arr[idx];
+}

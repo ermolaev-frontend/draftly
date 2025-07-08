@@ -1,8 +1,12 @@
-// Canvas/editor types for use across the app
+/* eslint-disable no-unused-vars */
+
+import rough from 'roughjs';
+import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts';
 
 import type { Drawable } from 'roughjs/bin/core';
 
 export type ToolType = 'select' | 'pencil' | 'rectangle' | 'circle' | 'line';
+type ShapeType = 'pencil' | 'rectangle' | 'circle' | 'line';
 
 export interface Point {
   x: number;
@@ -21,15 +25,19 @@ export interface BaseShape {
   id?: string;
 }
 
-export interface RectangleShape extends BaseShape, Point {
+export interface RectangleShape extends BaseShape {
   type: 'rectangle';
   width: number;
   height: number;
-  rotation?: number;
+  x: number;
+  y: number;
+  rotation: number;
 }
 
-export interface CircleShape extends BaseShape, Point {
+export interface CircleShape extends BaseShape {
   type: 'circle';
+  x: number;
+  y: number;
   radius: number;
 }
 
@@ -51,27 +59,20 @@ export interface PencilShape extends BaseShape {
 
 export type Shape = RectangleShape | CircleShape | LineShape | PencilShape;
 
-export interface InteractionState {
-  isDragging: boolean;
-  isResizing: boolean;
-  selectedShape: Shape | null;
-  dragOffset: Point;
-  resizeHandle: { type: string } | null;
-  // Dynamic properties for drawing and resizing
-  isDrawingPencil?: boolean;
-  isDrawingRectangle?: boolean;
-  isDrawingCircle?: boolean;
-  isDrawingLine?: boolean;
-  drawingShape?: Shape | null;
-  startPoint?: Point | null;
-  initialAngle?: number | null;
-  startRotation?: number | null;
-  pencilResize?: {
-    initialPoints: Point[];
-    initialBounds: { x: number; y: number; width: number; height: number };
-  } | null;
-  initialRadius?: number | null;
-  initialDistance?: number | null;
-  initialPoints?: Point[];
-  lineCenter?: Point;
-} 
+export interface IShape {
+  type: ShapeType;
+  color: string;
+  strokeWidth: number;
+  id: string;
+
+  draw(ctx: CanvasRenderingContext2D, roughCanvas?: ReturnType<typeof rough.canvas>): void;   
+  drawSelection(ctx: CanvasRenderingContext2D): void
+  isPointInShape(point: Point): boolean;
+  resize(mouse: Point, inter: Interaction): void;
+  drawNewShape(mouse: Point, inter: Interaction): void;
+  rotate(mouse: Point, inter: Interaction): void;
+  getBounds(): Bounds;
+  move(mouse: Point, inter: Interaction): void;
+  getHandles(): (Point & { type: Handle })[];
+  getHandleAt({ x, y }: Point): Handle | null;
+};

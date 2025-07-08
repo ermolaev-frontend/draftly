@@ -5,7 +5,7 @@ import type {
   RectangleShape,
   CircleShape,
   LineShape,
-  PencilShape,
+  // PencilShape,
   Shape,
   Point, Bounds,
 } from 'shared/types/canvas';
@@ -13,9 +13,9 @@ import type {
 import Interaction, { type Handle } from './Interaction';
 import { hashStringToSeed } from '../canvasUtils';
 
-function radToDeg(radians: number): number {
-  return radians * (180 / Math.PI);
-}
+// function radToDeg(radians: number): number {
+//   return radians * (180 / Math.PI);
+// }
 
 export class CanvasEditor {
   private readonly canvas: HTMLCanvasElement;
@@ -25,7 +25,7 @@ export class CanvasEditor {
   private readonly interaction: Interaction;
   private animationFrameId: number | null = null;
   private INITIAL_SHAPES_COUNT = 100;
-  private roughCanvas: any | null = null;
+  private roughCanvas: ReturnType<typeof rough.canvas> | null = null;
   private shapeIdCounter = 1;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -200,7 +200,7 @@ export class CanvasEditor {
         ctx.translate(center.x, center.y);
         ctx.rotate(rotation);
 
-        this.roughCanvas.rectangle(
+        this.roughCanvas?.rectangle(
           -shape.width / 2,
           -shape.height / 2,
           shape.width,
@@ -224,7 +224,7 @@ export class CanvasEditor {
         // Use roughjs for circles
         const center = this.getCircleCenter(shape);
 
-        this.roughCanvas.ellipse(
+        this.roughCanvas?.ellipse(
           center.x,
           center.y,
           shape.radius * 2,
@@ -246,7 +246,7 @@ export class CanvasEditor {
 
       case 'line': {
         // Use roughjs for lines
-        this.roughCanvas.line(
+        this.roughCanvas?.line(
           shape.x1,
           shape.y1,
           shape.x2,
@@ -294,7 +294,7 @@ export class CanvasEditor {
               !shape._roughDrawablePoints.every((pt, i) => pt.x === shape.points[i].x && pt.y === shape.points[i].y);
 
             if (!shape._roughDrawable || pointsChanged) {
-              shape._roughDrawable = this.roughCanvas.generator.linearPath(
+              shape._roughDrawable = this.roughCanvas?.generator.linearPath(
                 shape.points.map(pt => [pt.x, pt.y]),
                 {
                   stroke: shape.color,
@@ -309,7 +309,9 @@ export class CanvasEditor {
               shape._roughDrawablePoints = shape.points.map(pt => ({ ...pt }));
             }
 
-            this.roughCanvas.draw(shape._roughDrawable);
+            if (shape._roughDrawable) {
+              this.roughCanvas?.draw(shape._roughDrawable);
+            }
           }
         }
 
@@ -460,6 +462,7 @@ export class CanvasEditor {
         width: shape.width,
         height: shape.height,
       };
+
       case 'circle': return {
         x: shape.x - shape.radius,
         y: shape.y - shape.radius,
@@ -502,6 +505,7 @@ export class CanvasEditor {
   }
     
   private isPointInShape(x: number, y: number, shape: Shape): boolean {
+    console.log('isPointInShape');
     const bounds = this.getShapeBounds(shape);
     if (!bounds) return false;
 
@@ -1019,13 +1023,6 @@ export class CanvasEditor {
     let cursor = 'default';
     const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
 
-    // console.log({
-    //   initialAngle: radToDeg(this.interaction.initialAngle ?? 0),
-    //   startRotation: radToDeg(this.interaction.startRotation ?? 0),
-    // }, 'interaction');
-
-    // console.log(this.interaction.type);
-
     const { shape, startPoint } = this.interaction;
 
     if (this.interaction.type === 'drawing') {
@@ -1110,9 +1107,7 @@ export class CanvasEditor {
         let hovered = false;
 
         for (let i = this.shapes.length - 1; i >= 0; i--) {
-          const shape = this.shapes[i];
-
-          if (this.isPointInShape(mouse.x, mouse.y, shape)) {
+          if (this.isPointInShape(mouse.x, mouse.y, this.shapes[i])) {
             hovered = true;
 
             if (shape === this.interaction.shape) {
