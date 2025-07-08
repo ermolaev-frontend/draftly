@@ -170,29 +170,31 @@ export class CanvasEditor {
 
         return;
       }
-    } else {
-      let shapeSelected = false;
+    }
 
-      for (let i = this.shapes.length - 1; i >= 0; i--) {
-        const shape = this.shapes[i];
+    let shapeSelected = false;
 
-        if (shape.isPointInShape(mouse)) {
-          shape.startDragging(this.interaction, mouse);
-          this.canvas.style.cursor = 'move';
-          shapeSelected = true;
-          break;
-        }
+    for (let i = this.shapes.length - 1; i >= 0; i--) {
+      const shape = this.shapes[i];
+
+      if (shape.isPointInShape(mouse)) {
+        shape.startDragging(this.interaction, mouse);
+        this.canvas.style.cursor = 'move';
+        shapeSelected = true;
+        break;
       }
+    }
 
-      if (!shapeSelected) {
-        this.deselectShape();
-      }
+    if (!shapeSelected) {
+      this.deselectShape();
     }
   
     this.requestDraw();
   }
     
   onMouseMove(e: MouseEvent | { offsetX: number; offsetY: number }): void {
+    console.log(this.interaction);
+
     const mouse = this.getMousePos(e);
     let cursor = 'default';
     const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
@@ -209,6 +211,7 @@ export class CanvasEditor {
       cursor = 'move';
     } else if (interType === 'resizing') {
       interShape?.resize(mouse, this.interaction);
+      this.requestDraw();
       cursor = this.getCursorForHandle(this.interaction.handle);
     } else {
       // Check if mouse is hovering over a handle
@@ -266,7 +269,7 @@ export class CanvasEditor {
         dragOffset: { x: 0, y: 0 },
       });
     }
-        
+
     this.autoSave();
   }
     
