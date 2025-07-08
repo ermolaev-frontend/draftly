@@ -26,7 +26,6 @@ export class CanvasEditor {
   private animationFrameId: number | null = null;
   private INITIAL_SHAPES_COUNT = 100;
   private roughCanvas: ReturnType<typeof rough.canvas> | null = null;
-  private shapeIdCounter = 1;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -466,7 +465,6 @@ export class CanvasEditor {
   }
     
   private isPointInShape(x: number, y: number, shape: Shape): boolean {
-    console.log('isPointInShape');
     const bounds = this.getShapeBounds(shape);
     if (!bounds) return false;
 

@@ -52,15 +52,14 @@ export class Rectangle implements IShape {
   draw(ctx: CanvasRenderingContext2D, roughCanvas: ReturnType<typeof rough.canvas>): void {
     ctx.save();
     ctx.strokeStyle = this.color;
-
     ctx.lineWidth = this.strokeWidth;
-
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.beginPath();
 
     const center = this.getCenter();
     const rotation = this.rotation ?? 0;
+
     ctx.translate(center.x, center.y);
     ctx.rotate(rotation);
 
@@ -83,10 +82,8 @@ export class Rectangle implements IShape {
   }
 
   drawSelection(ctx: CanvasRenderingContext2D): void {
-    const bounds = this.getBounds();
-    if (!bounds) return;
     ctx.save();
-    // Colors in Excalidraw style
+
     const borderColor = '#228be6'; // saturated blue
     const fillColor = 'rgba(34, 139, 230, 0.08)'; // semi-transparent blue
     ctx.lineWidth = 2;
