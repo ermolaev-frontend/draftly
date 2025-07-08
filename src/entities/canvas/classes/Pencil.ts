@@ -6,7 +6,7 @@ import type { Bounds, Point, IShape } from 'shared/types/canvas';
 import { generateId, hashStringToSeed, getRandom, getRandomColor, getRandomStrokeWidth } from '../canvasUtils';
 
 export class Pencil implements IShape {
-  readonly type = 'rectangle';
+  readonly type = 'pencil';
   readonly color: string;
   readonly strokeWidth: number;
   readonly id: string;
@@ -21,6 +21,25 @@ export class Pencil implements IShape {
 
   patch(shape: Partial<Pencil>) {
     Object.assign(this, shape);
+  }
+
+  startDragging(interaction: Interaction, mouse: Point): void {
+    interaction.patch({
+      type: 'dragging',
+      handle: null,
+      shape: this,
+      dragOffset: { x: mouse.x, y: mouse.y },
+      initialPoints: this.points.map(pt => ({ ...pt })),
+    });
+  }
+
+  startDrawing(interaction: Interaction): void {
+    interaction.patch({
+      handle: null,
+      shape: this,
+      dragOffset: { x: 0, y: 0 },
+      type: 'drawing',
+    });
   }
 
   static createRandom(): Pencil {

@@ -1,4 +1,4 @@
-import type { Shape, Point, Bounds } from 'shared/types/canvas';
+import type { Point, Bounds, IShape } from 'shared/types/canvas';
 
 type InteractionType = 'idle' | 'dragging' | 'resizing' | 'drawing';
 export type Handle = 'nw' | 'n' | 'e' | 'ne' | 'se' | 's' | 'sw' | 'w' | 'rotate' | 'radius' | 'start' | 'end';
@@ -7,7 +7,7 @@ const systemCenter: Point = { x: 0, y: 0 };
 
 export default class Interaction {
   readonly type: InteractionType = 'idle';
-  readonly shape: Shape | null = null;
+  readonly shape: IShape | null = null;
   readonly dragOffset: Point = systemCenter;
   readonly handle: Handle | null = null;
   readonly startPoint: Point = systemCenter; // for drawing

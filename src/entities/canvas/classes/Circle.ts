@@ -28,6 +28,19 @@ export class Circle implements IShape {
     Object.assign(this, shape);
   }
 
+  startDragging(interaction: Interaction, mouse: Point): void {
+    interaction.patch({
+      type: 'dragging',
+      handle: null,
+      shape: this,
+      dragOffset: { x: mouse.x - this.x, y: mouse.y - this.y },
+    });
+  }
+
+  startDrawing(interaction: Interaction, mouse: Point): void {
+
+  }
+
   static createRandom(): Circle {
     return new Circle ({
       color: getRandomColor(),

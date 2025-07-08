@@ -2,30 +2,26 @@ import rough from 'roughjs';
 
 import type {
   ToolType,
-  RectangleShape,
-  CircleShape,
-  LineShape,
-  // PencilShape,
-  Shape,
   Point, Bounds,
+  IShape,
 } from 'shared/types/canvas';
 
 import Interaction, { type Handle } from './Interaction';
-import { generateId, hashStringToSeed } from '../canvasUtils';
-
-// function radToDeg(radians: number): number {
-//   return radians * (180 / Math.PI);
-// }
+import { getInitialShapes, getRandomColor, getRandomStrokeWidth } from '../canvasUtils';
+import { Rectangle } from './Rectangle';
+import { Circle } from './Circle';
+import { Line } from './Line';
+import { Pencil } from './Pencil';
 
 export class CanvasEditor {
   private readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
-  private shapes: Shape[];
+  private shapes: IShape[];
   private currentTool: ToolType;
   private readonly interaction: Interaction;
   private animationFrameId: number | null = null;
   private INITIAL_SHAPES_COUNT = 100;
-  private roughCanvas: ReturnType<typeof rough.canvas> | null = null;
+  private readonly roughCanvas: ReturnType<typeof rough.canvas>;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -33,112 +29,12 @@ export class CanvasEditor {
     this.roughCanvas = rough.canvas(this.canvas);
     this.interaction = new Interaction();
     this.currentTool = 'select'; // New tool: select, pencil, ...
-    // this.requestDraw();
     // ВАЖНО: выставить размеры canvas по wrapper'у
     this.resizeCanvasToWrapper();
     // Теперь canvas.width и height актуальны!
-    const margin = 40; // inner margin for shapes
-    const zoneRows = 6;
-    const zoneCols = 6;
-    const zoneWidth = (this.canvas.width - 2 * margin) / zoneCols;
-    const zoneHeight = (this.canvas.height - 2 * margin) / zoneRows;
-    const zones = [];
 
-    for (let row = 0; row < zoneRows; row++) {
-      for (let col = 0; col < zoneCols; col++) {
-        zones.push({
-          xMin: margin + col * zoneWidth,
-          xMax: margin + (col + 1) * zoneWidth,
-          yMin: margin + row * zoneHeight,
-          yMax: margin + (row + 1) * zoneHeight,
-        });
-      }
-    }
-
-    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
-    // Create INITIAL_SHAPES_COUNT shapes distributed across 6 zones
-    this.shapes = [];
-
-    for (let i = 0; i < this.INITIAL_SHAPES_COUNT; i++) {
-      const zone = zones[i % zones.length];
-      const typeRand = Math.random();
-      let newShape: Shape;
-
-      if (typeRand < 0.25) {
-        // Rectangle
-        newShape = this.createRectangle({
-          x: this.getRandom(zone.xMin, zone.xMax - 120),
-          y: this.getRandom(zone.yMin, zone.yMax - 100),
-          width: this.getRandom(100, Math.min(180, zone.xMax - zone.xMin)),
-          height: this.getRandom(80, Math.min(140, zone.yMax - zone.yMin)),
-          color: colors[Math.floor(this.getRandom(0, colors.length))],
-          strokeWidth: this.getRandom(3, 6),
-          type: 'rectangle' as const,
-          rotation: 0,
-        });
-      } else if (typeRand < 0.5) {
-        // Circle
-        newShape = this.createCircle({
-          x: this.getRandom(zone.xMin + 60, zone.xMax - 60),
-          y: this.getRandom(zone.yMin + 60, zone.yMax - 60),
-          radius: this.getRandom(
-            40,
-            Math.min(80, (zone.xMax - zone.xMin) / 2, (zone.yMax - zone.yMin) / 2),
-          ),
-          color: colors[Math.floor(this.getRandom(0, colors.length))],
-          strokeWidth: this.getRandom(3, 6),
-          type: 'circle' as const,
-        });
-      } else if (typeRand < 0.75) {
-        // Line
-        const cx = (zone.xMin + zone.xMax) / 2;
-        const cy = (zone.yMin + zone.yMax) / 2;
-
-        const length = this.getRandom(
-          80,
-          Math.min(zone.xMax - zone.xMin, zone.yMax - zone.yMin) - 20,
-        );
-
-        const angle = this.getRandom(0, Math.PI * 2);
-        const x1 = cx - Math.cos(angle) * length / 2;
-        const y1 = cy - Math.sin(angle) * length / 2;
-        const x2 = cx + Math.cos(angle) * length / 2;
-        const y2 = cy + Math.sin(angle) * length / 2;
-
-        newShape = this.createLine({
-          x1, y1, x2, y2,
-          color: colors[Math.floor(this.getRandom(0, colors.length))],
-          strokeWidth: this.getRandom(3, 6),
-          type: 'line' as const,
-        });
-      } else {
-        // Pencil
-        const numPoints = Math.floor(this.getRandom(5, 20));
-        const points = [];
-        let px = this.getRandom(zone.xMin + 10, zone.xMax - 10);
-        let py = this.getRandom(zone.yMin + 10, zone.yMax - 10);
-        points.push({ x: px, y: py });
-
-        for (let p = 1; p < numPoints; p++) {
-          px += this.getRandom(-20, 20);
-          py += this.getRandom(-20, 20);
-          px = Math.max(zone.xMin + 5, Math.min(zone.xMax - 5, px));
-          py = Math.max(zone.yMin + 5, Math.min(zone.yMax - 5, py));
-          points.push({ x: px, y: py });
-        }
-
-        newShape = {
-          type: 'pencil',
-          color: colors[Math.floor(this.getRandom(0, colors.length))],
-          strokeWidth: this.getRandom(3, 6),
-          points,
-          id: generateId(),
-        };
-      }
-
-      this.shapes.push(newShape);
-    }
-
+    this.shapes = getInitialShapes(canvas, this.INITIAL_SHAPES_COUNT);
+    
     this.requestDraw();
   }
 
@@ -180,224 +76,19 @@ export class CanvasEditor {
     this.canvas.style.cursor = 'default';
   }
 
-  private drawShape(shape: Shape): void {
-    const ctx = this.ctx;
-    ctx.save();
-    ctx.strokeStyle = shape.color;
-
-    ctx.lineWidth = (shape.type === 'pencil')
-      ? shape.strokeWidth * 2
-      : shape.strokeWidth;
-
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-
-    switch (shape.type) {
-      case 'rectangle': {
-        const center = this.getRectangleCenter(shape);
-        const rotation = shape.rotation ?? 0;
-        ctx.translate(center.x, center.y);
-        ctx.rotate(rotation);
-
-        this.roughCanvas?.rectangle(
-          -shape.width / 2,
-          -shape.height / 2,
-          shape.width,
-          shape.height,
-          {
-            stroke: shape.color,
-            strokeWidth: shape.strokeWidth,
-            fill: undefined,
-            roughness: 1.5,
-            bowing: 2,
-            seed: shape.id ? hashStringToSeed(shape.id) : undefined,
-          },
-        );
-
-        break;
-      }
-
-      case 'circle': {
-        // Use roughjs for circles
-        const center = this.getCircleCenter(shape);
-
-        this.roughCanvas?.circle(
-          center.x,
-          center.y,
-          shape.radius * 2,
-          {
-            stroke: shape.color,
-            strokeWidth: shape.strokeWidth,
-            fill: undefined,
-            roughness: 1.5,
-            bowing: 2,
-            seed: shape.id ? hashStringToSeed(shape.id) : undefined,
-          },
-        );
-
-        break;
-      }
-
-      case 'line': {
-        // Use roughjs for lines
-        this.roughCanvas?.line(
-          shape.x1,
-          shape.y1,
-          shape.x2,
-          shape.y2,
-          {
-            stroke: shape.color,
-            strokeWidth: shape.strokeWidth,
-            roughness: 1.5,
-            bowing: 2,
-            seed: shape.id ? hashStringToSeed(shape.id) : undefined,
-          },
-        );
-
-        break;
-      }
-
-      case 'pencil': {
-        if (shape.points && shape.points.length > 1) {
-          const drawable = this.roughCanvas?.generator.curve(
-            shape.points.map(pt => [pt.x, pt.y]),
-            {
-              stroke: shape.color,
-              strokeWidth: shape.strokeWidth * 2,
-              roughness: 0.3,
-              bowing: 0.1,
-              seed: shape.id ? hashStringToSeed(shape.id) : undefined,
-            },
-          );
-
-          if (drawable) {
-            this.roughCanvas?.draw(drawable);
-          }
-        }
-
-        break;
-      }
-
-      default:
-        break;
-    }
-
-    ctx.restore();
-  }
-    
-  private drawSelection(shape: Shape): void {
-    const ctx = this.ctx;
-    const bounds = this.getShapeBounds(shape);
-    if (!bounds) return;
-    ctx.save();
-    // Colors in Excalidraw style
-    const borderColor = '#228be6'; // saturated blue
-    const fillColor = 'rgba(34, 139, 230, 0.08)'; // semi-transparent blue
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = borderColor;
-    ctx.fillStyle = fillColor;
-    ctx.setLineDash([]); // Solid line
-
-    if (shape.type === 'rectangle') {
-      // Rotate bounding box and handles together with rectangle
-      const { x: cx, y: cy } = this.getRectangleCenter(shape);
-      ctx.translate(cx, cy);
-      ctx.rotate(shape.rotation ?? 0);
-
-      // Fill
-      ctx.fillRect(
-        -shape.width/2,
-        -shape.height/2,
-        shape.width,
-        shape.height,
-      );
-
-      // Frame
-      ctx.strokeRect(
-        -shape.width/2,
-        -shape.height/2,
-        shape.width,
-        shape.height,
-      );
-
-      // Handles
-      ctx.fillStyle = borderColor;
-      this.getRectangleHandles(shape).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
-      // Rotation handle (circle)
-      const rotateHandle = { x: 0, y: -shape.height/2 - 30, type: 'rotate' };
-      ctx.beginPath();
-      ctx.arc(rotateHandle.x, rotateHandle.y, 8, 0, Math.PI*2);
-      ctx.fillStyle = '#fff';
-      ctx.fill();
-      ctx.strokeStyle = borderColor;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-    } else if (shape.type === 'line') {
-      // Don't draw bounding box, only handles
-      ctx.fillStyle = borderColor;
-      ctx.fillRect(shape.x1 - 4, shape.y1 - 4, 8, 8); // start
-      ctx.fillRect(shape.x2 - 4, shape.y2 - 4, 8, 8); // end
-    } else if (shape.type === 'circle') {
-      // Fill
-      ctx.beginPath();
-      ctx.arc(shape.x, shape.y, shape.radius, 0, Math.PI * 2);
-      ctx.fill();
-      // Frame
-      ctx.beginPath();
-      ctx.arc(shape.x, shape.y, shape.radius, 0, Math.PI * 2);
-      ctx.strokeStyle = borderColor;
-      ctx.stroke();
-      // Right handle from center (on circle)
-      const handle = { x: shape.x + shape.radius, y: shape.y, type: 'radius' };
-      ctx.beginPath();
-      ctx.arc(handle.x, handle.y, 7, 0, Math.PI * 2);
-      ctx.fillStyle = borderColor;
-      ctx.fill();
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-    } else if (shape.type === 'pencil') {
-      // Bounding box + 8 handles
-      ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-      ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
-      ctx.fillStyle = borderColor;
-      this.getBoundingBoxHandles(bounds).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
-    } else {
-      // For other shapes (if they appear)
-      ctx.fillRect(
-        bounds.x,
-        bounds.y,
-        bounds.width,
-        bounds.height,
-      );
-
-      ctx.strokeRect(
-        bounds.x,
-        bounds.y,
-        bounds.width,
-        bounds.height,
-      );
-
-      ctx.fillStyle = borderColor;
-      // 8 handles: 4 corner and 4 side
-      this.getBoundingBoxHandles(bounds).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
-    }
-
-    ctx.restore();
-  }
-    
   private drawShapes(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
     if (!Array.isArray(this.shapes)) return;
 
+    const { shape, type } = this.interaction;
+
     this.shapes.forEach(shape => {
-      this.drawShape(shape);
+      shape.draw(this.ctx, this.roughCanvas);
     });
 
-    if (this.interaction.shape && this.interaction.type !== 'drawing') {
-      this.drawSelection(this.interaction.shape);
+    if (shape && type !== 'drawing') {
+      shape.drawSelection(this.ctx);
     }
   }
     
@@ -412,387 +103,22 @@ export class CanvasEditor {
 
     return { x: (e as MouseEvent).offsetX, y: (e as MouseEvent).offsetY };
   }
-    
-  private getShapeBounds(shape: Shape): Bounds | null {
-    switch (shape.type) {
-      case 'rectangle': return {
-        x: shape.x,
-        y: shape.y,
-        width: shape.width,
-        height: shape.height,
-      };
-
-      case 'circle': return {
-        x: shape.x - shape.radius,
-        y: shape.y - shape.radius,
-        width: shape.radius * 2,
-        height: shape.radius * 2,
-      };
-
-      case 'line': {
-        const minX = Math.min(shape.x1, shape.x2);
-        const minY = Math.min(shape.y1, shape.y2);
-        const maxX = Math.max(shape.x1, shape.x2);
-        const maxY = Math.max(shape.y1, shape.y2);
-
-        return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-      }
-
-      case 'pencil': {
-        if (!shape.points || shape.points.length === 0) return null;
-        let minX = shape.points[0].x, maxX = shape.points[0].x;
-        let minY = shape.points[0].y, maxY = shape.points[0].y;
-
-        for (const pt of shape.points) {
-          if (pt.x < minX) minX = pt.x;
-          if (pt.x > maxX) maxX = pt.x;
-          if (pt.y < minY) minY = pt.y;
-          if (pt.y > maxY) maxY = pt.y;
-        }
-
-        return {
-          x: minX,
-          y: minY,
-          width: (maxX - minX),
-          height: (maxY - minY),
-        };
-      }
-
-      default:
-        return null;
-    }
-  }
-    
-  private isPointInShape(x: number, y: number, shape: Shape): boolean {
-    const bounds = this.getShapeBounds(shape);
-    if (!bounds) return false;
-
-    switch (shape.type) {
-      case 'circle': {
-        const dx = x - shape.x, dy = y - shape.y;
-
-        return dx * dx + dy * dy <= shape.radius * shape.radius;
-      }
-
-      case 'line': {
-        const { x1, y1, x2, y2 } = shape;
-        const dxToStart = x - x1;
-        const dyToStart = y - y1;
-        const lineDx = x2 - x1;
-        const lineDy = y2 - y1;
-        const projection = dxToStart * lineDx + dyToStart * lineDy;
-        const lineLengthSq = lineDx * lineDx + lineDy * lineDy;
-        let t = lineLengthSq ? projection / lineLengthSq : -1;
-        t = Math.max(0, Math.min(1, t));
-        const closestX = x1 + t * lineDx;
-        const closestY = y1 + t * lineDy;
-        const distance = Math.sqrt((x - closestX) ** 2 + (y - closestY) ** 2);
-
-        return distance < 8;
-      }
-
-      case 'rectangle': {
-        const cx = shape.x + shape.width/2;
-        const cy = shape.y + shape.height/2;
-        const angle = -(shape.rotation ?? 0);
-        const dx = x - cx, dy = y - cy;
-        const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
-        const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
-
-        return lx >= -shape.width/2 && lx <= shape.width/2 && ly >= -shape.height/2 && ly <= shape.height/2;
-      }
-
-      case 'pencil': {
-        if (!shape.points || shape.points.length < 2) return false;
-
-        for (let i = 1; i < shape.points.length; i++) {
-          const xStart = shape.points[i-1].x, yStart = shape.points[i-1].y;
-          const xEnd = shape.points[i].x, yEnd = shape.points[i].y;
-          const dxToStart = x - xStart;
-          const dyToStart = y - yStart;
-          const segmentDx = xEnd - xStart;
-          const segmentDy = yEnd - yStart;
-          const projection = dxToStart * segmentDx + dyToStart * segmentDy;
-          const segmentLengthSq = segmentDx * segmentDx + segmentDy * segmentDy;
-          let t = segmentLengthSq ? projection / segmentLengthSq : -1;
-          t = Math.max(0, Math.min(1, t));
-          const closestX = xStart + t * segmentDx;
-          const closestY = yStart + t * segmentDy;
-          const dist = Math.sqrt((x - closestX) ** 2 + (y - closestY) ** 2);
-          if (dist < 8) return true;
-        }
-
-        return false;
-      }
-
-      default:
-        return x >= bounds.x && x <= bounds.x + bounds.width && y >= bounds.y && y <= bounds.y + bounds.height;
-    }
-  }
-    
-  private getHandleAt(x: number, y: number, shape: Shape): Handle | null {
-    if (shape !== this.interaction.shape) return null;
-
-    switch (shape.type) {
-      case 'line': {
-        if (Math.abs(x - shape.x1) <= 8 && Math.abs(y - shape.y1) <= 8) return 'start';
-        if (Math.abs(x - shape.x2) <= 8 && Math.abs(y - shape.y2) <= 8) return 'end';
-
-        return null;
-      }
-
-      case 'rectangle': {
-        const cx = shape.x + shape.width/2;
-        const cy = shape.y + shape.height/2;
-        const angle = -(shape.rotation ?? 0);
-        const dx = x - cx, dy = y - cy;
-        const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
-        const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
-
-        for (const h of this.getRectangleHandles(shape)) {
-          if (h.type === 'rotate') {
-            if ((lx-h.x)**2 + (ly-h.y)**2 <= 10*10) return 'rotate';
-          } else {
-            if (Math.abs(lx - h.x) <= 8 && Math.abs(ly - h.y) <= 8) return h.type;
-          }
-        }
-
-        return null;
-      }
-
-      case 'circle': {
-        const handleX = shape.x + shape.radius;
-        const handleY = shape.y;
-
-        if ((x - handleX) ** 2 + (y - handleY) ** 2 <= 10 * 10) {
-          return 'radius';
-        }
-
-        return null;
-      }
-
-      case 'pencil': {
-        const bounds = this.getShapeBounds(shape);
-        if (!bounds) return null;
-
-        for (const h of this.getBoundingBoxHandles(bounds)) {
-          if (Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) return h.type;
-        }
-
-        return null;
-      }
-
-      default: {
-        const bounds = this.getShapeBounds(shape);
-        if (!bounds) return null;
-
-        return this.getBoundingBoxHandles(bounds)
-          .find(h => Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8)?.type ?? null;
-      }
-    }
-  }
-    
-  private resizeShape(mouse: Point): void {
-    const { shape, handle, startRotation, initialAngle } = this.interaction;
-    if (!shape || !handle) return;
-        
-    switch (shape.type) {
-      case 'rectangle': {
-        if (handle === 'rotate') {
-          const cx = shape.x + shape.width/2;
-          const cy = shape.y + shape.height/2;
-          const angle = Math.atan2(mouse.y - cy, mouse.x - cx);
-          shape.rotation = startRotation + angle - initialAngle;
-          this.requestDraw();
-
-          return;
-        }
-
-        if (handle) {
-          const cx = shape.x + shape.width/2;
-          const cy = shape.y + shape.height/2;
-          const angle = -(shape.rotation ?? 0);
-          const dx = mouse.x - cx, dy = mouse.y - cy;
-          const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
-          const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
-          let left = -shape.width/2, right = shape.width/2, top = -shape.height/2, bottom = shape.height/2;
-
-          switch (handle) {
-            case 'nw':
-              left = Math.min(lx, right - 20);
-              top = Math.min(ly, bottom - 20);
-              break;
-            case 'ne':
-              right = Math.max(lx, left + 20);
-              top = Math.min(ly, bottom - 20);
-              break;
-            case 'se':
-              right = Math.max(lx, left + 20);
-              bottom = Math.max(ly, top + 20);
-              break;
-            case 'sw':
-              left = Math.min(lx, right - 20);
-              bottom = Math.max(ly, top + 20);
-              break;
-            case 'n':
-              top = Math.min(ly, bottom - 20);
-              break;
-            case 's':
-              bottom = Math.max(ly, top + 20);
-              break;
-            case 'e':
-              right = Math.max(lx, left + 20);
-              break;
-            case 'w':
-              left = Math.min(lx, right - 20);
-              break;
-          }
-
-          const newWidth = right - left;
-          const newHeight = bottom - top;
-
-          const newCx = cx + (
-            Math.cos(shape.rotation ?? 0) * (left + right) / 2 -
-            Math.sin(shape.rotation ?? 0) * (top + bottom) / 2
-          );
-
-          const newCy = cy + (
-            Math.sin(shape.rotation ?? 0) * (left + right) / 2 +
-            Math.cos(shape.rotation ?? 0) * (top + bottom) / 2
-          );
-
-          shape.width = newWidth;
-          shape.height = newHeight;
-          shape.x = newCx - newWidth/2;
-          shape.y = newCy - newHeight/2;
-          this.requestDraw();
-
-          return;
-        }
-
-        break;
-      }
-
-      case 'circle': {
-        if (handle === 'radius') {
-          const dx = mouse.x - shape.x;
-          const dy = mouse.y - shape.y;
-          const newRadius = Math.sqrt(dx * dx + dy * dy);
-          shape.radius = Math.max(20, newRadius);
-          this.requestDraw();
-
-          return;
-        }
-
-        break;
-      }
-
-      case 'line': {
-        if (handle === 'start') {
-          shape.x1 = mouse.x;
-          shape.y1 = mouse.y;
-        } else if (handle === 'end') {
-          shape.x2 = mouse.x;
-          shape.y2 = mouse.y;
-        }
-
-        this.requestDraw();
-
-        return;
-      }
-
-      case 'pencil': {
-        if (this.interaction.type === 'resizing' && this.interaction.shape?.type === 'pencil') {
-          const { initialPoints, initialBounds } = this.interaction;
-          if (!initialPoints || !initialBounds) break;
-          
-          let newX = initialBounds.x,
-            newY = initialBounds.y,
-            newW = initialBounds.width,
-            newH = initialBounds.height;
-
-          switch (handle) {
-            case 'nw':
-              newX = mouse.x;
-              newY = mouse.y;
-              newW = initialBounds.x + initialBounds.width - mouse.x;
-              newH = initialBounds.y + initialBounds.height - mouse.y;
-              break;
-            case 'ne':
-              newY = mouse.y;
-              newW = mouse.x - initialBounds.x;
-              newH = initialBounds.y + initialBounds.height - mouse.y;
-              break;
-            case 'se':
-              newW = mouse.x - initialBounds.x;
-              newH = mouse.y - initialBounds.y;
-              break;
-            case 'sw':
-              newX = mouse.x;
-              newW = initialBounds.x + initialBounds.width - mouse.x;
-              newH = mouse.y - initialBounds.y;
-              break;
-            case 'n':
-              newY = mouse.y;
-              newH = initialBounds.y + initialBounds.height - mouse.y;
-              break;
-            case 's':
-              newH = mouse.y - initialBounds.y;
-              break;
-            case 'e':
-              newW = mouse.x - initialBounds.x;
-              break;
-            case 'w':
-              newX = mouse.x;
-              newW = initialBounds.x + initialBounds.width - mouse.x;
-              break;
-          }
-
-          newW = Math.max(10, newW);
-          newH = Math.max(10, newH);
-
-          shape.points = initialPoints.map((pt: Point) => {
-            const relX = (pt.x - initialBounds.x) / initialBounds.width;
-            const relY = (pt.y - initialBounds.y) / initialBounds.height;
-
-            return {
-              x: newX + relX * newW,
-              y: newY + relY * newH,
-            };
-          });
-
-          this.requestDraw();
-
-          return;
-        }
-
-        break;
-      }
-
-      default:
-        break;
-    }
-
-    this.requestDraw();
-  }
 
   onMouseDown(e: MouseEvent | { offsetX: number; offsetY: number }): void {
     const mouse = this.getMousePos(e);
     const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
 
     if (drawingTools.includes(this.currentTool)) {
-      let newShape: Shape | null = null;
+      let newShape: IShape | null = null;
 
       switch (this.currentTool) {
         case 'pencil': {
         // Start a new line
-          newShape = {
-            type: 'pencil',
-            color: this.getRandomColor(),
-            strokeWidth: this.getRandomStrokeWidth(),
+          newShape = new Pencil({
+            color: getRandomColor(),
+            strokeWidth: getRandomStrokeWidth(),
             points: [mouse],
-            id: generateId(),
-          };
+          });
 
           this.interaction.patch({
             handle: null,
@@ -805,7 +131,7 @@ export class CanvasEditor {
         }
 
         case 'rectangle': {
-          newShape = this.createRectangle({
+          newShape = new Rectangle({
             x: mouse.x,
             y: mouse.y,
             width: 1,
@@ -824,7 +150,7 @@ export class CanvasEditor {
         }
 
         case 'circle': {
-          newShape = this.createCircle({
+          newShape = new Circle({
             x: mouse.x,
             y: mouse.y,
             radius: 1,
@@ -842,7 +168,7 @@ export class CanvasEditor {
         }
 
         case 'line': {
-          newShape = this.createLine({
+          newShape = new Line({
             x1: mouse.x,
             y1: mouse.y,
             x2: mouse.x,
@@ -869,7 +195,7 @@ export class CanvasEditor {
     } else {
       if (this.interaction.shape) {
         const shape = this.interaction.shape;
-        const handle = this.getHandleAt(mouse.x, mouse.y, shape);
+        const handle = shape.getHandleAt(mouse);
   
         if (handle) {
           let initialAngle = 0;
@@ -878,7 +204,7 @@ export class CanvasEditor {
           let initialBounds = {} as Bounds;
   
           if (shape.type === 'pencil') {
-            const bounds = this.getShapeBounds(shape);
+            const bounds = shape.getBounds();
   
             if (bounds) {
               initialPoints = shape.points.map(pt => ({ ...pt }));
@@ -917,52 +243,10 @@ export class CanvasEditor {
       let shapeSelected = false;
   
       for (let i = this.shapes.length - 1; i >= 0; i--) {
-        if (this.isPointInShape(mouse.x, mouse.y, this.shapes[i])) {
-          const shape = this.shapes[i];
-          this.interaction.patch({ shape });
-  
-          switch (shape.type) {
-            case 'line': {
-              const centerX = (shape.x1 + shape.x2) / 2;
-              const centerY = (shape.y1 + shape.y2) / 2;
+        const shape = this.shapes[i];
 
-              this.interaction.patch({
-                type: 'dragging',
-                handle: null,
-                shape,
-                dragOffset: {
-                  x: mouse.x - centerX,
-                  y: mouse.y - centerY,
-                },
-              });
-
-              break;
-            }
-
-            case 'pencil': {
-              this.interaction.patch({
-                type: 'dragging',
-                handle: null,
-                shape,
-                dragOffset: { x: mouse.x, y: mouse.y },
-                initialPoints: shape.points.map(pt => ({ ...pt })),
-              });
-
-              break;
-            }
-
-            default: {
-              this.interaction.patch({
-                type: 'dragging',
-                handle: null,
-                shape,
-                dragOffset: { x: mouse.x - shape.x, y: mouse.y - shape.y },
-              });
-
-              break;
-            }
-          }
-  
+        if (shape.isPointInShape(mouse)) {
+          shape.startDragging(this.interaction, mouse);
           this.canvas.style.cursor = 'move';
           shapeSelected = true;
           break;
@@ -982,81 +266,25 @@ export class CanvasEditor {
     let cursor = 'default';
     const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
 
-    const { shape, startPoint } = this.interaction;
+    const { shape: interShape, type: interType } = this.interaction;
 
-    if (this.interaction.type === 'drawing') {
-      switch (shape?.type) {
-        case 'pencil':
-          shape.points?.push(mouse);
-          
-          break;
-
-        case 'rectangle':
-          if (shape && startPoint) {
-            shape.x = Math.min(startPoint.x, mouse.x);
-            shape.y = Math.min(startPoint.y, mouse.y);
-            shape.width = Math.abs(mouse.x - startPoint.x);
-            shape.height = Math.abs(mouse.y - startPoint.y);
-          }
-
-          break;
-
-        case 'circle':
-          if (shape && startPoint) {
-            shape.radius = Math.sqrt((mouse.x - startPoint.x) ** 2 + (mouse.y - startPoint.y) ** 2);
-          }
-
-          break;
-
-        case 'line':
-          if (shape) {
-            shape.x2 = mouse.x;
-            shape.y2 = mouse.y;
-          }
-
-          break;
-      }
-
+    if (interType === 'drawing') {
+      interShape?.drawNewShape(mouse, this.interaction);
       this.requestDraw();
-      this.canvas.style.cursor = 'crosshair';
-    } else if (this.interaction.type === 'dragging') {
-      if (shape?.type === 'line') {
-        const prevCenterX = (shape.x1 + shape.x2) / 2;
-        const prevCenterY = (shape.y1 + shape.y2) / 2;
-        const newCenterX = mouse.x - this.interaction.dragOffset.x;
-        const newCenterY = mouse.y - this.interaction.dragOffset.y;
-        const dx = newCenterX - prevCenterX;
-        const dy = newCenterY - prevCenterY;
-        shape.x1 += dx;
-        shape.y1 += dy;
-        shape.x2 += dx;
-        shape.y2 += dy;
-      } else if (shape?.type === 'pencil') {
-        const dx = mouse.x - this.interaction.dragOffset.x;
-        const dy = mouse.y - this.interaction.dragOffset.y;
-
-        if (this.interaction.initialPoints && shape.points) {
-          shape.points = this.interaction.initialPoints.map(pt => ({
-            x: pt.x + dx,
-            y: pt.y + dy,
-          }));
-        }
-      } else if (shape?.type === 'rectangle' || shape?.type === 'circle') {
-        shape.x = mouse.x - this.interaction.dragOffset.x;
-        shape.y = mouse.y - this.interaction.dragOffset.y;
-      }
-
+      cursor = 'crosshair';
+    } else if (interType === 'dragging') {
+      interShape?.move(mouse, this.interaction);
       this.requestDraw();
       cursor = 'move';
     } else if (this.interaction.type === 'resizing') {
-      this.resizeShape(mouse);
+      interShape?.resize(mouse, this.interaction);
       cursor = this.getCursorForHandle(this.interaction.handle);
     } else {
       // Check if mouse is hovering over a handle
       let hoveredHandle = null;
 
-      if (this.interaction.shape) {
-        hoveredHandle = this.getHandleAt(mouse.x, mouse.y, this.interaction.shape);
+      if (interShape) {
+        hoveredHandle = interShape.getHandleAt(mouse);
       }
 
       if (hoveredHandle) {
@@ -1066,10 +294,10 @@ export class CanvasEditor {
         let hovered = false;
 
         for (let i = this.shapes.length - 1; i >= 0; i--) {
-          if (this.isPointInShape(mouse.x, mouse.y, this.shapes[i])) {
+          if (this.shapes[i].isPointInShape(mouse)) {
             hovered = true;
 
-            if (shape === this.interaction.shape) {
+            if (this.shapes[i] === interShape) {
               hoveredSelected = true;
             }
 
@@ -1124,16 +352,6 @@ export class CanvasEditor {
 
     return CanvasEditor.handleCursorMap.get(handle) ?? 'default';
   }
-    
-  private getRandomColor(): string {
-    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
-
-    return colors[Math.floor(Math.random() * colors.length)];
-  }
-    
-  private getRandomStrokeWidth(): number {
-    return this.getRandomFromArray([3, 4, 5]);
-  }
 
   static handleCursorMap = new Map([
     ['nw', 'nwse-resize'],
@@ -1147,17 +365,6 @@ export class CanvasEditor {
     ['rotate', 'grab'],
   ]);
 
-  private getRectangleCenter(shape: RectangleShape): Point {
-    return {
-      x: shape.x + shape.width / 2,
-      y: shape.y + shape.height / 2,
-    };
-  }
-    
-  private getCircleCenter(shape: CircleShape): Point {
-    return { x: shape.x, y: shape.y };
-  }
-    
   resizeCanvasToWrapper() {
     const wrapper = this.canvas.parentElement;
 
@@ -1172,93 +379,5 @@ export class CanvasEditor {
       this.ctx.scale(dpr, dpr);
       this.requestDraw();
     }
-  }
-
-  private getRandom(min: number, max: number): number {
-    return Math.random() * (max - min) + min;
-  }
-
-  private getRandomFromArray<T>(arr: T[]): T {
-    if (arr.length === 0) {
-      throw new Error('Array must not be empty');
-    }
-
-    const idx = Math.floor(Math.random() * arr.length);
-    
-    return arr[idx];
-  }
-
-  private getRectangleHandles(
-    shape: RectangleShape,
-  ): (Point & { type: Handle })[] {
-    const w = shape.width, h = shape.height;
-
-    return [
-      { x: -w/2, y: -h/2, type: 'nw' },
-      { x: +w/2, y: -h/2, type: 'ne' },
-      { x: +w/2, y: +h/2, type: 'se' },
-      { x: -w/2, y: +h/2, type: 'sw' },
-      { x: 0, y: -h/2, type: 'n' },
-      { x: +w/2, y: 0, type: 'e' },
-      { x: 0, y: +h/2, type: 's' },
-      { x: -w/2, y: 0, type: 'w' },
-      { x: 0, y: -h/2 - 30, type: 'rotate' },
-    ];
-  }
-
-  private getBoundingBoxHandles(
-    bounds: Bounds,
-  ): (Point & { type: Handle })[] {
-    return [
-      { x: bounds.x, y: bounds.y, type: 'nw' },
-      { x: bounds.x + bounds.width, y: bounds.y, type: 'ne' },
-      { x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se' },
-      { x: bounds.x, y: bounds.y + bounds.height, type: 'sw' },
-      { x: bounds.x + bounds.width/2, y: bounds.y, type: 'n' },
-      { x: bounds.x + bounds.width, y: bounds.y + bounds.height/2, type: 'e' },
-      { x: bounds.x + bounds.width/2, y: bounds.y + bounds.height, type: 's' },
-      { x: bounds.x, y: bounds.y + bounds.height/2, type: 'w' },
-    ];
-  }
-
-  private createRectangle(options: Partial<RectangleShape> = {}): RectangleShape {
-    return {
-      type: 'rectangle' as const,
-      color: this.getRandomColor(),
-      strokeWidth: this.getRandomStrokeWidth(),
-      x: options.x ?? this.getRandom(50, 650),
-      y: options.y ?? this.getRandom(50, 450),
-      width: options.width ?? this.getRandom(100, 250),
-      height: options.height ?? this.getRandom(80, 180),
-      rotation: options.rotation ?? 0,
-      id: generateId(),
-    };
-  }
-
-  private createCircle(options: Partial<CircleShape> = {}): CircleShape {
-    return {
-      type: 'circle' as const,
-      color: this.getRandomColor(),
-      strokeWidth: this.getRandomStrokeWidth(),
-      x: options.x ?? this.getRandom(100, 700),
-      y: options.y ?? this.getRandom(100, 500),
-      radius: options.radius ?? this.getRandom(40, 100),
-      id: generateId(),
-    };
-  }
-
-  private createLine(options: Partial<LineShape>): LineShape {
-    const x1 = options.x1 ?? this.getRandom(100, 700);
-    const y1 = options.y1 ?? this.getRandom(100, 500);
-    const x2 = options.x2 ?? this.getRandom(100, 700);
-    const y2 = options.y2 ?? this.getRandom(100, 500);
-
-    return {
-      type: 'line' as const,
-      color: options.color ?? this.getRandomColor(),
-      strokeWidth: options.strokeWidth ?? this.getRandomStrokeWidth(),
-      x1, y1, x2, y2,
-      id: generateId(),
-    };
   }
 } 

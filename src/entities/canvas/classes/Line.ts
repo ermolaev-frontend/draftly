@@ -30,6 +30,25 @@ export class Line implements IShape {
     Object.assign(this, shape);
   }
 
+  startDragging(interaction: Interaction, mouse: Point): void {
+    const centerX = (this.x1 + this.x2) / 2;
+    const centerY = (this.y1 + this.y2) / 2;
+
+    interaction.patch({
+      type: 'dragging',
+      handle: null,
+      shape: this,
+      dragOffset: {
+        x: mouse.x - centerX,
+        y: mouse.y - centerY,
+      },
+    });
+  }
+
+  startDrawing(interaction: Interaction, mouse: Point): void {
+
+  }
+
   static createRandom(): Line {
     const x1 = getRandom(100, 700);
     const y1 = getRandom(100, 500);
