@@ -51,11 +51,6 @@ export class Rectangle implements IShape {
 
   draw(ctx: CanvasRenderingContext2D, roughCanvas: ReturnType<typeof rough.canvas>): void {
     ctx.save();
-    ctx.strokeStyle = this.color;
-    ctx.lineWidth = this.strokeWidth;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
 
     const center = this.getCenter();
     const rotation = this.rotation ?? 0;

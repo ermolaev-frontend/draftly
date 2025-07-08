@@ -1,0 +1,240 @@
+import rough from 'roughjs';
+import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts';
+
+import type { Bounds, Point, IShape } from 'shared/types/canvas';
+
+import { generateId, hashStringToSeed, getRandom, getRandomColor, getRandomStrokeWidth } from '../canvasUtils';
+
+export class Pencil implements IShape {
+  readonly type = 'rectangle';
+  readonly color: string;
+  readonly strokeWidth: number;
+  readonly id: string;
+  readonly points: Point[];
+
+  constructor(shape: Partial<Pencil>) {
+    this.id = generateId();
+    this.color = shape.color ?? 'red';
+    this.strokeWidth = shape.strokeWidth ?? 1;
+    this.points = shape.points ?? [];
+  }
+
+  patch(shape: Partial<Pencil>) {
+    Object.assign(this, shape);
+  }
+
+  static createRandom(): Pencil {
+    const numPoints = Math.floor(getRandom(5, 20));
+    const points = [];
+    let px = getRandom(0, 20);
+    let py = getRandom(0, 40);
+    points.push({ x: px, y: py });
+
+    for (let p = 1; p < numPoints; p++) {
+      px += getRandom(-20, 20);
+      py += getRandom(-20, 20);
+      points.push({ x: px, y: py });
+    }
+
+    return new Pencil ({
+      color: getRandomColor(),
+      strokeWidth: getRandomStrokeWidth(),
+      points,
+    });
+  }
+
+  draw(ctx: CanvasRenderingContext2D, roughCanvas: ReturnType<typeof rough.canvas>): void {
+    ctx.save();
+    
+    if (this.points?.length) {
+      const drawable = roughCanvas?.generator.curve(
+        this.points.map(pt => [pt.x, pt.y]),
+        {
+          stroke: this.color,
+          strokeWidth: this.strokeWidth * 2,
+          roughness: 0.3,
+          bowing: 0.1,
+          seed: this.id ? hashStringToSeed(this.id) : undefined,
+        },
+      );
+
+      if (drawable) {
+        roughCanvas?.draw(drawable);
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawSelection(ctx: CanvasRenderingContext2D): void {
+    ctx.save();
+    const bounds = this.getBounds();
+
+    if (!bounds) return;
+
+    const borderColor = '#228be6'; // saturated blue
+    const fillColor = 'rgba(34, 139, 230, 0.08)'; // semi-transparent blue
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = borderColor;
+    ctx.fillStyle = fillColor;
+    ctx.setLineDash([]); // Solid line
+
+    // Bounding box + 8 handles
+    ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+    ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+    ctx.fillStyle = borderColor;
+    this.getHandles(bounds).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
+
+    ctx.restore();
+  }
+
+  getHandles(bounds: Bounds): (Point & { type: Handle })[] {
+    return [
+      { x: bounds.x, y: bounds.y, type: 'nw' },
+      { x: bounds.x + bounds.width, y: bounds.y, type: 'ne' },
+      { x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se' },
+      { x: bounds.x, y: bounds.y + bounds.height, type: 'sw' },
+      { x: bounds.x + bounds.width/2, y: bounds.y, type: 'n' },
+      { x: bounds.x + bounds.width, y: bounds.y + bounds.height/2, type: 'e' },
+      { x: bounds.x + bounds.width/2, y: bounds.y + bounds.height, type: 's' },
+      { x: bounds.x, y: bounds.y + bounds.height/2, type: 'w' },
+    ];
+  }
+
+  isPointInShape({ x, y }: Point): boolean {
+    if (!this.points || this.points.length < 2) return false;
+
+    for (let i = 1; i < this.points.length; i++) {
+      const xStart = this.points[i-1].x, yStart = this.points[i-1].y;
+      const xEnd = this.points[i].x, yEnd = this.points[i].y;
+      const dxToStart = x - xStart;
+      const dyToStart = y - yStart;
+      const segmentDx = xEnd - xStart;
+      const segmentDy = yEnd - yStart;
+      const projection = dxToStart * segmentDx + dyToStart * segmentDy;
+      const segmentLengthSq = segmentDx * segmentDx + segmentDy * segmentDy;
+      let t = segmentLengthSq ? projection / segmentLengthSq : -1;
+      t = Math.max(0, Math.min(1, t));
+      const closestX = xStart + t * segmentDx;
+      const closestY = yStart + t * segmentDy;
+      const sqDistance = (x - closestX) ** 2 + (y - closestY) ** 2;
+
+      if (sqDistance < 64) return true;
+    }
+
+    return false;
+  }
+
+  resize(mouse: Point, { handle, initialBounds, initialPoints }: Interaction): void {
+    if (!initialPoints || !initialBounds) return;
+      
+    let newX = initialBounds.x,
+      newY = initialBounds.y,
+      newW = initialBounds.width,
+      newH = initialBounds.height;
+
+    switch (handle) {
+      case 'nw':
+        newX = mouse.x;
+        newY = mouse.y;
+        newW = initialBounds.x + initialBounds.width - mouse.x;
+        newH = initialBounds.y + initialBounds.height - mouse.y;
+        break;
+      case 'ne':
+        newY = mouse.y;
+        newW = mouse.x - initialBounds.x;
+        newH = initialBounds.y + initialBounds.height - mouse.y;
+        break;
+      case 'se':
+        newW = mouse.x - initialBounds.x;
+        newH = mouse.y - initialBounds.y;
+        break;
+      case 'sw':
+        newX = mouse.x;
+        newW = initialBounds.x + initialBounds.width - mouse.x;
+        newH = mouse.y - initialBounds.y;
+        break;
+      case 'n':
+        newY = mouse.y;
+        newH = initialBounds.y + initialBounds.height - mouse.y;
+        break;
+      case 's':
+        newH = mouse.y - initialBounds.y;
+        break;
+      case 'e':
+        newW = mouse.x - initialBounds.x;
+        break;
+      case 'w':
+        newX = mouse.x;
+        newW = initialBounds.x + initialBounds.width - mouse.x;
+        break;
+    }
+
+    newW = Math.max(10, newW);
+    newH = Math.max(10, newH);
+
+    const newPoints = initialPoints.map((pt: Point) => {
+      const relX = (pt.x - initialBounds.x) / initialBounds.width;
+      const relY = (pt.y - initialBounds.y) / initialBounds.height;
+
+      return {
+        x: newX + relX * newW,
+        y: newY + relY * newH,
+      };
+    });
+
+    this.patch({ points: newPoints });
+  }
+
+  getBounds(): Bounds | null {
+    if (!this.points || this.points.length === 0) return null;
+
+    let minX = this.points[0].x, maxX = this.points[0].x;
+    let minY = this.points[0].y, maxY = this.points[0].y;
+
+    for (const pt of this.points) {
+      if (pt.x < minX) minX = pt.x;
+      if (pt.x > maxX) maxX = pt.x;
+      if (pt.y < minY) minY = pt.y;
+      if (pt.y > maxY) maxY = pt.y;
+    }
+
+    return {
+      x: minX,
+      y: minY,
+      width: (maxX - minX),
+      height: (maxY - minY),
+    };
+  }
+
+  drawNewShape(mouse: Point): void {    
+    this.patch({
+      points: this.points.concat(mouse),
+    });
+  }
+
+  move(mouse: Point, { dragOffset, initialPoints }: Interaction): void {
+    const dx = mouse.x - dragOffset.x;
+    const dy = mouse.y - dragOffset.y;
+
+    if (initialPoints && this.points) {
+      this.patch({
+        points: initialPoints.map(pt => ({
+          x: pt.x + dx,
+          y: pt.y + dy,
+        })),
+      });
+    }
+  }
+
+  getHandleAt({ x, y }: Point): Handle | null {
+    const bounds = this.getBounds();
+    if (!bounds) return null;
+
+    for (const h of this.getHandles(bounds)) {
+      if (Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) return h.type;
+    }
+
+    return null;
+  }
+}

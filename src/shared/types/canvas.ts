@@ -66,8 +66,8 @@ export interface IShape {
   resize(mouse: Point, inter: Interaction): void;
   drawNewShape(mouse: Point, inter: Interaction): void;
   rotate?(mouse: Point, inter: Interaction): void;
-  getBounds(): Bounds;
+  getBounds(): Bounds | null;
   move(mouse: Point, inter: Interaction): void;
-  getHandles?(): (Point & { type: Handle })[];
+  getHandles?(bounds?: Bounds): (Point & { type: Handle })[];
   getHandleAt({ x, y }: Point): Handle | null;
 };
