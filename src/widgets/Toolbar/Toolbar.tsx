@@ -10,6 +10,8 @@ import styles from './Toolbar.module.scss';
 interface ToolbarProps {
   activeTool: ToolType;
   onToolChange: (tool: ToolType) => void;
+  activeColor: string;
+  onColorChange: (color: string) => void;
   onClearCanvas?: () => void;
   isDarkMode?: boolean;
   onToggleDarkMode?: () => void;
@@ -18,10 +20,13 @@ interface ToolbarProps {
 const toolButtons = [
   { tool: 'rectangle', icon: faSquareRegular, title: 'Rectangle' },
   { tool: 'circle', icon: faCircleRegular, title: 'Circle' },
+  { tool: 'ellipse', icon: faCircleRegular, title: 'Ellipse' },
   { tool: 'line', icon: faSlash, title: 'Line' },
   { tool: 'select', icon: faArrowPointer, title: 'Select' },
   { tool: 'pencil', icon: faPencil, title: 'Pencil' },
 ];
+
+const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
 
 export const Toolbar: React.FC<ToolbarProps> = ({
   activeTool,
