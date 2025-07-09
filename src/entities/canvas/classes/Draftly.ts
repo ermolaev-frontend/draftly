@@ -14,7 +14,7 @@ import { Circle } from './Circle';
 import { Line } from './Line';
 import { Pencil } from './Pencil';
 
-export class CanvasEditor {
+export class Draftly {
   private readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
   private shapes: IShape[];
@@ -103,7 +103,7 @@ export class CanvasEditor {
   onMouseDown(e: EventOffset): void {    
     const mouse = this.getMousePos(e);
 
-    if (CanvasEditor.DRAWING_TOOLS.includes(this.currentTool)) {
+    if (Draftly.DRAWING_TOOLS.includes(this.currentTool)) {
       let newShape: IShape | null = null;
 
       switch (this.currentTool) {
@@ -247,7 +247,7 @@ export class CanvasEditor {
     }
 
     // --- FINAL cursor logic for drawing tools ---
-    if (CanvasEditor.DRAWING_TOOLS.includes(this.currentTool)) {
+    if (Draftly.DRAWING_TOOLS.includes(this.currentTool)) {
       cursor = 'crosshair';
     }
 
@@ -283,7 +283,7 @@ export class CanvasEditor {
   private getCursorForHandle(handle: Handle | null): string {
     if (!handle) return 'default';
 
-    return CanvasEditor.handleCursorMap.get(handle) ?? 'default';
+    return Draftly.handleCursorMap.get(handle) ?? 'default';
   }
 
   static handleCursorMap = new Map([
