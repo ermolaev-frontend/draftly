@@ -3,20 +3,20 @@ import { useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 import type { TouchEvent, MouseEvent } from 'react';
 import type { EventOffset } from 'shared/types/canvas';
 
-import { CanvasEditor } from '../classes/CanvasEditor';
+import { Draftly } from '../classes/Draftly';
 import styles from './style.module.scss';
 
-export const CanvasEditorWrapper = forwardRef<CanvasEditor | null, unknown>(
+export const DraftlyWrapper = forwardRef<Draftly | null, unknown>(
   (_, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const editorRef = useRef<CanvasEditor | null>(null);
+    const editorRef = useRef<Draftly | null>(null);
 
-    // Create CanvasEditor as soon as canvas is available
+    // Create Draftly as soon as canvas is available
     const setCanvasRef = useCallback((node: HTMLCanvasElement | null) => {
       canvasRef.current = node;
 
       if (node && !editorRef.current) {
-        editorRef.current = new CanvasEditor(node);
+        editorRef.current = new Draftly(node);
       }
     }, []);
 
@@ -67,7 +67,7 @@ export const CanvasEditorWrapper = forwardRef<CanvasEditor | null, unknown>(
       editorRef.current?.onMouseUp();
     };
 
-    useImperativeHandle(ref, () => editorRef.current as CanvasEditor, []);
+    useImperativeHandle(ref, () => editorRef.current as Draftly, []);
 
     return (
       <div className={styles.canvasWrapper}>

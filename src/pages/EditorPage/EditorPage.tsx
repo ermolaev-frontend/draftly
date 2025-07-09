@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { CanvasEditorWrapper } from 'entities/canvas/CanvasWrapper';
-import { CanvasEditor } from 'entities/canvas/classes/CanvasEditor';
+import { DraftlyWrapper } from 'entities/canvas/CanvasWrapper';
+import { Draftly } from 'entities/canvas/classes/Draftly';
 import { Toolbar } from 'widgets/Toolbar/Toolbar';
 
 import type { ToolType } from 'shared/types/canvas';
@@ -12,7 +12,7 @@ const getSystemTheme = () => window.matchMedia && window.matchMedia('(prefers-co
 export const EditorPage: React.FC = () => {
   const [activeTool, setActiveTool] = useState<ToolType>('select');
   const [isDarkMode, setIsDarkMode] = useState(getSystemTheme());
-  const editorRef = useRef<CanvasEditor | null>(null);
+  const editorRef = useRef<Draftly | null>(null);
 
   // Handler to set tool
   const handleTool = useCallback((tool: ToolType) => {
@@ -90,7 +90,7 @@ export const EditorPage: React.FC = () => {
         isDarkMode={isDarkMode}
         onToggleDarkMode={handleToggleDarkMode}
       />
-      <CanvasEditorWrapper ref={editorRef} />
+      <DraftlyWrapper ref={editorRef} />
     </div>
   );
 };

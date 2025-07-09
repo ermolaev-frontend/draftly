@@ -7,13 +7,13 @@ This directory contains the core TypeScript classes for Draftly's canvas drawing
 The classes in this folder provide the building blocks for:
 - Drawing geometric shapes (Rectangle, Circle, Line)
 - Freehand drawing (Pencil)
-- Managing the canvas state and user interactions (CanvasEditor, Interaction)
+- Managing the canvas state and user interactions (Draftly, Interaction)
 
 ---
 
 ## Class Descriptions
 
-### CanvasEditor.ts
+### Draftly.ts
 - **Purpose:** Central manager for the canvas. Handles the lifecycle of shapes, drawing operations, selection, undo/redo, and user input.
 - **Responsibilities:**
   - Add, remove, and update shapes
@@ -68,7 +68,7 @@ The classes in this folder provide the building blocks for:
 - **Adding New Shapes:**
   - Create a new class in this folder, following the structure of existing shapes.
   - Implement methods for drawing, hit-testing, and manipulation.
-  - Register the new shape with the `CanvasEditor` if needed.
+  - Register the new shape with the `Draftly` if needed.
 
 - **Modifying Behavior:**
   - Prefer extending existing classes or using composition over direct modification.
