@@ -1,4 +1,4 @@
-import { useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
+import { useRef, forwardRef, useImperativeHandle, useCallback, useEffect } from 'react';
 
 import type { TouchEvent, MouseEvent } from 'react';
 
@@ -17,6 +17,15 @@ export const CanvasEditorWrapper = forwardRef<CanvasEditor | null, unknown>(
       if (node && !editorRef.current) {
         editorRef.current = new CanvasEditor(node);
       }
+    }, []);
+
+    // --- PAN TOOL TEST: временно добавим переключение через window ---
+    useEffect(() => {
+      if (!editorRef.current) return;
+      // Позволяет переключать инструмент через window.setPanTool(true/false)
+      (window as any).setPanTool = (enable: boolean) => {
+        editorRef.current?.setTool(enable ? 'pan' : 'select');
+      };
     }, []);
 
     // --- Event Handlers ---

@@ -2,7 +2,6 @@ import rough from 'roughjs';
 
 import type {
   ToolType,
-  Point,
   IShape,
 } from 'shared/types/canvas';
 
@@ -17,11 +16,17 @@ export class CanvasEditor {
   private readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
   private shapes: IShape[];
-  private currentTool: ToolType;
+  private currentTool: ToolType | 'pan';
   private readonly interaction: Interaction;
   private animationFrameId: number | null = null;
   private INITIAL_SHAPES_COUNT = 100;
   private readonly roughCanvas: ReturnType<typeof rough.canvas>;
+  // --- PAN SUPPORT ---
+  private offsetX: number = 0;
+  private offsetY: number = 0;
+  private isPanning: boolean = false;
+  private panStart: { x: number; y: number } = { x: 0, y: 0 };
+  private panOffsetStart: { x: number; y: number } = { x: 0, y: 0 };
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -50,8 +55,11 @@ export class CanvasEditor {
     this.requestDraw();
   }
     
-  setTool(toolName: ToolType): void {
-    this.currentTool = toolName;
+  setTool(tool: ToolType | 'pan') {
+    this.currentTool = tool as ToolType;
+    if (tool === 'pan') {
+      this.canvas.style.cursor = 'grab';
+    }
   }
 
   deleteSelectedShape(): void {
@@ -70,8 +78,14 @@ export class CanvasEditor {
 
   private drawShapes(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-    if (!Array.isArray(this.shapes)) return;
+
+    // --- PAN: apply translation ---
+    this.ctx.save();
+    this.ctx.translate(this.offsetX, this.offsetY);
+    if (!Array.isArray(this.shapes)) {
+      this.ctx.restore();
+      return;
+    }
 
     const { shape, type } = this.interaction;
 
@@ -82,22 +96,49 @@ export class CanvasEditor {
     if (shape && type !== 'drawing') {
       shape.drawSelection(this.ctx);
     }
+
+    this.ctx.restore();
   }
     
   redraw(): void {
     this.requestDraw();
   }
     
-  private getMousePos(e: MouseEvent | { offsetX: number; offsetY: number }): Point {
+  private getMousePos(e: MouseEvent | { offsetX: number; offsetY: number }): { x: number; y: number } {
+    // --- PAN: учитываем offset ---
     if ('offsetX' in e && 'offsetY' in e) {
-      return { x: e.offsetX, y: e.offsetY };
+      return {
+        x: e.offsetX - this.offsetX,
+        y: e.offsetY - this.offsetY,
+      };
+    } else if ('clientX' in e && 'clientY' in e) {
+      const rect = this.canvas.getBoundingClientRect();
+      return {
+        x: (e as any).clientX - rect.left - this.offsetX,
+        y: (e as any).clientY - rect.top - this.offsetY,
+      };
     }
 
-    return { x: (e as MouseEvent).offsetX, y: (e as MouseEvent).offsetY };
+    return { x: 0, y: 0 };
   }
 
-  onMouseDown(e: MouseEvent | { offsetX: number; offsetY: number }): void {    
+  onMouseDown(e: MouseEvent | { offsetX: number; offsetY: number }): void {
+    // --- PAN: если инструмент pan ---
+    if (this.currentTool === 'pan') {
+      this.isPanning = true;
+      if ('offsetX' in e && 'offsetY' in e) {
+        this.panStart = { x: e.offsetX, y: e.offsetY };
+      } else if (typeof e === 'object' && 'clientX' in e && 'clientY' in e) {
+        const rect = this.canvas.getBoundingClientRect();
+        this.panStart = { x: (e as any).clientX - rect.left, y: (e as any).clientY - rect.top };
+      }
+      this.panOffsetStart = { x: this.offsetX, y: this.offsetY };
+      this.canvas.style.cursor = 'grabbing';
+      return;
+    }
+
     const mouse = this.getMousePos(e);
+
     const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
 
     if (drawingTools.includes(this.currentTool)) {
@@ -187,7 +228,26 @@ export class CanvasEditor {
   }
     
   onMouseMove(e: MouseEvent | { offsetX: number; offsetY: number }): void {
+    // --- PAN: если сейчас панорамируем ---
+    if (this.currentTool === 'pan' && this.isPanning) {
+      let x = 0, y = 0;
+      if ('offsetX' in e && 'offsetY' in e) {
+        x = e.offsetX;
+        y = e.offsetY;
+      } else if (typeof e === 'object' && 'clientX' in e && 'clientY' in e) {
+        const rect = this.canvas.getBoundingClientRect();
+        x = (e as any).clientX - rect.left;
+        y = (e as any).clientY - rect.top;
+      }
+      this.offsetX = this.panOffsetStart.x + (x - this.panStart.x);
+      this.offsetY = this.panOffsetStart.y + (y - this.panStart.y);
+      this.requestDraw();
+      this.canvas.style.cursor = 'grabbing';
+      return;
+    }
+
     const mouse = this.getMousePos(e);
+
     let cursor = 'default';
     const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
 
@@ -248,6 +308,13 @@ export class CanvasEditor {
   }
     
   onMouseUp(): void {
+    // --- PAN: завершение панорамирования ---
+    if (this.currentTool === 'pan' && this.isPanning) {
+      this.isPanning = false;
+      this.canvas.style.cursor = 'grab';
+      return;
+    }
+
     if (this.interaction.type === 'drawing') {
       this.interaction.patch({
         shape: null,
