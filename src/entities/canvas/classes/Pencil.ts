@@ -1,9 +1,8 @@
-import rough from 'roughjs';
 import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts';
 
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
-import { generateId, hashStringToSeed } from '../canvasUtils';
+import { generateId } from '../canvasUtils';
 
 export class Pencil implements IShape {
   readonly type = 'pencil';
@@ -75,9 +74,11 @@ export class Pencil implements IShape {
     ctx.lineWidth = this.strokeWidth * 2;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+
     if (this.points.length > 1) {
       this.drawSmoothLine(ctx, this.points);
     }
+
     ctx.restore();
   }
 
@@ -85,11 +86,13 @@ export class Pencil implements IShape {
     if (points.length < 2) return;
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
+
     for (let i = 1; i < points.length - 1; i++) {
       const midX = (points[i].x + points[i + 1].x) / 2;
       const midY = (points[i].y + points[i + 1].y) / 2;
       ctx.quadraticCurveTo(points[i].x, points[i].y, midX, midY);
     }
+
     // last segment
     ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
     ctx.stroke();
