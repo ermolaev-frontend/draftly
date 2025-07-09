@@ -50,14 +50,14 @@ export class Rectangle implements IShape {
     });
   }
 
-  startResizing(interaction: Interaction, handle: Handle) {
+  startResizing(interaction: Interaction, handle: Handle, mouse: Point) {
     let initialAngle = 0;
     let startRotation = 0;
 
     if (handle === 'rotate') {
       const cx = this.x + this.width / 2;
       const cy = this.y + this.height / 2;
-      initialAngle = Math.atan2(this.y - cy, this.x - cx);
+      initialAngle = Math.atan2(mouse.y - cy, mouse.x - cx);
       startRotation = this.rotation ?? 0;
     }
 

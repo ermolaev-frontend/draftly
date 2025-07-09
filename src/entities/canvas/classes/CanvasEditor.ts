@@ -167,7 +167,7 @@ export class CanvasEditor {
         const handle = shape.getHandleAt(mouse);
   
         if (handle) {
-          shape.startResizing(this.interaction, handle);
+          shape.startResizing(this.interaction, handle, mouse);
   
           return;
         }
