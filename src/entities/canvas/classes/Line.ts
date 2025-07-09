@@ -118,7 +118,7 @@ export class Line implements IShape {
     t = Math.max(0, Math.min(1, t));
     const closestX = x1 + t * lineDx;
     const closestY = y1 + t * lineDy;
-    const sqDistance = Math.sqrt((x - closestX) ** 2 + (y - closestY) ** 2);
+    const sqDistance = (x - closestX) ** 2 + (y - closestY) ** 2;
 
     return sqDistance < 64;
   }
