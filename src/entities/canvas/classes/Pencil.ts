@@ -69,27 +69,30 @@ export class Pencil implements IShape {
     });
   }
 
-  draw(ctx: CanvasRenderingContext2D, roughCanvas: ReturnType<typeof rough.canvas>): void {
+  draw(ctx: CanvasRenderingContext2D): void {
     ctx.save();
-    
-    if (this.points?.length) {
-      const drawable = roughCanvas?.generator.curve(
-        this.points.map(pt => [pt.x, pt.y]),
-        {
-          stroke: this.color,
-          strokeWidth: this.strokeWidth * 2,
-          roughness: 0.3,
-          bowing: 0.1,
-          seed: this.id ? hashStringToSeed(this.id) : undefined,
-        },
-      );
-
-      if (drawable) {
-        roughCanvas?.draw(drawable);
-      }
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = this.strokeWidth * 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (this.points.length > 1) {
+      this.drawSmoothLine(ctx, this.points);
     }
-
     ctx.restore();
+  }
+
+  private drawSmoothLine(ctx: CanvasRenderingContext2D, points: Point[]) {
+    if (points.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length - 1; i++) {
+      const midX = (points[i].x + points[i + 1].x) / 2;
+      const midY = (points[i].y + points[i + 1].y) / 2;
+      ctx.quadraticCurveTo(points[i].x, points[i].y, midX, midY);
+    }
+    // last segment
+    ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+    ctx.stroke();
   }
 
   drawSelection(ctx: CanvasRenderingContext2D): void {
