@@ -9,6 +9,7 @@ import styles from './Toolbar.module.scss';
 
 interface ToolbarProps {
   activeTool: ToolType;
+  // eslint-disable-next-line no-unused-vars
   onToolChange: (tool: ToolType) => void;
   activeColor: string;
   onColorChange: (color: string) => void;

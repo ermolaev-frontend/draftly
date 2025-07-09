@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { CanvasEditorWrapper } from 'entities/canvas/CanvasWrapper';
-import { CanvasEditor } from 'entities/canvas/classes/CanvasEditor';
+import { DraftlyWrapper } from 'entities/canvas/CanvasWrapper';
+import { Draftly } from 'entities/canvas/classes/Draftly';
 import { Toolbar } from 'widgets/Toolbar/Toolbar';
 
 import type { ToolType } from 'shared/types/canvas';
@@ -13,14 +13,14 @@ export const EditorPage: React.FC = () => {
   const [activeTool, setActiveTool] = useState<ToolType>('select');
   const [activeColor, setActiveColor] = useState('#ff6b6b');
   const [isDarkMode, setIsDarkMode] = useState(getSystemTheme());
-  const editorRef = useRef<CanvasEditor | null>(null);
+  const draftlyRef = useRef<Draftly | null>(null);
 
   // Handler to set tool
   const handleTool = useCallback((tool: ToolType) => {
     setActiveTool(tool);
     
-    if (editorRef.current) {
-      editorRef.current.setTool(tool);
+    if (draftlyRef.current) {
+      draftlyRef.current.setTool(tool);
     }
   }, []);
 
@@ -39,12 +39,12 @@ export const EditorPage: React.FC = () => {
   }, []);
 
   const handleClearCanvas = useCallback(() => {
-    editorRef.current?.clearCanvas();
+    draftlyRef.current?.clearCanvas();
   }, []);
 
   useEffect(() => {
     function handleResize() {
-      editorRef.current?.resizeCanvasToWrapper();
+      draftlyRef.current?.resizeCanvasToWrapper();
     }
 
     window.addEventListener('resize', handleResize);
@@ -61,14 +61,13 @@ export const EditorPage: React.FC = () => {
       switch (e.key) {
         case 'Escape':
           setActiveTool('select');
-          editorRef.current?.setTool('select');
-          editorRef.current?.deselectShape();
-          editorRef.current?.redraw();
+          draftlyRef.current?.setTool('select');
+          draftlyRef.current?.deselectShape();
 
           return;
         case 'Delete':
         case 'Backspace':
-          editorRef.current?.deleteSelectedShape?.();
+          draftlyRef.current?.deleteSelectedShape?.();
 
           return;
         default:
@@ -103,7 +102,7 @@ export const EditorPage: React.FC = () => {
         isDarkMode={isDarkMode}
         onToggleDarkMode={handleToggleDarkMode}
       />
-      <CanvasEditorWrapper ref={editorRef} />
+      <DraftlyWrapper ref={draftlyRef} />
     </div>
   );
 };
