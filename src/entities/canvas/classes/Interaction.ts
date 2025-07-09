@@ -19,4 +19,18 @@ export default class Interaction {
   patch(inter: Partial<Interaction>) {
     Object.assign(this, inter);
   }
+
+  reset() {
+    this.patch({
+      type: 'idle',
+      shape: null,
+      dragOffset: systemCenter,
+      handle: null,
+      startPoint: systemCenter,
+      initialAngle: 0,
+      startRotation: 0,
+      initialPoints: [],
+      initialBounds: { x: 0, y: 0, width: 0, height: 0 },
+    });
+  }
 }

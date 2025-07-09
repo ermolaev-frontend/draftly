@@ -104,7 +104,7 @@ export class CanvasEditor {
     return { x: (e as MouseEvent).offsetX, y: (e as MouseEvent).offsetY };
   }
 
-  onMouseDown(e: MouseEvent | { offsetX: number; offsetY: number }): void {
+  onMouseDown(e: MouseEvent | { offsetX: number; offsetY: number }): void {    
     const mouse = this.getMousePos(e);
     const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
 
@@ -161,40 +161,40 @@ export class CanvasEditor {
         this.requestDraw();
       }
 
-    } else if (this.interaction.shape) {
-      const shape = this.interaction.shape;
-      const handle = shape.getHandleAt(mouse);
-
-      if (handle) {
-        shape.startResizing(this.interaction, handle);
-
-        return;
-      }
-    }
-
-    let shapeSelected = false;
-
-    for (let i = this.shapes.length - 1; i >= 0; i--) {
-      const shape = this.shapes[i];
-
-      if (shape.isPointInShape(mouse)) {
-        shape.startDragging(this.interaction, mouse);
-        this.canvas.style.cursor = 'move';
-        shapeSelected = true;
-        break;
-      }
-    }
-
-    if (!shapeSelected) {
-      this.deselectShape();
-    }
+    } else {
+      if (this.interaction.shape) {
+        const shape = this.interaction.shape;
+        const handle = shape.getHandleAt(mouse);
   
-    this.requestDraw();
+        if (handle) {
+          shape.startResizing(this.interaction, handle);
+  
+          return;
+        }
+      }
+
+      let shapeSelected = false;
+
+      for (let i = this.shapes.length - 1; i >= 0; i--) {
+        const shape = this.shapes[i];
+    
+        if (shape.isPointInShape(mouse)) {
+          shape.startDragging(this.interaction, mouse);
+          this.canvas.style.cursor = 'move';
+          shapeSelected = true;
+          break;
+        }
+      }
+    
+      if (!shapeSelected) {
+        this.deselectShape();
+      }
+      
+      this.requestDraw();
+    }
   }
     
   onMouseMove(e: MouseEvent | { offsetX: number; offsetY: number }): void {
-    console.log(this.interaction);
-
     const mouse = this.getMousePos(e);
     let cursor = 'default';
     const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
