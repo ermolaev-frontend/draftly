@@ -12,14 +12,14 @@ const getSystemTheme = () => window.matchMedia && window.matchMedia('(prefers-co
 export const EditorPage: React.FC = () => {
   const [activeTool, setActiveTool] = useState<ToolType>('select');
   const [isDarkMode, setIsDarkMode] = useState(getSystemTheme());
-  const editorRef = useRef<Draftly | null>(null);
+  const draftlyRef = useRef<Draftly | null>(null);
 
   // Handler to set tool
   const handleTool = useCallback((tool: ToolType) => {
     setActiveTool(tool);
     
-    if (editorRef.current) {
-      editorRef.current.setTool(tool);
+    if (draftlyRef.current) {
+      draftlyRef.current.setTool(tool);
     }
   }, []);
 
@@ -29,12 +29,12 @@ export const EditorPage: React.FC = () => {
   }, []);
 
   const handleClearCanvas = useCallback(() => {
-    editorRef.current?.clearCanvas();
+    draftlyRef.current?.clearCanvas();
   }, []);
 
   useEffect(() => {
     function handleResize() {
-      editorRef.current?.resizeCanvasToWrapper();
+      draftlyRef.current?.resizeCanvasToWrapper();
     }
 
     window.addEventListener('resize', handleResize);
@@ -51,13 +51,13 @@ export const EditorPage: React.FC = () => {
       switch (e.key) {
         case 'Escape':
           setActiveTool('select');
-          editorRef.current?.setTool('select');
-          editorRef.current?.deselectShape();
+          draftlyRef.current?.setTool('select');
+          draftlyRef.current?.deselectShape();
 
           return;
         case 'Delete':
         case 'Backspace':
-          editorRef.current?.deleteSelectedShape?.();
+          draftlyRef.current?.deleteSelectedShape?.();
 
           return;
         default:
@@ -90,7 +90,7 @@ export const EditorPage: React.FC = () => {
         isDarkMode={isDarkMode}
         onToggleDarkMode={handleToggleDarkMode}
       />
-      <DraftlyWrapper ref={editorRef} />
+      <DraftlyWrapper ref={draftlyRef} />
     </div>
   );
 };
