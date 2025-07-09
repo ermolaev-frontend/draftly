@@ -115,7 +115,13 @@ export class CanvasEditor {
     };
   }
 
-  private worldToScreen(worldPoint: Point): Point {
+  /** 
+   * Converts world coordinates to screen coordinates
+   * @param worldPoint - Point in world coordinates
+   * @returns Point in screen coordinates
+   * Note: Reserved for future features like grid rendering, coordinate display, etc.
+   */
+  private _worldToScreen(worldPoint: Point): Point {
     return {
       x: worldPoint.x * this.viewport.zoom + this.viewport.x,
       y: worldPoint.y * this.viewport.zoom + this.viewport.y,
