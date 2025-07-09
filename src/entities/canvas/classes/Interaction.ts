@@ -1,6 +1,6 @@
 import type { Point, Bounds, IShape } from 'shared/types/canvas';
 
-type InteractionType = 'idle' | 'dragging' | 'resizing' | 'drawing';
+type InteractionType = 'idle' | 'dragging' | 'resizing' | 'drawing' | 'panning';
 export type Handle = 'nw' | 'n' | 'e' | 'ne' | 'se' | 's' | 'sw' | 'w' | 'rotate' | 'radius' | 'start' | 'end';
 
 const systemCenter: Point = { x: 0, y: 0 };

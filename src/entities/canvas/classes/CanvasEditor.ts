@@ -4,6 +4,7 @@ import type {
   ToolType,
   Point,
   IShape,
+  Viewport,
 } from 'shared/types/canvas';
 
 import Interaction, { type Handle } from './Interaction';
@@ -22,6 +23,7 @@ export class CanvasEditor {
   private animationFrameId: number | null = null;
   private INITIAL_SHAPES_COUNT = 100;
   private readonly roughCanvas: ReturnType<typeof rough.canvas>;
+  private viewport: Viewport = { x: 0, y: 0, zoom: 1 };
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -73,6 +75,13 @@ export class CanvasEditor {
         
     if (!Array.isArray(this.shapes)) return;
 
+    // Save the current context state
+    this.ctx.save();
+    
+    // Apply viewport transformation
+    this.ctx.translate(this.viewport.x, this.viewport.y);
+    this.ctx.scale(this.viewport.zoom, this.viewport.zoom);
+
     const { shape, type } = this.interaction;
 
     this.shapes.forEach(shape => {
@@ -82,6 +91,9 @@ export class CanvasEditor {
     if (shape && type !== 'drawing') {
       shape.drawSelection(this.ctx);
     }
+
+    // Restore the context state
+    this.ctx.restore();
   }
     
   redraw(): void {
@@ -90,15 +102,41 @@ export class CanvasEditor {
     
   private getMousePos(e: MouseEvent | { offsetX: number; offsetY: number }): Point {
     if ('offsetX' in e && 'offsetY' in e) {
-      return { x: e.offsetX, y: e.offsetY };
+      return this.screenToWorld({ x: e.offsetX, y: e.offsetY });
     }
 
-    return { x: (e as MouseEvent).offsetX, y: (e as MouseEvent).offsetY };
+    return this.screenToWorld({ x: (e as MouseEvent).offsetX, y: (e as MouseEvent).offsetY });
+  }
+
+  private screenToWorld(screenPoint: Point): Point {
+    return {
+      x: (screenPoint.x - this.viewport.x) / this.viewport.zoom,
+      y: (screenPoint.y - this.viewport.y) / this.viewport.zoom,
+    };
+  }
+
+  private worldToScreen(worldPoint: Point): Point {
+    return {
+      x: worldPoint.x * this.viewport.zoom + this.viewport.x,
+      y: worldPoint.y * this.viewport.zoom + this.viewport.y,
+    };
   }
 
   onMouseDown(e: MouseEvent | { offsetX: number; offsetY: number }): void {    
-    const mouse = this.getMousePos(e);
     const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
+
+    // Handle panning with hand tool
+    if (this.currentTool === 'hand') {
+      const screenMouse = 'offsetX' in e ? { x: e.offsetX, y: e.offsetY } : { x: (e as MouseEvent).offsetX, y: (e as MouseEvent).offsetY };
+      this.interaction.patch({
+        type: 'panning',
+        startPoint: screenMouse,
+      });
+      this.canvas.style.cursor = 'grabbing';
+      return;
+    }
+
+    const mouse = this.getMousePos(e);
 
     if (drawingTools.includes(this.currentTool)) {
       let newShape: IShape | null = null;
@@ -187,61 +225,78 @@ export class CanvasEditor {
   }
     
   onMouseMove(e: MouseEvent | { offsetX: number; offsetY: number }): void {
-    const mouse = this.getMousePos(e);
     let cursor = 'default';
     const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
 
     const { shape: interShape, type: interType } = this.interaction;
 
-    if (interType === 'drawing') {
-      interShape?.drawNewShape(mouse, this.interaction);
+    // Handle panning
+    if (interType === 'panning') {
+      const screenMouse = 'offsetX' in e ? { x: e.offsetX, y: e.offsetY } : { x: (e as MouseEvent).offsetX, y: (e as MouseEvent).offsetY };
+      const dx = screenMouse.x - this.interaction.startPoint.x;
+      const dy = screenMouse.y - this.interaction.startPoint.y;
+      
+      this.viewport.x += dx;
+      this.viewport.y += dy;
+      
+      this.interaction.patch({ startPoint: screenMouse });
       this.requestDraw();
-      cursor = 'crosshair';
-    } else if (interType === 'dragging') {
-      interShape?.move(mouse, this.interaction);
-      this.requestDraw();
-      cursor = 'move';
-    } else if (interType === 'resizing') {
-      interShape?.resize(mouse, this.interaction);
-      this.requestDraw();
-      cursor = this.getCursorForHandle(this.interaction.handle);
+      cursor = 'grabbing';
     } else {
-      // Check if mouse is hovering over a handle
-      let hoveredHandle = null;
+      const mouse = this.getMousePos(e);
 
-      if (interShape) {
-        hoveredHandle = interShape.getHandleAt(mouse);
-      }
-
-      if (hoveredHandle) {
-        cursor = this.getCursorForHandle(hoveredHandle);
+      if (interType === 'drawing') {
+        interShape?.drawNewShape(mouse, this.interaction);
+        this.requestDraw();
+        cursor = 'crosshair';
+      } else if (interType === 'dragging') {
+        interShape?.move(mouse, this.interaction);
+        this.requestDraw();
+        cursor = 'move';
+      } else if (interType === 'resizing') {
+        interShape?.resize(mouse, this.interaction);
+        this.requestDraw();
+        cursor = this.getCursorForHandle(this.interaction.handle);
       } else {
-        let hoveredSelected = false;
-        let hovered = false;
+        // Check if mouse is hovering over a handle
+        let hoveredHandle = null;
 
-        for (let i = this.shapes.length - 1; i >= 0; i--) {
-          if (this.shapes[i].isPointInShape(mouse)) {
-            hovered = true;
-
-            if (this.shapes[i] === interShape) {
-              hoveredSelected = true;
-            }
-
-            break;
-          }
+        if (interShape) {
+          hoveredHandle = interShape.getHandleAt(mouse);
         }
 
-        if (hoveredSelected) {
-          cursor = 'move';
-        } else if (hovered) {
-          cursor = 'pointer';
+        if (hoveredHandle) {
+          cursor = this.getCursorForHandle(hoveredHandle);
+        } else {
+          let hoveredSelected = false;
+          let hovered = false;
+
+          for (let i = this.shapes.length - 1; i >= 0; i--) {
+            if (this.shapes[i].isPointInShape(mouse)) {
+              hovered = true;
+
+              if (this.shapes[i] === interShape) {
+                hoveredSelected = true;
+              }
+
+              break;
+            }
+          }
+
+          if (hoveredSelected) {
+            cursor = 'move';
+          } else if (hovered) {
+            cursor = 'pointer';
+          }
         }
       }
     }
 
-    // --- FINAL cursor logic for drawing tools ---
+    // --- FINAL cursor logic for tools ---
     if (drawingTools.includes(this.currentTool)) {
       cursor = 'crosshair';
+    } else if (this.currentTool === 'hand' && interType === 'idle') {
+      cursor = 'grab';
     }
 
     this.canvas.style.cursor = cursor;
@@ -254,6 +309,15 @@ export class CanvasEditor {
         type: 'idle',
         startPoint: { x: 0, y: 0 },
       });
+    } else if (this.interaction.type === 'panning') {
+      this.interaction.patch({
+        type: 'idle',
+        startPoint: { x: 0, y: 0 },
+      });
+      // Reset cursor to grab when panning ends but still in hand mode
+      if (this.currentTool === 'hand') {
+        this.canvas.style.cursor = 'grab';
+      }
     } else {
       this.interaction.patch({
         handle: null,

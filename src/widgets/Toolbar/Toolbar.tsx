@@ -21,6 +21,7 @@ const toolButtons = [
   { tool: 'line', icon: faSlash, title: 'Line' },
   { tool: 'select', icon: faArrowPointer, title: 'Select' },
   { tool: 'pencil', icon: faPencil, title: 'Pencil' },
+  { tool: 'hand', icon: faArrowPointer, title: 'Pan Canvas' },
 ];
 
 export const Toolbar: React.FC<ToolbarProps> = ({
