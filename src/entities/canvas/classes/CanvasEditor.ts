@@ -121,6 +121,7 @@ export class CanvasEditor {
    * @returns Point in screen coordinates
    * Note: Reserved for future features like grid rendering, coordinate display, etc.
    */
+  // @ts-expect-error - Method reserved for future use
   private _worldToScreen(worldPoint: Point): Point {
     return {
       x: worldPoint.x * this.viewport.zoom + this.viewport.x,
