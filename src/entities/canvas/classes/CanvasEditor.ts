@@ -7,7 +7,7 @@ import type {
 } from 'shared/types/canvas';
 
 import Interaction, { type Handle } from './Interaction';
-import { getInitialShapes, getRandomColor, getRandomStrokeWidth } from '../canvasUtils';
+import { getInitialShapes, getRandomStrokeWidth } from '../canvasUtils';
 import { Rectangle } from './Rectangle';
 import { Circle } from './Circle';
 import { Line } from './Line';
@@ -18,6 +18,7 @@ export class CanvasEditor {
   private readonly ctx: CanvasRenderingContext2D;
   private shapes: IShape[];
   private currentTool: ToolType;
+  private activeColor: string;
   private readonly interaction: Interaction;
   private animationFrameId: number | null = null;
   private INITIAL_SHAPES_COUNT = 100;
@@ -29,6 +30,7 @@ export class CanvasEditor {
     this.roughCanvas = rough.canvas(this.canvas);
     this.interaction = new Interaction();
     this.currentTool = 'select';
+    this.activeColor = '#ff6b6b';
     this.resizeCanvasToWrapper();
 
     this.shapes = getInitialShapes(canvas, this.INITIAL_SHAPES_COUNT);
@@ -52,6 +54,10 @@ export class CanvasEditor {
     
   setTool(toolName: ToolType): void {
     this.currentTool = toolName;
+  }
+
+  setActiveColor(color: string): void {
+    this.activeColor = color;
   }
 
   deleteSelectedShape(): void {
@@ -106,7 +112,7 @@ export class CanvasEditor {
       switch (this.currentTool) {
         case 'pencil': {
           newShape = new Pencil({
-            color: getRandomColor(),
+            color: this.activeColor,
             strokeWidth: getRandomStrokeWidth(),
             points: [mouse],
           });
@@ -120,6 +126,7 @@ export class CanvasEditor {
             y: mouse.y,
             width: 1,
             height: 1,
+            color: this.activeColor,
           });
 
           break;
@@ -130,6 +137,7 @@ export class CanvasEditor {
             x: mouse.x,
             y: mouse.y,
             radius: 1,
+            color: this.activeColor,
           });
 
           break;
@@ -141,6 +149,7 @@ export class CanvasEditor {
             y1: mouse.y,
             x2: mouse.x,
             y2: mouse.y,
+            color: this.activeColor,
           });
 
           break;

@@ -20,7 +20,6 @@ interface ToolbarProps {
 const toolButtons = [
   { tool: 'rectangle', icon: faSquareRegular, title: 'Rectangle' },
   { tool: 'circle', icon: faCircleRegular, title: 'Circle' },
-  { tool: 'ellipse', icon: faCircleRegular, title: 'Ellipse' },
   { tool: 'line', icon: faSlash, title: 'Line' },
   { tool: 'select', icon: faArrowPointer, title: 'Select' },
   { tool: 'pencil', icon: faPencil, title: 'Pencil' },
@@ -31,6 +30,8 @@ const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'
 export const Toolbar: React.FC<ToolbarProps> = ({
   activeTool,
   onToolChange,
+  activeColor,
+  onColorChange,
   onClearCanvas,
   isDarkMode,
   onToggleDarkMode,
@@ -50,6 +51,23 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <FontAwesomeIcon icon={icon} />
       </button>
     ))}
+
+    {/* Color Picker */}
+    <div className={styles.colorSection}>
+      <div className={styles.colorLabel}>Color</div>
+      <div className={styles.colorGrid}>
+        {colors.map(color => (
+          <button
+            key={color}
+            className={`${styles.colorButton} ${activeColor === color ? styles.activeColor : ''}`}
+            style={{ backgroundColor: color }}
+            onClick={() => onColorChange(color)}
+            title={`Select ${color}`}
+          />
+        ))}
+      </div>
+    </div>
+
     {onClearCanvas && (
       <button
         onClick={onClearCanvas}

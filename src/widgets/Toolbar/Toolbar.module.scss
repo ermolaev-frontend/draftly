@@ -72,4 +72,48 @@
   background: var(--clear-btn-hover-bg, #c0392b);
   color: var(--clear-btn-color, #fff);
   box-shadow: 0 2px 8px rgba(231,76,60,0.12);
-} 
+}
+
+.colorSection {
+  margin: 20px 0 12px 0;
+  border-top: 1px solid var(--panel-border, #e0e0e0);
+  padding-top: 18px;
+}
+
+.colorLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #666);
+  margin-bottom: 10px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.colorGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+
+.colorButton {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+}
+
+.colorButton.activeColor {
+  border-color: var(--primary, #007bff);
+  transform: scale(1.1);
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+}

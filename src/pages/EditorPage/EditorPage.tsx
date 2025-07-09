@@ -11,6 +11,7 @@ const getSystemTheme = () => window.matchMedia && window.matchMedia('(prefers-co
 
 export const EditorPage: React.FC = () => {
   const [activeTool, setActiveTool] = useState<ToolType>('select');
+  const [activeColor, setActiveColor] = useState('#ff6b6b');
   const [isDarkMode, setIsDarkMode] = useState(getSystemTheme());
   const editorRef = useRef<CanvasEditor | null>(null);
 
@@ -20,6 +21,15 @@ export const EditorPage: React.FC = () => {
     
     if (editorRef.current) {
       editorRef.current.setTool(tool);
+    }
+  }, []);
+
+  // Handler to set color
+  const handleColorChange = useCallback((color: string) => {
+    setActiveColor(color);
+    
+    if (editorRef.current) {
+      editorRef.current.setActiveColor(color);
     }
   }, []);
 
@@ -87,6 +97,8 @@ export const EditorPage: React.FC = () => {
       <Toolbar
         activeTool={activeTool}
         onToolChange={handleTool}
+        activeColor={activeColor}
+        onColorChange={handleColorChange}
         onClearCanvas={handleClearCanvas}
         isDarkMode={isDarkMode}
         onToggleDarkMode={handleToggleDarkMode}
