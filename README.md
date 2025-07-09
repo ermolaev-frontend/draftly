@@ -1,74 +1,6 @@
 # Draftly
 
-## Описание (Русский)
-
-**Draftly** — это простое и креативное веб-приложение для быстрого создания скетчей, визуализации идей и прототипирования. Приложение предоставляет интерактивный холст с инструментами для рисования фигур (прямоугольник, круг, линия, карандаш), выбора и перемещения объектов, а также поддерживает светлую и тёмную темы. Все изменения автоматически сохраняются в localStorage браузера.
-
-### Основные возможности
-
-- Рисование прямоугольников, кругов, линий и произвольных кривых (карандаш)
-- Выделение и перемещение объектов
-- Удаление выбранных объектов (клавиши Delete/Backspace)
-- Очистка всего холста
-- Переключение между светлой и тёмной темой
-- Адаптивный интерфейс
-- Автоматическое сохранение состояния холста в браузере
-- Поддержка управления с клавиатуры (Escape — выделение, Delete — удаление)
-- Поддержка сенсорных устройств (touch events)
-
-### Технологии
-
-- React 19
-- TypeScript
-- Vite
-- roughjs (имитация рукописного стиля)
-- SCSS (Sass)
-- FontAwesome (иконки)
-- Caddy (продакшн-сервер)
-- pnpm (менеджер пакетов)
-
-### Локальный запуск
-
-1. Установите зависимости:
-
-```bash
-pnpm install
-```
-
-2. Запустите в режиме разработки:
-
-```bash
-pnpm dev
-```
-
-Приложение будет доступно по адресу: http://localhost:5173
-
-3. Сборка для продакшена:
-
-```bash
-pnpm build
-```
-
-4. Предпросмотр продакшн-сборки:
-
-```bash
-pnpm preview
-```
-
-### Запуск через Docker
-
-```bash
-cd ci
-docker-compose up --build
-```
-
-Приложение будет доступно по адресу: http://localhost:8080
-
----
-
-# Draftly
-
-## Description (English)
+## Description
 
 **Draftly** is a simple and creative web app for quickly sketching ideas, visualizing concepts, and rapid prototyping. It provides an interactive canvas with tools for drawing shapes (rectangle, circle, line, pencil), selecting and moving objects, and supports both light and dark themes. All changes are automatically saved in the browser's localStorage.
 
@@ -86,14 +18,14 @@ docker-compose up --build
 
 ### Technologies
 
-- React 19
-- TypeScript
-- Vite
-- roughjs (hand-drawn style)
-- SCSS (Sass)
-- FontAwesome (icons)
+- React 19.1.0
+- TypeScript 5.8.3
+- Vite 7.0.0
+- roughjs 4.6.6 (hand-drawn style)
+- SCSS (Sass 1.89.2)
+- FontAwesome 6.7.2 (icons)
 - Caddy (production server)
-- pnpm (package manager)
+- pnpm 8.x (package manager)
 
 ### Local Development
 
