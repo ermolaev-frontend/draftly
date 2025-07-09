@@ -12,6 +12,7 @@ import { Rectangle } from './Rectangle';
 import { Circle } from './Circle';
 import { Line } from './Line';
 import { Pencil } from './Pencil';
+import { Ellipse } from './Ellipse';
 
 export class CanvasEditor {
   private readonly canvas: HTMLCanvasElement;
@@ -98,7 +99,7 @@ export class CanvasEditor {
 
   onMouseDown(e: MouseEvent | { offsetX: number; offsetY: number }): void {    
     const mouse = this.getMousePos(e);
-    const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
+    const drawingTools = ['rectangle', 'circle', 'ellipse', 'line', 'pencil'];
 
     if (drawingTools.includes(this.currentTool)) {
       let newShape: IShape | null = null;
@@ -130,6 +131,17 @@ export class CanvasEditor {
             x: mouse.x,
             y: mouse.y,
             radius: 1,
+          });
+
+          break;
+        }
+
+        case 'ellipse': {
+          newShape = new Ellipse({
+            x: mouse.x,
+            y: mouse.y,
+            radiusX: 1,
+            radiusY: 1,
           });
 
           break;
@@ -189,7 +201,7 @@ export class CanvasEditor {
   onMouseMove(e: MouseEvent | { offsetX: number; offsetY: number }): void {
     const mouse = this.getMousePos(e);
     let cursor = 'default';
-    const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
+    const drawingTools = ['rectangle', 'circle', 'ellipse', 'line', 'pencil'];
 
     const { shape: interShape, type: interType } = this.interaction;
 

@@ -3,8 +3,8 @@
 import rough from 'roughjs';
 import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts';
 
-export type ToolType = 'select' | 'pencil' | 'rectangle' | 'circle' | 'line';
-type ShapeType = 'pencil' | 'rectangle' | 'circle' | 'line';
+export type ToolType = 'select' | 'pencil' | 'rectangle' | 'circle' | 'line' | 'ellipse';
+type ShapeType = 'pencil' | 'rectangle' | 'circle' | 'line' | 'ellipse';
 
 export interface Point {
   x: number;

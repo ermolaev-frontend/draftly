@@ -18,6 +18,7 @@ interface ToolbarProps {
 const toolButtons = [
   { tool: 'rectangle', icon: faSquareRegular, title: 'Rectangle' },
   { tool: 'circle', icon: faCircleRegular, title: 'Circle' },
+  { tool: 'ellipse', icon: faCircleRegular, title: 'Ellipse' },
   { tool: 'line', icon: faSlash, title: 'Line' },
   { tool: 'select', icon: faArrowPointer, title: 'Select' },
   { tool: 'pencil', icon: faPencil, title: 'Pencil' },

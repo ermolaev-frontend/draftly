@@ -4,6 +4,7 @@ import { Rectangle } from './classes/Rectangle';
 import { Circle } from './classes/Circle';
 import { Line } from './classes/Line';
 import { Pencil } from './classes/Pencil';
+import { Ellipse } from './classes/Ellipse';
 
 export function catmullRom2bezier(
   points: Point[],
@@ -170,7 +171,7 @@ export function getInitialShapes (canvas: HTMLCanvasElement, shapesCount: number
     const typeRand = Math.random();
     let newShape: IShape;
 
-    if (typeRand < 0.25) {
+    if (typeRand < 0.2) {
       // Rectangle
       newShape = new Rectangle({
         x: getRandom(zone.xMin, zone.xMax - 120),
@@ -181,7 +182,7 @@ export function getInitialShapes (canvas: HTMLCanvasElement, shapesCount: number
         strokeWidth: getRandom(3, 6, true),
         rotation: 0,
       });
-    } else if (typeRand < 0.5) {
+    } else if (typeRand < 0.4) {
       // Circle
       newShape = new Circle({
         x: getRandom(zone.xMin + 60, zone.xMax - 60),
@@ -193,7 +194,18 @@ export function getInitialShapes (canvas: HTMLCanvasElement, shapesCount: number
         color: colors[Math.floor(getRandom(0, colors.length))],
         strokeWidth: getRandom(3, 6, true),
       });
-    } else if (typeRand < 0.75) {
+    } else if (typeRand < 0.6) {
+      // Ellipse
+      newShape = new Ellipse({
+        x: getRandom(zone.xMin + 60, zone.xMax - 60),
+        y: getRandom(zone.yMin + 60, zone.yMax - 60),
+        radiusX: getRandom(30, Math.min(90, (zone.xMax - zone.xMin) / 2)),
+        radiusY: getRandom(20, Math.min(60, (zone.yMax - zone.yMin) / 2)),
+        color: colors[Math.floor(getRandom(0, colors.length))],
+        strokeWidth: getRandom(3, 6, true),
+        rotation: getRandom(0, Math.PI * 2),
+      });
+    } else if (typeRand < 0.8) {
       // Line
       const cx = (zone.xMin + zone.xMax) / 2;
       const cy = (zone.yMin + zone.yMax) / 2;
