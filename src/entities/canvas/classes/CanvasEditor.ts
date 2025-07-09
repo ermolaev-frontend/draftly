@@ -28,10 +28,8 @@ export class CanvasEditor {
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
     this.roughCanvas = rough.canvas(this.canvas);
     this.interaction = new Interaction();
-    this.currentTool = 'select'; // New tool: select, pencil, ...
-    // ВАЖНО: выставить размеры canvas по wrapper'у
+    this.currentTool = 'select';
     this.resizeCanvasToWrapper();
-    // Теперь canvas.width и height актуальны!
 
     this.shapes = getInitialShapes(canvas, this.INITIAL_SHAPES_COUNT);
     
@@ -56,9 +54,6 @@ export class CanvasEditor {
     this.currentTool = toolName;
   }
 
-  /**
-     * Deletes the currently selected shape (if any) from the shapes array and redraws the canvas.
-     */
   deleteSelectedShape(): void {
     if (this.interaction.shape) {
       this.shapes = this.shapes.filter(s => s !== this.interaction.shape);
@@ -68,9 +63,6 @@ export class CanvasEditor {
     }
   }
 
-  /**
-     * Deselects the currently selected shape (if any) and redraws the canvas.
-     */
   deselectShape(): void {
     this.interaction.patch({ shape: null, handle: null, type: 'idle' });
     this.canvas.style.cursor = 'default';
