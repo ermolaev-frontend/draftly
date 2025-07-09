@@ -43,7 +43,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         onClick={() => onToolChange(tool as ToolType)}
         title={title}
       >
-        <FontAwesomeIcon icon={icon} />
+        <FontAwesomeIcon icon={icon} style={tool === 'ellipse' ? { transform: 'scaleX(1.3)' } : {}} />
       </button>
     ))}
     {onClearCanvas && (
