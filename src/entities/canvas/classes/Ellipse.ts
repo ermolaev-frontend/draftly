@@ -109,22 +109,14 @@ export class Ellipse implements IShape {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rotation ?? 0);
 
-    // Draw ellipse using scaling trick for better browser compatibility
-    ctx.save();
-    ctx.scale(1, this.radiusY / this.radiusX);
-    
     // Fill
     ctx.beginPath();
-    ctx.arc(0, 0, this.radiusX, 0, Math.PI * 2);
-    ctx.restore();
+    ctx.ellipse(0, 0, this.radiusX, this.radiusY, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // Frame
-    ctx.save();
-    ctx.scale(1, this.radiusY / this.radiusX);
     ctx.beginPath();
-    ctx.arc(0, 0, this.radiusX, 0, Math.PI * 2);
-    ctx.restore();
+    ctx.ellipse(0, 0, this.radiusX, this.radiusY, 0, 0, Math.PI * 2);
     ctx.strokeStyle = borderColor;
     ctx.stroke();
 
