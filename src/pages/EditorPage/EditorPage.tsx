@@ -53,7 +53,6 @@ export const EditorPage: React.FC = () => {
           setActiveTool('select');
           editorRef.current?.setTool('select');
           editorRef.current?.deselectShape();
-          editorRef.current?.redraw();
 
           return;
         case 'Delete':

@@ -4,6 +4,7 @@ import type {
   ToolType,
   Point,
   IShape,
+  EventOffset,
 } from 'shared/types/canvas';
 
 import Interaction, { type Handle } from './Interaction';
@@ -22,6 +23,7 @@ export class CanvasEditor {
   private animationFrameId: number | null = null;
   private INITIAL_SHAPES_COUNT = 100;
   private readonly roughCanvas: ReturnType<typeof rough.canvas>;
+  static readonly DRAWING_TOOLS = ['rectangle', 'circle', 'line', 'pencil'];
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -56,7 +58,7 @@ export class CanvasEditor {
 
   deleteSelectedShape(): void {
     if (this.interaction.shape) {
-      this.shapes = this.shapes.filter(s => s !== this.interaction.shape);
+      this.deleteShape(this.interaction.shape);
       this.interaction.patch({ shape: null });
       this.requestDraw();
       this.autoSave?.();
@@ -66,13 +68,20 @@ export class CanvasEditor {
   deselectShape(): void {
     this.interaction.patch({ shape: null, handle: null, type: 'idle' });
     this.canvas.style.cursor = 'default';
+    this.requestDraw();
+  }
+
+  private addShape(shape: IShape) {
+    this.shapes.push(shape);
+  }
+
+  private deleteShape(shape: IShape) {
+    this.shapes = this.shapes.filter(s => s !== shape);
   }
 
   private drawShapes(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-    if (!Array.isArray(this.shapes)) return;
-
     const { shape, type } = this.interaction;
 
     this.shapes.forEach(shape => {
@@ -84,23 +93,17 @@ export class CanvasEditor {
     }
   }
     
-  redraw(): void {
-    this.requestDraw();
-  }
-    
-  private getMousePos(e: MouseEvent | { offsetX: number; offsetY: number }): Point {
-    if ('offsetX' in e && 'offsetY' in e) {
-      return { x: e.offsetX, y: e.offsetY };
-    }
-
-    return { x: (e as MouseEvent).offsetX, y: (e as MouseEvent).offsetY };
+  private getMousePos(e: EventOffset): Point {
+    return {
+      x: e.offsetX,
+      y: e.offsetY, 
+    };
   }
 
-  onMouseDown(e: MouseEvent | { offsetX: number; offsetY: number }): void {    
+  onMouseDown(e: EventOffset): void {    
     const mouse = this.getMousePos(e);
-    const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
 
-    if (drawingTools.includes(this.currentTool)) {
+    if (CanvasEditor.DRAWING_TOOLS.includes(this.currentTool)) {
       let newShape: IShape | null = null;
 
       switch (this.currentTool) {
@@ -116,6 +119,8 @@ export class CanvasEditor {
 
         case 'rectangle': {
           newShape = new Rectangle({
+            color: getRandomColor(),
+            strokeWidth: getRandomStrokeWidth(),
             x: mouse.x,
             y: mouse.y,
             width: 1,
@@ -127,6 +132,8 @@ export class CanvasEditor {
 
         case 'circle': {
           newShape = new Circle({
+            color: getRandomColor(),
+            strokeWidth: getRandomStrokeWidth(),
             x: mouse.x,
             y: mouse.y,
             radius: 1,
@@ -137,6 +144,8 @@ export class CanvasEditor {
 
         case 'line': {
           newShape = new Line({
+            color: getRandomColor(),
+            strokeWidth: getRandomStrokeWidth(),
             x1: mouse.x,
             y1: mouse.y,
             x2: mouse.x,
@@ -149,10 +158,9 @@ export class CanvasEditor {
 
       if (newShape) {
         newShape.startDrawing(this.interaction, mouse);
-        this.shapes.push(newShape);
+        this.addShape(newShape);
         this.requestDraw();
       }
-
     } else {
       if (this.interaction.shape) {
         const shape = this.interaction.shape;
@@ -186,10 +194,9 @@ export class CanvasEditor {
     }
   }
     
-  onMouseMove(e: MouseEvent | { offsetX: number; offsetY: number }): void {
+  onMouseMove(e: EventOffset): void {
     const mouse = this.getMousePos(e);
     let cursor = 'default';
-    const drawingTools = ['rectangle', 'circle', 'line', 'pencil'];
 
     const { shape: interShape, type: interType } = this.interaction;
 
@@ -240,7 +247,7 @@ export class CanvasEditor {
     }
 
     // --- FINAL cursor logic for drawing tools ---
-    if (drawingTools.includes(this.currentTool)) {
+    if (CanvasEditor.DRAWING_TOOLS.includes(this.currentTool)) {
       cursor = 'crosshair';
     }
 

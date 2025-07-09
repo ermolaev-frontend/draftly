@@ -1,6 +1,7 @@
 import { useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 
 import type { TouchEvent, MouseEvent } from 'react';
+import type { EventOffset } from 'shared/types/canvas';
 
 import { CanvasEditor } from '../classes/CanvasEditor';
 import styles from './style.module.scss';
@@ -36,7 +37,7 @@ export const CanvasEditorWrapper = forwardRef<CanvasEditor | null, unknown>(
       editorRef.current?.onMouseUp();
     };
 
-    const adaptTouchEvent = (e: TouchEvent<HTMLCanvasElement>): { offsetX: number; offsetY: number } => {
+    const adaptTouchEvent = (e: TouchEvent<HTMLCanvasElement>): EventOffset => {
       const touch = e.touches[0] || e.changedTouches[0];
       if (!touch || !canvasRef.current) return { offsetX: 0, offsetY: 0 };
       const bounding = canvasRef.current.getBoundingClientRect();
