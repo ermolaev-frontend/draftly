@@ -23,7 +23,9 @@ export class CanvasEditor {
   private animationFrameId: number | null = null;
   private INITIAL_SHAPES_COUNT = 100;
   private readonly roughCanvas: ReturnType<typeof rough.canvas>;
-  private viewport: Viewport = { x: 0, y: 0, zoom: 1 };
+  public viewport: Viewport = { x: 0, y: 0, zoom: 1 };
+  private readonly MIN_ZOOM = 0.1;
+  private readonly MAX_ZOOM = 5;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -134,12 +136,17 @@ export class CanvasEditor {
 
     // Handle panning with hand tool
     if (this.currentTool === 'hand') {
-      const screenMouse = 'offsetX' in e ? { x: e.offsetX, y: e.offsetY } : { x: (e as MouseEvent).offsetX, y: (e as MouseEvent).offsetY };
+      const screenMouse = 'offsetX' in e
+        ? { x: e.offsetX, y: e.offsetY }
+        : { x: (e as MouseEvent).offsetX, y: (e as MouseEvent).offsetY };
+      
       this.interaction.patch({
         type: 'panning',
         startPoint: screenMouse,
       });
+      
       this.canvas.style.cursor = 'grabbing';
+      
       return;
     }
 
@@ -239,7 +246,10 @@ export class CanvasEditor {
 
     // Handle panning
     if (interType === 'panning') {
-      const screenMouse = 'offsetX' in e ? { x: e.offsetX, y: e.offsetY } : { x: (e as MouseEvent).offsetX, y: (e as MouseEvent).offsetY };
+      const screenMouse = 'offsetX' in e
+        ? { x: e.offsetX, y: e.offsetY }
+        : { x: (e as MouseEvent).offsetX, y: (e as MouseEvent).offsetY };
+      
       const dx = screenMouse.x - this.interaction.startPoint.x;
       const dy = screenMouse.y - this.interaction.startPoint.y;
       
@@ -321,6 +331,7 @@ export class CanvasEditor {
         type: 'idle',
         startPoint: { x: 0, y: 0 },
       });
+      
       // Reset cursor to grab when panning ends but still in hand mode
       if (this.currentTool === 'hand') {
         this.canvas.style.cursor = 'grab';
@@ -377,4 +388,28 @@ export class CanvasEditor {
       this.requestDraw();
     }
   }
+
+  setZoom(zoom: number, center?: Point) {
+    const newZoom = Math.max(this.MIN_ZOOM, Math.min(this.MAX_ZOOM, zoom));
+    
+    if (center) {
+      // Сохраняем положение точки под курсором при зуме
+      const before = this.screenToWorld(center);
+      this.viewport.zoom = newZoom;
+      const after = this.screenToWorld(center);
+      this.viewport.x += (after.x - before.x) * this.viewport.zoom;
+      this.viewport.y += (after.y - before.y) * this.viewport.zoom;
+    } else {
+      this.viewport.zoom = newZoom;
+    }
+    
+    this.requestDraw();
+  }
+
+  applyZoom(delta: number, center: Point) {
+    const factor = 1.1;
+    const zoom = delta < 0 ? this.viewport.zoom * factor : this.viewport.zoom / factor;
+    this.setZoom(zoom, center);
+  }
+
 } 
