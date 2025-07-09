@@ -16,44 +16,6 @@ export interface Bounds extends Point {
   height: number;
 }
 
-export interface BaseShape {
-  type: ToolType;
-  color: string;
-  strokeWidth: number;
-  id?: string;
-}
-
-export interface RectangleShape extends BaseShape {
-  type: 'rectangle';
-  width: number;
-  height: number;
-  x: number;
-  y: number;
-  rotation: number;
-}
-
-export interface CircleShape extends BaseShape {
-  type: 'circle';
-  x: number;
-  y: number;
-  radius: number;
-}
-
-export interface LineShape extends BaseShape {
-  type: 'line';
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-}
-
-export interface PencilShape extends BaseShape {
-  type: 'pencil';
-  points: Point[];
-}
-
-export type Shape = RectangleShape | CircleShape | LineShape | PencilShape;
-
 export interface IShape {
   type: ShapeType;
   color: string;
