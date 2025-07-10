@@ -1,61 +1,49 @@
 import rough from 'roughjs';
-import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts';
 
-import type { Bounds, Point, IShape } from 'shared/types/canvas';
+import type { Bounds, Point, ShapeType } from 'shared/types/canvas';
 
-import { generateId, hashStringToSeed } from '../canvasUtils';
+import Interaction, { type Handle } from './Interaction';
+import { BaseShape } from './BaseShape';
+import { GeometryUtils } from './GeometryUtils';
+import { ShapeConstants } from './ShapeConstants';
 
-export class Line implements IShape {
-  readonly type = 'line';
-  readonly color: string;
-  readonly strokeWidth: number;
-  readonly id: string;
-
+export class Line extends BaseShape {
+  readonly type: ShapeType = 'line';  
   readonly x1: number;
   readonly y1: number;
   readonly x2: number;
   readonly y2: number;
 
-  constructor(shape: Partial<Line>) {
-    this.id = generateId();
-    this.color = shape.color ?? 'red';
-    this.strokeWidth = shape.strokeWidth ?? 1;
-    this.x1 = shape.x1 ?? 0;
-    this.y1 = shape.y1 ?? 0;
-    this.x2 = shape.x2 ?? 0;
-    this.y2 = shape.y2 ?? 0;
+  constructor(params: Partial<Line> & { color?: string; strokeWidth?: number }) {
+    super(params.color ?? ShapeConstants.DEFAULT_COLOR, params.strokeWidth ?? ShapeConstants.DEFAULT_STROKE_WIDTH);
+    this.x1 = params.x1 ?? 0;
+    this.y1 = params.y1 ?? 0;
+    this.x2 = params.x2 ?? 0;
+    this.y2 = params.y2 ?? 0;
   }
 
-  patch(shape: Partial<Line>): void {
-    Object.assign(this, shape);
+  getCenter(): Point {
+    return {
+      x: (this.x1 + this.x2) / 2,
+      y: (this.y1 + this.y2) / 2,
+    };
   }
 
   startDragging(interaction: Interaction, mouse: Point): void {
-    const centerX = (this.x1 + this.x2) / 2;
-    const centerY = (this.y1 + this.y2) / 2;
+    const center = this.getCenter();
 
     interaction.patch({
       type: 'dragging',
       handle: null,
       shape: this,
       dragOffset: {
-        x: mouse.x - centerX,
-        y: mouse.y - centerY,
+        x: mouse.x - center.x,
+        y: mouse.y - center.y,
       },
     });
   }
 
-  startDrawing(interaction: Interaction, mouse: Point): void {
-    interaction.patch({
-      handle: null,
-      shape: this,
-      dragOffset: { x: 0, y: 0 },
-      type: 'drawing',
-      startPoint: { ...mouse },
-    });
-  }
-
-  startResizing(interaction: Interaction, handle: Handle) {
+  startResizing(interaction: Interaction, handle: Handle): void {
     interaction.patch({
       type: 'resizing',
       handle,
@@ -70,57 +58,26 @@ export class Line implements IShape {
 
   draw(ctx: CanvasRenderingContext2D, roughCanvas: ReturnType<typeof rough.canvas>): void {
     ctx.save();
-
-    roughCanvas?.line(
-      this.x1,
-      this.y1,
-      this.x2,
-      this.y2,
-      {
-        stroke: this.color,
-        strokeWidth: this.strokeWidth,
-        roughness: 1.5,
-        bowing: 2,
-        seed: this.id ? hashStringToSeed(this.id) : undefined,
-      },
-    );
-
+    roughCanvas?.line(this.x1, this.y1, this.x2, this.y2, this.getRoughOptions());
     ctx.restore();
   }
 
   drawSelection(ctx: CanvasRenderingContext2D): void {
-    ctx.save();
+    this.drawSelectionFrame(ctx);
 
-    const borderColor = '#228be6'; // saturated blue
-    const fillColor = 'rgba(34, 139, 230, 0.08)'; // semi-transparent blue
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = borderColor;
-    ctx.fillStyle = fillColor;
-    ctx.setLineDash([]); // Solid line
-
-    // Don't draw bounding box, only handles
-    ctx.fillStyle = borderColor;
-    ctx.fillRect(this.x1 - 4, this.y1 - 4, 8, 8); // start
-    ctx.fillRect(this.x2 - 4, this.y2 - 4, 8, 8); // end
+    // Draw start and end handles
+    this.drawHandle(ctx, this.x1, this.y1);
+    this.drawHandle(ctx, this.x2, this.y2);
 
     ctx.restore();
   }
 
-  isPointInShape({ x, y }: Point): boolean {
-    const { x1, y1, x2, y2 } = this;
-    const dxToStart = x - x1;
-    const dyToStart = y - y1;
-    const lineDx = x2 - x1;
-    const lineDy = y2 - y1;
-    const projection = dxToStart * lineDx + dyToStart * lineDy;
-    const lineLengthSq = lineDx * lineDx + lineDy * lineDy;
-    let t = lineLengthSq ? projection / lineLengthSq : -1;
-    t = Math.max(0, Math.min(1, t));
-    const closestX = x1 + t * lineDx;
-    const closestY = y1 + t * lineDy;
-    const sqDistance = (x - closestX) ** 2 + (y - closestY) ** 2;
+  isPointInShape(point: Point): boolean {
+    const lineStart = { x: this.x1, y: this.y1 };
+    const lineEnd = { x: this.x2, y: this.y2 };
+    const closest = GeometryUtils.closestPointOnLine(point, lineStart, lineEnd);
 
-    return sqDistance < 64;
+    return GeometryUtils.distanceSquared(point, closest) < ShapeConstants.POINT_HIT_TOLERANCE;
   }
 
   resize(mouse: Point, { handle }: Interaction): void {
@@ -146,7 +103,7 @@ export class Line implements IShape {
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
   }
 
-  drawNewShape({ x, y }: Point): void {    
+  drawNewShape({ x, y }: Point): void {
     this.patch({
       x2: x,
       y2: y,
@@ -154,12 +111,15 @@ export class Line implements IShape {
   }
 
   move(mouse: Point, { dragOffset }: Interaction): void {
-    const prevCenterX = (this.x1 + this.x2) / 2;
-    const prevCenterY = (this.y1 + this.y2) / 2;
-    const newCenterX = mouse.x - dragOffset.x;
-    const newCenterY = mouse.y - dragOffset.y;
-    const dx = newCenterX - prevCenterX;
-    const dy = newCenterY - prevCenterY;
+    const center = this.getCenter();
+
+    const newCenter = {
+      x: mouse.x - dragOffset.x,
+      y: mouse.y - dragOffset.y,
+    };
+
+    const dx = newCenter.x - center.x;
+    const dy = newCenter.y - center.y;
 
     this.patch({
       x1: this.x1 + dx,
@@ -169,9 +129,9 @@ export class Line implements IShape {
     });
   }
 
-  getHandleAt({ x, y }: Point): Handle | null {
-    if (Math.abs(x - this.x1) <= 8 && Math.abs(y - this.y1) <= 8) return 'start';
-    if (Math.abs(x - this.x2) <= 8 && Math.abs(y - this.y2) <= 8) return 'end';
+  getHandleAt(point: Point): Handle | null {
+    if (this.isPointNearHandle(point, { x: this.x1, y: this.y1 })) return 'start';
+    if (this.isPointNearHandle(point, { x: this.x2, y: this.y2 })) return 'end';
 
     return null;
   }

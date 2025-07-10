@@ -1,25 +1,27 @@
-import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts';
+import type { Bounds, Point, ShapeType } from 'shared/types/canvas';
 
-import type { Bounds, Point, IShape } from 'shared/types/canvas';
+import Interaction, { type Handle } from './Interaction';
+import { BaseShape } from './BaseShape';
+import { GeometryUtils } from './GeometryUtils';
+import { ShapeConstants } from './ShapeConstants';
 
-import { generateId } from '../canvasUtils';
-
-export class Pencil implements IShape {
-  readonly type = 'pencil';
-  readonly color: string;
-  readonly strokeWidth: number;
-  readonly id: string;
+export class Pencil extends BaseShape {
+  readonly type: ShapeType = 'pencil';
   readonly points: Point[];
 
-  constructor(shape: Partial<Pencil>) {
-    this.id = generateId();
-    this.color = shape.color ?? 'red';
-    this.strokeWidth = shape.strokeWidth ?? 1;
-    this.points = shape.points ?? [];
+  constructor(params: Partial<Pencil> & { color?: string; strokeWidth?: number }) {
+    super(params.color ?? ShapeConstants.DEFAULT_COLOR, params.strokeWidth ?? ShapeConstants.DEFAULT_STROKE_WIDTH);
+    this.points = params.points ?? [];
   }
 
-  patch(shape: Partial<Pencil>) {
-    Object.assign(this, shape);
+  getCenter(): Point {
+    const bounds = this.getBounds();
+    if (!bounds) return { x: 0, y: 0 };
+
+    return {
+      x: bounds.x + bounds.width / 2,
+      y: bounds.y + bounds.height / 2,
+    };
   }
 
   startDragging(interaction: Interaction, mouse: Point): void {
@@ -41,19 +43,13 @@ export class Pencil implements IShape {
     });
   }
 
-  startResizing(interaction: Interaction, handle: Handle) {
+  startResizing(interaction: Interaction, handle: Handle): void {
     let initialPoints, initialBounds;
     const bounds = this.getBounds();
 
     if (bounds) {
       initialPoints = this.points.map(pt => ({ ...pt }));
-
-      initialBounds = {
-        x: bounds.x ?? 0,
-        y: bounds.y ?? 0,
-        width: bounds.width ?? 0,
-        height: bounds.height ?? 0,
-      };
+      initialBounds = { ...bounds };
     }
 
     interaction.patch({
@@ -82,8 +78,9 @@ export class Pencil implements IShape {
     ctx.restore();
   }
 
-  private drawSmoothLine(ctx: CanvasRenderingContext2D, points: Point[]) {
+  private drawSmoothLine(ctx: CanvasRenderingContext2D, points: Point[]): void {
     if (points.length < 2) return;
+    
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
 
@@ -93,65 +90,59 @@ export class Pencil implements IShape {
       ctx.quadraticCurveTo(points[i].x, points[i].y, midX, midY);
     }
 
-    // last segment
+    // Draw last segment
     ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
     ctx.stroke();
   }
 
   drawSelection(ctx: CanvasRenderingContext2D): void {
-    ctx.save();
     const bounds = this.getBounds();
-
     if (!bounds) return;
 
-    const borderColor = '#228be6'; // saturated blue
-    const fillColor = 'rgba(34, 139, 230, 0.08)'; // semi-transparent blue
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = borderColor;
-    ctx.fillStyle = fillColor;
-    ctx.setLineDash([]); // Solid line
+    this.drawSelectionFrame(ctx);
 
-    // Bounding box + 8 handles
+    // Fill and stroke bounding box
     ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
     ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
-    ctx.fillStyle = borderColor;
-    this.getHandles(bounds).forEach(h => ctx.fillRect(h.x - 4, h.y - 4, 8, 8));
+
+    // Draw resize handles
+    this.getHandles(bounds).forEach(handle => {
+      this.drawHandle(ctx, handle.x, handle.y);
+    });
 
     ctx.restore();
   }
 
-  getHandles(bounds: Bounds): (Point & { type: Handle })[] {
+  getHandles(bounds?: Bounds): (Point & { type: Handle })[] {
+    if (!bounds) {
+      const calcBounds = this.getBounds();
+      if (!calcBounds) return [];
+      bounds = calcBounds;
+    }
+
     return [
       { x: bounds.x, y: bounds.y, type: 'nw' },
       { x: bounds.x + bounds.width, y: bounds.y, type: 'ne' },
       { x: bounds.x + bounds.width, y: bounds.y + bounds.height, type: 'se' },
       { x: bounds.x, y: bounds.y + bounds.height, type: 'sw' },
-      { x: bounds.x + bounds.width/2, y: bounds.y, type: 'n' },
-      { x: bounds.x + bounds.width, y: bounds.y + bounds.height/2, type: 'e' },
-      { x: bounds.x + bounds.width/2, y: bounds.y + bounds.height, type: 's' },
-      { x: bounds.x, y: bounds.y + bounds.height/2, type: 'w' },
+      { x: bounds.x + bounds.width / 2, y: bounds.y, type: 'n' },
+      { x: bounds.x + bounds.width, y: bounds.y + bounds.height / 2, type: 'e' },
+      { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height, type: 's' },
+      { x: bounds.x, y: bounds.y + bounds.height / 2, type: 'w' },
     ];
   }
 
-  isPointInShape({ x, y }: Point): boolean {
+  isPointInShape(point: Point): boolean {
     if (!this.points || this.points.length < 2) return false;
 
     for (let i = 1; i < this.points.length; i++) {
-      const xStart = this.points[i-1].x, yStart = this.points[i-1].y;
-      const xEnd = this.points[i].x, yEnd = this.points[i].y;
-      const dxToStart = x - xStart;
-      const dyToStart = y - yStart;
-      const segmentDx = xEnd - xStart;
-      const segmentDy = yEnd - yStart;
-      const projection = dxToStart * segmentDx + dyToStart * segmentDy;
-      const segmentLengthSq = segmentDx * segmentDx + segmentDy * segmentDy;
-      let t = segmentLengthSq ? projection / segmentLengthSq : -1;
-      t = Math.max(0, Math.min(1, t));
-      const closestX = xStart + t * segmentDx;
-      const closestY = yStart + t * segmentDy;
-      const sqDistance = (x - closestX) ** 2 + (y - closestY) ** 2;
-
-      if (sqDistance < 64) return true;
+      const lineStart = this.points[i - 1];
+      const lineEnd = this.points[i];
+      const closest = GeometryUtils.closestPointOnLine(point, lineStart, lineEnd);
+      
+      if (GeometryUtils.distanceSquared(point, closest) < ShapeConstants.POINT_HIT_TOLERANCE) {
+        return true;
+      }
     }
 
     return false;
@@ -159,11 +150,11 @@ export class Pencil implements IShape {
 
   resize(mouse: Point, { handle, initialBounds, initialPoints }: Interaction): void {
     if (!initialPoints || !initialBounds) return;
-      
-    let newX = initialBounds.x,
-      newY = initialBounds.y,
-      newW = initialBounds.width,
-      newH = initialBounds.height;
+
+    let newX = initialBounds.x;
+    let newY = initialBounds.y;
+    let newW = initialBounds.width;
+    let newH = initialBounds.height;
 
     switch (handle) {
       case 'nw':
@@ -202,8 +193,8 @@ export class Pencil implements IShape {
         break;
     }
 
-    newW = Math.max(10, newW);
-    newH = Math.max(10, newH);
+    newW = Math.max(ShapeConstants.MIN_SIZE / 2, newW);
+    newH = Math.max(ShapeConstants.MIN_SIZE / 2, newH);
 
     const newPoints = initialPoints.map((pt: Point) => {
       const relX = (pt.x - initialBounds.x) / initialBounds.width;
@@ -221,27 +212,29 @@ export class Pencil implements IShape {
   getBounds(): Bounds | null {
     if (!this.points || this.points.length === 0) return null;
 
-    let minX = this.points[0].x, maxX = this.points[0].x;
-    let minY = this.points[0].y, maxY = this.points[0].y;
+    let minX = this.points[0].x;
+    let maxX = this.points[0].x;
+    let minY = this.points[0].y;
+    let maxY = this.points[0].y;
 
     for (const pt of this.points) {
-      if (pt.x < minX) minX = pt.x;
-      if (pt.x > maxX) maxX = pt.x;
-      if (pt.y < minY) minY = pt.y;
-      if (pt.y > maxY) maxY = pt.y;
+      minX = Math.min(minX, pt.x);
+      maxX = Math.max(maxX, pt.x);
+      minY = Math.min(minY, pt.y);
+      maxY = Math.max(maxY, pt.y);
     }
 
     return {
       x: minX,
       y: minY,
-      width: (maxX - minX),
-      height: (maxY - minY),
+      width: maxX - minX,
+      height: maxY - minY,
     };
   }
 
-  drawNewShape(mouse: Point): void {    
+  drawNewShape(mouse: Point): void {
     this.patch({
-      points: this.points.concat(mouse),
+      points: [...this.points, mouse],
     });
   }
 
@@ -259,12 +252,14 @@ export class Pencil implements IShape {
     }
   }
 
-  getHandleAt({ x, y }: Point): Handle | null {
+  getHandleAt(point: Point): Handle | null {
     const bounds = this.getBounds();
     if (!bounds) return null;
 
-    for (const h of this.getHandles(bounds)) {
-      if (Math.abs(x - h.x) <= 8 && Math.abs(y - h.y) <= 8) return h.type;
+    for (const handle of this.getHandles(bounds)) {
+      if (this.isPointNearHandle(point, handle)) {
+        return handle.type;
+      }
     }
 
     return null;
