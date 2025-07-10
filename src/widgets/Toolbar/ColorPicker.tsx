@@ -7,6 +7,7 @@ const COLORS = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'
 
 interface ColorPickerProps {
   selectedColor: string;
+  // eslint-disable-next-line no-unused-vars
   onColorChange: (color: string) => void;
 }
 

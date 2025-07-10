@@ -5,16 +5,19 @@ import { faSlash, faArrowPointer, faPencil, faBroom, faMoon, faLightbulb } from 
 import cn from 'classnames';
 
 import type { ToolType } from 'shared/types/canvas';
+
 import ColorPicker from './ColorPicker';
 import styles from './style.module.scss';
 
 interface ToolbarProps {
   activeTool: ToolType;
+  // eslint-disable-next-line no-unused-vars
   onToolChange: (tool: ToolType) => void;
   onClearCanvas?: () => void;
   isDarkMode?: boolean;
   onToggleDarkMode?: () => void;
   selectedColor: string;
+  // eslint-disable-next-line no-unused-vars
   onColorChange: (color: string) => void;
 }
 
