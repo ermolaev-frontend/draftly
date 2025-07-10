@@ -100,7 +100,7 @@ export class Draftly {
     };
   }
 
-  onMouseDown(e: EventOffset): void {    
+  handlePointerDown(e: EventOffset): void {    
     const mouse = this.getMousePos(e);
 
     if (Draftly.DRAWING_TOOLS.includes(this.currentTool)) {
@@ -194,7 +194,7 @@ export class Draftly {
     }
   }
     
-  onMouseMove(e: EventOffset): void {
+  handlePointerMove(e: EventOffset): void {
     const mouse = this.getMousePos(e);
     let cursor = 'default';
 
@@ -254,7 +254,7 @@ export class Draftly {
     this.canvas.style.cursor = cursor;
   }
     
-  onMouseUp(): void {
+  handlePointerUp(): void {
     if (this.interaction.type === 'drawing') {
       this.interaction.patch({
         shape: null,

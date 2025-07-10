@@ -2,10 +2,11 @@ import React, { memo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSquare as faSquareRegular, faCircle as faCircleRegular } from '@fortawesome/free-regular-svg-icons';
 import { faSlash, faArrowPointer, faPencil, faBroom, faMoon, faLightbulb } from '@fortawesome/free-solid-svg-icons';
+import cn from 'classnames';
 
 import type { ToolType } from 'shared/types/canvas';
 
-import styles from './Toolbar.module.scss';
+import styles from './style.module.scss';
 
 interface ToolbarProps {
   activeTool: ToolType;
@@ -50,7 +51,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       <button
         onClick={onClearCanvas}
         title="Clear Canvas"
-        className={styles.clearButton}
+        className={cn(styles.clearButton, styles.toolbarButton)}
       >
         <FontAwesomeIcon icon={faBroom} />
       </button>
@@ -60,7 +61,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         onClick={onToggleDarkMode}
         title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         className={styles.toolbarButton}
-        style={{ marginTop: 48 }}
       >
         <FontAwesomeIcon icon={isDarkMode ? faLightbulb : faMoon} />
       </button>

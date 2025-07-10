@@ -1,6 +1,5 @@
 import { useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 
-import type { TouchEvent, MouseEvent } from 'react';
 import type { EventOffset } from 'shared/types/canvas';
 
 import { Draftly } from '../classes/Draftly';
@@ -11,7 +10,6 @@ export const DraftlyWrapper = forwardRef<Draftly | null, unknown>(
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const draftlyRef = useRef<Draftly | null>(null);
 
-    // Create Draftly as soon as canvas is available
     const setCanvasRef = useCallback((node: HTMLCanvasElement | null) => {
       canvasRef.current = node;
 
@@ -20,52 +18,34 @@ export const DraftlyWrapper = forwardRef<Draftly | null, unknown>(
       }
     }, []);
 
-    // --- Event Handlers ---
-    const handleMouseDown = (e: MouseEvent<HTMLCanvasElement>) => {
-      draftlyRef.current?.onMouseDown(e.nativeEvent);
+    const getPointerOffset = (e: React.PointerEvent<HTMLCanvasElement>): EventOffset => {
+      const bounding = canvasRef.current?.getBoundingClientRect();
+      
+      return {
+        offsetX: e.clientX - (bounding?.left ?? 0),
+        offsetY: e.clientY - (bounding?.top ?? 0),
+      };
     };
 
-    const handleMouseMove = (e: MouseEvent<HTMLCanvasElement>) => {
-      draftlyRef.current?.onMouseMove(e.nativeEvent);
-    };
-
-    const handleMouseUp = () => {
-      draftlyRef.current?.onMouseUp();
-    };
-
-    const handleMouseLeave = () => {
-      draftlyRef.current?.onMouseUp();
-    };
-
-    const adaptTouchEvent = (e: TouchEvent<HTMLCanvasElement>): EventOffset => {
-      const touch = e.touches[0] || e.changedTouches[0];
-      if (!touch || !canvasRef.current) return { offsetX: 0, offsetY: 0 };
-      const bounding = canvasRef.current.getBoundingClientRect();
-      const offsetX = touch.clientX - bounding.left;
-      const offsetY = touch.clientY - bounding.top;
-
-      return { offsetX, offsetY };
-    };
-
-    const handleTouchStart = (e: TouchEvent<HTMLCanvasElement>) => {
+    const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
       e.preventDefault();
-      draftlyRef.current?.onMouseDown(adaptTouchEvent(e));
+      draftlyRef.current?.handlePointerDown(getPointerOffset(e));
+      (e.target as HTMLCanvasElement).setPointerCapture(e.pointerId);
     };
 
-    const handleTouchMove = (e: TouchEvent<HTMLCanvasElement>) => {
+    const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
       e.preventDefault();
-      draftlyRef.current?.onMouseMove(adaptTouchEvent(e));
+      draftlyRef.current?.handlePointerMove(getPointerOffset(e));
     };
 
-    const handleTouchEnd = (e: TouchEvent<HTMLCanvasElement>) => {
+    const handlePointerEnd = (e: React.PointerEvent<HTMLCanvasElement>) => {
       e.preventDefault();
-      draftlyRef.current?.onMouseUp();
+      draftlyRef.current?.handlePointerUp();
+      (e.target as HTMLCanvasElement).releasePointerCapture(e.pointerId);
     };
 
-    const handleTouchCancel = (e: TouchEvent<HTMLCanvasElement>) => {
-      e.preventDefault();
-      draftlyRef.current?.onMouseUp();
-    };
+    const handlePointerUp = handlePointerEnd;
+    const handlePointerCancel = handlePointerEnd;
 
     useImperativeHandle(ref, () => draftlyRef.current as Draftly, []);
 
@@ -73,14 +53,10 @@ export const DraftlyWrapper = forwardRef<Draftly | null, unknown>(
       <div className={styles.canvasWrapper}>
         <canvas
           ref={setCanvasRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchCancel}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
         />
       </div>
     );
