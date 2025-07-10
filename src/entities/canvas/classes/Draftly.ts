@@ -49,7 +49,7 @@ export class Draftly {
     
   clearCanvas(): void {
     this.shapes = [];
-    this.requestDraw();
+    this.deselectShape();
   }
     
   setTool(toolName: ToolType): void {
@@ -61,7 +61,7 @@ export class Draftly {
       this.deleteShape(this.interaction.shape);
       this.interaction.patch({ shape: null });
       this.requestDraw();
-      this.autoSave?.();
+      this.autoSave();
     }
   }
 
