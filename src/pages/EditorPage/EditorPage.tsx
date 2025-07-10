@@ -13,7 +13,7 @@ export const EditorPage: React.FC = () => {
   const [activeTool, setActiveTool] = useState<ToolType>('select');
   const [isDarkMode, setIsDarkMode] = useState(getSystemTheme());
   const draftlyRef = useRef<Draftly | null>(null);
-  const [selectedColor, setSelectedColor] = useState('#ff6b6b');
+  const [selectedColor, setSelectedColor] = useState<string>('#ff6b6b');
   // Handler to set tool
   const handleTool = useCallback((tool: ToolType) => {
     setActiveTool(tool);
@@ -85,6 +85,10 @@ export const EditorPage: React.FC = () => {
     return () => mq.removeEventListener('change', handleChange);
   }, []);
 
+  useEffect(() => {
+    draftlyRef.current?.setColor(selectedColor);
+  }, [selectedColor]);
+
   return (
     <div className={styles.editorPage} data-theme={isDarkMode ? 'dark' : 'light'}>
       <Toolbar
@@ -96,7 +100,7 @@ export const EditorPage: React.FC = () => {
         selectedColor={selectedColor}
         onColorChange={handleColorChange}
       />
-      <DraftlyWrapper ref={draftlyRef} selectedColor={selectedColor} />
+      <DraftlyWrapper ref={draftlyRef} />
     </div>
   );
 };
