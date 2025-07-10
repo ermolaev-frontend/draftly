@@ -8,7 +8,7 @@ import type {
 } from 'shared/types/canvas';
 
 import Interaction, { type Handle } from './Interaction';
-import { getInitialShapes, getRandomColor, getRandomStrokeWidth } from '../canvasUtils';
+import { getInitialShapes, getRandomStrokeWidth } from '../canvasUtils';
 import { Rectangle } from './Rectangle';
 import { Circle } from './Circle';
 import { Line } from './Line';
@@ -24,6 +24,7 @@ export class Draftly {
   private INITIAL_SHAPES_COUNT = 100;
   private readonly roughCanvas: ReturnType<typeof rough.canvas>;
   static readonly DRAWING_TOOLS = ['rectangle', 'circle', 'line', 'pencil'];
+  private currentColor: string = '#ff6b6b';
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -54,6 +55,10 @@ export class Draftly {
     
   setTool(toolName: ToolType): void {
     this.currentTool = toolName;
+  }
+
+  setColor(color: string): void {
+    this.currentColor = color;
   }
 
   deleteSelectedShape(): void {
@@ -109,7 +114,7 @@ export class Draftly {
       switch (this.currentTool) {
         case 'pencil': {
           newShape = new Pencil({
-            color: getRandomColor(),
+            color: this.currentColor,
             strokeWidth: getRandomStrokeWidth(),
             points: [mouse],
           });
@@ -119,7 +124,7 @@ export class Draftly {
 
         case 'rectangle': {
           newShape = new Rectangle({
-            color: getRandomColor(),
+            color: this.currentColor,
             strokeWidth: getRandomStrokeWidth(),
             x: mouse.x,
             y: mouse.y,
@@ -132,7 +137,7 @@ export class Draftly {
 
         case 'circle': {
           newShape = new Circle({
-            color: getRandomColor(),
+            color: this.currentColor,
             strokeWidth: getRandomStrokeWidth(),
             x: mouse.x,
             y: mouse.y,
@@ -144,7 +149,7 @@ export class Draftly {
 
         case 'line': {
           newShape = new Line({
-            color: getRandomColor(),
+            color: this.currentColor,
             strokeWidth: getRandomStrokeWidth(),
             x1: mouse.x,
             y1: mouse.y,

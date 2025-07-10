@@ -82,3 +82,26 @@
   color: var(--clear-btn-color, #fff);
   box-shadow: 0 2px 8px rgba(231,76,60,0.12);
 } 
+
+.colorPicker {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0 1rem;
+}
+
+.colorSwatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.colorSwatch.selected {
+  border: 2.5px solid #222;
+  box-shadow: 0 0 0 2px #fff, 0 2px 8px rgba(0,0,0,0.12);
+} 

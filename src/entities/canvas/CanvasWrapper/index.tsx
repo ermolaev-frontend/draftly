@@ -1,12 +1,16 @@
-import { useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
+import { useRef, forwardRef, useImperativeHandle, useCallback, useEffect } from 'react';
 
 import type { EventOffset } from 'shared/types/canvas';
 
 import { Draftly } from '../classes/Draftly';
 import styles from './style.module.scss';
 
-export const DraftlyWrapper = forwardRef<Draftly | null, unknown>(
-  (_, ref) => {
+interface DraftlyWrapperProps {
+  selectedColor: string;
+}
+
+export const DraftlyWrapper = forwardRef<Draftly | null, DraftlyWrapperProps>(
+  ({ selectedColor }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const draftlyRef = useRef<Draftly | null>(null);
 
@@ -17,6 +21,12 @@ export const DraftlyWrapper = forwardRef<Draftly | null, unknown>(
         draftlyRef.current = new Draftly(node);
       }
     }, []);
+
+    useEffect(() => {
+      if (draftlyRef.current) {
+        draftlyRef.current.setColor(selectedColor);
+      }
+    }, [selectedColor]);
 
     const getPointerOffset = (e: React.PointerEvent<HTMLCanvasElement>): EventOffset => {
       const bounding = canvasRef.current?.getBoundingClientRect();

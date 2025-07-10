@@ -13,7 +13,7 @@ export const EditorPage: React.FC = () => {
   const [activeTool, setActiveTool] = useState<ToolType>('select');
   const [isDarkMode, setIsDarkMode] = useState(getSystemTheme());
   const draftlyRef = useRef<Draftly | null>(null);
-
+  const [selectedColor, setSelectedColor] = useState('#ff6b6b');
   // Handler to set tool
   const handleTool = useCallback((tool: ToolType) => {
     setActiveTool(tool);
@@ -31,6 +31,10 @@ export const EditorPage: React.FC = () => {
   const handleClearCanvas = useCallback(() => {
     draftlyRef.current?.clearCanvas();
   }, []);
+
+  const handleColorChange = (color: string) => {
+    setSelectedColor(color);
+  };
 
   useEffect(() => {
     function handleResize() {
@@ -89,8 +93,10 @@ export const EditorPage: React.FC = () => {
         onClearCanvas={handleClearCanvas}
         isDarkMode={isDarkMode}
         onToggleDarkMode={handleToggleDarkMode}
+        selectedColor={selectedColor}
+        onColorChange={handleColorChange}
       />
-      <DraftlyWrapper ref={draftlyRef} />
+      <DraftlyWrapper ref={draftlyRef} selectedColor={selectedColor} />
     </div>
   );
 };
