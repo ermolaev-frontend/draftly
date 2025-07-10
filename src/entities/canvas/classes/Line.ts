@@ -45,13 +45,12 @@ export class Line implements IShape {
     });
   }
 
-  startDrawing(interaction: Interaction, mouse: Point): void {
+  startDrawing(interaction: Interaction): void {
     interaction.patch({
       handle: null,
       shape: this,
       dragOffset: { x: 0, y: 0 },
       type: 'drawing',
-      startPoint: { ...mouse },
     });
   }
 
@@ -146,10 +145,10 @@ export class Line implements IShape {
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
   }
 
-  drawNewShape({ x, y }: Point): void {    
+  drawNewShape(mouse: Point): void {    
     this.patch({
-      x2: x,
-      y2: y,
+      x2: mouse.x,
+      y2: mouse.y,
     });
   }
 

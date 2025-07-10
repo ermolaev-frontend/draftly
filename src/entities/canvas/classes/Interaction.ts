@@ -10,11 +10,10 @@ export default class Interaction {
   readonly shape: IShape | null = null;
   readonly dragOffset: Point = systemCenter;
   readonly handle: Handle | null = null;
-  readonly startPoint: Point = systemCenter; // for drawing
   readonly initialAngle: number = 0; // angle between Ox and shape handle in rad when rotation is started
   readonly startRotation: number = 0; // shape.rotation when rotation is started in rad
-  readonly initialPoints: Point[] = []; // for pencil?
-  readonly initialBounds: Bounds = { x: 0, y: 0, width: 0, height: 0 }; // for pencil?
+  readonly initialPoints: Point[] = [];
+  readonly initialBounds: Bounds = { x: 0, y: 0, width: 0, height: 0 };
 
   patch(inter: Partial<Interaction>) {
     Object.assign(this, inter);
@@ -26,7 +25,6 @@ export default class Interaction {
       shape: null,
       dragOffset: systemCenter,
       handle: null,
-      startPoint: systemCenter,
       initialAngle: 0,
       startRotation: 0,
       initialPoints: [],

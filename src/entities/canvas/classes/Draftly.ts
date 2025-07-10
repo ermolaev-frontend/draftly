@@ -201,7 +201,7 @@ export class Draftly {
     const { shape: interShape, type: interType } = this.interaction;
 
     if (interType === 'drawing') {
-      interShape?.drawNewShape(mouse, this.interaction);
+      interShape?.drawNewShape(mouse);
       this.requestDraw();
       cursor = 'crosshair';
     } else if (interType === 'dragging') {
@@ -259,7 +259,6 @@ export class Draftly {
       this.interaction.patch({
         shape: null,
         type: 'idle',
-        startPoint: { x: 0, y: 0 },
       });
     } else {
       this.interaction.patch({

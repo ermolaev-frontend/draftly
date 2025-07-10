@@ -40,13 +40,12 @@ export class Rectangle implements IShape {
     });
   }
 
-  startDrawing(interaction: Interaction, mouse: Point): void {
+  startDrawing(interaction: Interaction): void {
     interaction.patch({
       handle: null,
       shape: this,
       dragOffset: { x: 0, y: 0 },
       type: 'drawing',
-      startPoint: { ...mouse },
     });
   }
 
@@ -244,12 +243,12 @@ export class Rectangle implements IShape {
     };
   }
 
-  drawNewShape(mouse: Point, { startPoint }: Interaction): void {    
+  drawNewShape(mouse: Point): void {    
     this.patch({
-      width: Math.abs(mouse.x - startPoint.x),
-      height: Math.abs(mouse.y - startPoint.y),
-      x: Math.min(startPoint.x, mouse.x),
-      y: Math.min(startPoint.y, mouse.y),
+      width: Math.abs(mouse.x - this.x),
+      height: Math.abs(mouse.y - this.y),
+      x: Math.min(this.x, mouse.x),
+      y: Math.min(this.y, mouse.y),
     });
   }
 

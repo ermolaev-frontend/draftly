@@ -37,13 +37,12 @@ export class Circle implements IShape {
     });
   }
 
-  startDrawing(interaction: Interaction, mouse: Point): void {
+  startDrawing(interaction: Interaction): void {
     interaction.patch({
       handle: null,
       shape: this,
       dragOffset: { x: 0, y: 0 },
       type: 'drawing',
-      startPoint: { ...mouse },
     });
   }
 
@@ -137,9 +136,9 @@ export class Circle implements IShape {
     };
   }
 
-  drawNewShape(mouse: Point, { startPoint }: Interaction): void {    
+  drawNewShape(mouse: Point): void {    
     this.patch({
-      radius: Math.sqrt((mouse.x - startPoint.x) ** 2 + (mouse.y - startPoint.y) ** 2),
+      radius: Math.sqrt((mouse.x - this.x) ** 2 + (mouse.y - this.y) ** 2),
     });
   }
 

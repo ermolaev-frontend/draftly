@@ -33,7 +33,7 @@ export interface IShape {
   drawSelection(ctx: CanvasRenderingContext2D): void
   isPointInShape(point: Point): boolean;
   resize(mouse: Point, inter: Interaction): void;
-  drawNewShape(mouse: Point, inter: Interaction): void;
+  drawNewShape(mouse: Point): void;
   rotate?(mouse: Point, inter: Interaction): void;
   getBounds(): Bounds | null;
   move(mouse: Point, inter: Interaction): void;
