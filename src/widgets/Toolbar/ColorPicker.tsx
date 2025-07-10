@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import cn from 'classnames';
 
 import styles from './style.module.scss';
@@ -25,4 +25,4 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ selectedColor, onColorChange 
     ))}
   </div>;
 
-export default ColorPicker; 
+export default memo(ColorPicker); 

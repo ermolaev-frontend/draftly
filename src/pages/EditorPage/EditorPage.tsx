@@ -32,9 +32,9 @@ export const EditorPage: React.FC = () => {
     draftlyRef.current?.clearCanvas();
   }, []);
 
-  const handleColorChange = (color: string) => {
+  const handleColorChange = useCallback((color: string) => {
     setSelectedColor(color);
-  };
+  }, []);
 
   useEffect(() => {
     function handleResize() {
