@@ -162,7 +162,23 @@ export class Rectangle implements IShape {
     const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
     const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
 
-    return lx >= -this.width/2 && lx <= this.width/2 && ly >= -this.height/2 && ly <= this.height/2;
+    // Check if point is on the border of the rectangle
+    const tolerance = this.strokeWidth / 2 + 2; // Add some tolerance for better UX
+    
+    // Check if point is within the rectangle bounds
+    const withinBounds = lx >= -this.width/2 && lx <= this.width/2 && 
+                        ly >= -this.height/2 && ly <= this.height/2;
+    
+    if (!withinBounds) return false;
+    
+    // Check if point is on any of the four edges
+    const onLeftEdge = Math.abs(lx - (-this.width/2)) <= tolerance;
+    const onRightEdge = Math.abs(lx - this.width/2) <= tolerance;
+    const onTopEdge = Math.abs(ly - (-this.height/2)) <= tolerance;
+    const onBottomEdge = Math.abs(ly - this.height/2) <= tolerance;
+    
+    // Return true only if point is on an edge
+    return onLeftEdge || onRightEdge || onTopEdge || onBottomEdge;
   }
 
   resize(mouse: Point, interaction: Interaction): void {

@@ -175,6 +175,8 @@ export class Draftly {
           shape.startResizing(this.interaction, handle, mouse);
   
           return;
+        } else {
+          
         }
       }
 
@@ -262,7 +264,7 @@ export class Draftly {
   handlePointerUp(): void {
     if (this.interaction.type === 'drawing') {
       this.interaction.patch({
-        shape: null,
+        // shape: null,
         type: 'idle',
       });
     } else {
@@ -272,6 +274,8 @@ export class Draftly {
         dragOffset: { x: 0, y: 0 },
       });
     }
+
+    this.requestDraw();
 
     this.autoSave();
   }

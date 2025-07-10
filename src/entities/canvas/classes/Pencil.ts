@@ -241,6 +241,10 @@ export class Pencil implements IShape {
 
   drawNewShape(mouse: Point): void {    
     this.points.push(mouse);
+
+    this.patch({
+      points: this.points.concat(mouse),
+    });
   }
 
   move(mouse: Point, { dragOffset, initialPoints }: Interaction): void {
