@@ -3,6 +3,17 @@ name: Deploy to VDS
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'vite.config.ts'
+      - 'tsconfig*.json'
+      - 'ci/Dockerfile'
+      - 'ci/docker-compose.yml'
+      - 'index.html'
+      - '.github/workflows/deploy_main.yml'
 
 jobs:
   deploy:
