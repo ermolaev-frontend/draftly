@@ -22,9 +22,9 @@ export class Draftly {
   private currentTool: ToolType;
   private readonly interaction: Interaction;
   private animationFrameId: number | null = null;
-  private INITIAL_SHAPES_COUNT = 100;
+  private static readonly INITIAL_SHAPES_COUNT = 100;
   private readonly roughCanvas: ReturnType<typeof rough.canvas>;
-  static readonly DRAWING_TOOLS = ['rectangle', 'circle', 'line', 'pencil'];
+  private static readonly DRAWING_TOOLS = [TOOLS[1], TOOLS[2], TOOLS[3], TOOLS[4]];
   private currentColor: string = BASE_PALETTE[0];
 
   constructor(canvas: HTMLCanvasElement) {
@@ -35,7 +35,7 @@ export class Draftly {
     this.currentTool = TOOLS[4];
     this.resizeCanvasToWrapper();
 
-    this.shapes = getInitialShapes(canvas, this.INITIAL_SHAPES_COUNT);
+    this.shapes = getInitialShapes(canvas, Draftly.INITIAL_SHAPES_COUNT);
     
     this.requestDraw();
   }
