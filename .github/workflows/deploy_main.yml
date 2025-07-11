@@ -1,4 +1,4 @@
-name: Deploy to VDS
+name: Deploy to Production
 
 on:
   push:
