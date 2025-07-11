@@ -4,9 +4,9 @@ import { faSquare as faSquareRegular, faCircle as faCircleRegular } from '@forta
 import { faSlash, faArrowPointer, faPencil, faBroom, faMoon, faLightbulb } from '@fortawesome/free-solid-svg-icons';
 import cn from 'classnames';
 
+import ColorPicker from 'widgets/ColorPicker';
 import type { ToolType } from 'shared/types/canvas';
 
-import ColorPicker from '../ColorPicker';
 import styles from './style.module.scss';
 
 interface ToolbarProps {
