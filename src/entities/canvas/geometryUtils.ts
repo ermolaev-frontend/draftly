@@ -99,4 +99,16 @@ export const angleBetweenPoints = (p1: Point, p2: Point): number => {
 // 10. Translate a point by delta
 export const translatePoint = (pt: Point, dx: number, dy: number): Point => {
   return { x: pt.x + dx, y: pt.y + dy };
+};
+
+// 11. Convert point to local coordinates relative to center with rotation
+export const toLocalRotatedCoords = (px: number, py: number, cx: number, cy: number, angle: number): Point => {
+  const dx = px - cx;
+  const dy = py - cy;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return {
+    x: cos * dx - sin * dy,
+    y: sin * dx + cos * dy,
+  };
 }; 

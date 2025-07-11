@@ -5,7 +5,7 @@ import { BASE_PALETTE } from 'shared/types/colors';
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
 import { generateId, hashStringToSeed } from '../canvasUtils';
-import { rotatePoint, getRectCenter } from '../geometryUtils';
+import { rotatePoint, getRectCenter, toLocalRotatedCoords } from '../geometryUtils';
 
 export class Rectangle implements IShape {
   readonly type = 'rectangle';
@@ -177,7 +177,7 @@ export class Rectangle implements IShape {
 
     const { x: cx, y: cy } = getRectCenter(this.x, this.y, this.width, this.height);
     const angle = -(this.rotation ?? 0);
-    const { x: lx, y: ly } = rotatePoint(mouse.x, mouse.y, cx, cy, angle);
+    const { x: lx, y: ly } = toLocalRotatedCoords(mouse.x, mouse.y, cx, cy, angle);
     let left = -this.width/2, right = this.width/2, top = -this.height/2, bottom = this.height/2;
 
     switch (handle) {
@@ -286,7 +286,7 @@ export class Rectangle implements IShape {
   getHandleAt({ x, y }: Point): Handle | null {
     const { x: cx, y: cy } = getRectCenter(this.x, this.y, this.width, this.height);
     const angle = -(this.rotation ?? 0);
-    const { x: lx, y: ly } = rotatePoint(x, y, cx, cy, angle);
+    const { x: lx, y: ly } = toLocalRotatedCoords(x, y, cx, cy, angle);
 
     for (const h of this.getHandles()) {
       if (h.type === 'rotate') {
