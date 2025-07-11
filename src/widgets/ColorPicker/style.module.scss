@@ -1,0 +1,34 @@
+@use '../../assets/mixins' as *;
+
+.colorPicker {
+  margin-top: 24px;
+  margin-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+
+  @include mobile {
+    flex-wrap: nowrap;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 8px;
+  }
+}
+
+.colorSwatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.colorSwatch.selected {
+  border: 2px solid #222;
+  box-shadow: 0 0 0 2px #fff, 0 2px 8px rgba(0,0,0,0.12);
+} 

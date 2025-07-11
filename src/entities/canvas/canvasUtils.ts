@@ -1,102 +1,11 @@
-import type { Point, IShape } from 'shared/types/canvas';
+import { BASE_PALETTE } from 'shared/types/colors';
+
+import type { IShape } from 'shared/types/canvas';
 
 import { Rectangle } from './classes/Rectangle';
 import { Circle } from './classes/Circle';
 import { Line } from './classes/Line';
 import { Pencil } from './classes/Pencil';
-
-export function catmullRom2bezier(
-  points: Point[],
-): Array<{
-  start: Point;
-  cp1: Point;
-  cp2: Point;
-  end: Point;
-}> {
-  if (points.length < 2) return [];
-  const beziers = [];
-
-  for (let i = 0; i < points.length - 1; i++) {
-    const p0 = points[i - 1] || points[i];
-    const p1 = points[i];
-    const p2 = points[i + 1] || points[i];
-    const p3 = points[i + 2] || p2;
-
-    // Catmull-Rom to Bezier conversion
-    const cp1 = {
-      x: p1.x + (p2.x - p0.x) / 6,
-      y: p1.y + (p2.y - p0.y) / 6,
-    };
-
-    const cp2 = {
-      x: p2.x - (p3.x - p1.x) / 6,
-      y: p2.y - (p3.y - p1.y) / 6,
-    };
-
-    beziers.push({
-      start: { x: p1.x, y: p1.y },
-      cp1,
-      cp2,
-      end: { x: p2.x, y: p2.y },
-    });
-  }
-
-  return beziers;
-}
-
-export function simplifyDouglasPeucker(
-  points: Point[],
-  epsilon: number,
-): Point[] {
-  if (points.length < 3) return points;
-  const dmax = { dist: 0, idx: 0 };
-
-  const sq = (
-    a: Point,
-    b: Point,
-  ) => (
-    (a.x - b.x) ** 2 + (a.y - b.y) ** 2
-  );
-
-  function getPerpendicularDistance(
-    pt: Point,
-    lineStart: Point,
-    lineEnd: Point,
-  ): number {
-    const dx = lineEnd.x - lineStart.x;
-    const dy = lineEnd.y - lineStart.y;
-    if (dx === 0 && dy === 0) return Math.sqrt(sq(pt, lineStart));
-
-    const t =
-      ((pt.x - lineStart.x) * dx + (pt.y - lineStart.y) * dy) /
-      (dx * dx + dy * dy);
-
-    const proj = {
-      x: lineStart.x + t * dx,
-      y: lineStart.y + t * dy,
-    };
-
-    return Math.sqrt(sq(pt, proj));
-  }
-
-  for (let i = 1; i < points.length - 1; i++) {
-    const d = getPerpendicularDistance(points[i], points[0], points[points.length - 1]);
-
-    if (d > dmax.dist) {
-      dmax.dist = d;
-      dmax.idx = i;
-    }
-  }
-
-  if (dmax.dist > epsilon) {
-    const rec1 = simplifyDouglasPeucker(points.slice(0, dmax.idx + 1), epsilon);
-    const rec2 = simplifyDouglasPeucker(points.slice(dmax.idx), epsilon);
-
-    return rec1.slice(0, -1).concat(rec2);
-  } else {
-    return [points[0], points[points.length - 1]];
-  }
-}
 
 export function hashStringToSeed(str: string): number {
   let hash = 0;
@@ -118,7 +27,7 @@ export function generateId(): string {
 }
 
 export function getRandomColor(): string {
-  const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
+  const colors = BASE_PALETTE;
 
   return colors[Math.floor(Math.random() * colors.length)];
 }
@@ -162,8 +71,7 @@ export function getInitialShapes (canvas: HTMLCanvasElement, shapesCount: number
     }
   }
 
-  const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
-  const shapes = [];
+  const shapes: IShape[] = [];
 
   for (let i = 0; i < shapesCount; i++) {
     const zone = zones[i % zones.length];
@@ -177,7 +85,7 @@ export function getInitialShapes (canvas: HTMLCanvasElement, shapesCount: number
         y: getRandom(zone.yMin, zone.yMax - 100),
         width: getRandom(100, Math.min(180, zone.xMax - zone.xMin)),
         height: getRandom(80, Math.min(140, zone.yMax - zone.yMin)),
-        color: colors[Math.floor(getRandom(0, colors.length))],
+        color: getRandomColor(),
         strokeWidth: getRandom(3, 6, true),
         rotation: 0,
       });
@@ -190,7 +98,7 @@ export function getInitialShapes (canvas: HTMLCanvasElement, shapesCount: number
           40,
           Math.min(80, (zone.xMax - zone.xMin) / 2, (zone.yMax - zone.yMin) / 2),
         ),
-        color: colors[Math.floor(getRandom(0, colors.length))],
+        color: getRandomColor(),
         strokeWidth: getRandom(3, 6, true),
       });
     } else if (typeRand < 0.75) {
@@ -211,7 +119,7 @@ export function getInitialShapes (canvas: HTMLCanvasElement, shapesCount: number
 
       newShape = new Line({
         x1, y1, x2, y2,
-        color: colors[Math.floor(getRandom(0, colors.length))],
+        color: getRandomColor(),
         strokeWidth: getRandom(3, 6, true),
       });
     } else {
@@ -231,7 +139,7 @@ export function getInitialShapes (canvas: HTMLCanvasElement, shapesCount: number
       }
 
       newShape = new Pencil({
-        color: colors[Math.floor(getRandom(0, colors.length))],
+        color: getRandomColor(),
         strokeWidth: getRandom(3, 6),
         points,
       });

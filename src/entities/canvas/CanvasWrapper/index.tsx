@@ -5,7 +5,7 @@ import type { EventOffset } from 'shared/types/canvas';
 import { Draftly } from '../classes/Draftly';
 import styles from './style.module.scss';
 
-export const DraftlyWrapper = forwardRef<Draftly | null, unknown>(
+export const DraftlyWrapper = forwardRef<Draftly>(
   (_, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const draftlyRef = useRef<Draftly | null>(null);

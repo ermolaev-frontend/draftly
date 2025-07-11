@@ -1,5 +1,6 @@
 import rough from 'roughjs';
 import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts';
+import { BASE_PALETTE } from 'shared/types/colors';
 
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
@@ -18,7 +19,7 @@ export class Rectangle implements IShape {
 
   constructor(shape: Partial<Rectangle>) {
     this.id = generateId();
-    this.color = shape.color ?? 'red';
+    this.color = shape.color ?? BASE_PALETTE[0];
     this.strokeWidth = shape.strokeWidth ?? 1;
     this.x = shape.x ?? 0;
     this.y = shape.y ?? 0;

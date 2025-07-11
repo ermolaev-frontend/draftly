@@ -1,4 +1,5 @@
 import rough from 'roughjs';
+import { BASE_PALETTE, TOOLS } from 'shared/types/colors';
 
 import type {
   ToolType,
@@ -8,7 +9,7 @@ import type {
 } from 'shared/types/canvas';
 
 import Interaction, { type Handle } from './Interaction';
-import { getInitialShapes, getRandomColor, getRandomStrokeWidth } from '../canvasUtils';
+import { getInitialShapes, getRandomStrokeWidth } from '../canvasUtils';
 import { Rectangle } from './Rectangle';
 import { Circle } from './Circle';
 import { Line } from './Line';
@@ -21,19 +22,20 @@ export class Draftly {
   private currentTool: ToolType;
   private readonly interaction: Interaction;
   private animationFrameId: number | null = null;
-  private INITIAL_SHAPES_COUNT = 100;
+  private static readonly INITIAL_SHAPES_COUNT = 100;
   private readonly roughCanvas: ReturnType<typeof rough.canvas>;
-  static readonly DRAWING_TOOLS = ['rectangle', 'circle', 'line', 'pencil'];
+  private static readonly DRAWING_TOOLS = [TOOLS[1], TOOLS[2], TOOLS[3], TOOLS[4]];
+  private currentColor: string = BASE_PALETTE[0];
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
     this.roughCanvas = rough.canvas(this.canvas);
     this.interaction = new Interaction();
-    this.currentTool = 'select';
+    this.currentTool = TOOLS[4];
     this.resizeCanvasToWrapper();
 
-    this.shapes = getInitialShapes(canvas, this.INITIAL_SHAPES_COUNT);
+    this.shapes = getInitialShapes(canvas, Draftly.INITIAL_SHAPES_COUNT);
     
     this.requestDraw();
   }
@@ -49,11 +51,15 @@ export class Draftly {
     
   clearCanvas(): void {
     this.shapes = [];
-    this.requestDraw();
+    this.deselectShape();
   }
     
   setTool(toolName: ToolType): void {
     this.currentTool = toolName;
+  }
+
+  setColor(color: string): void {
+    this.currentColor = color;
   }
 
   deleteSelectedShape(): void {
@@ -61,7 +67,7 @@ export class Draftly {
       this.deleteShape(this.interaction.shape);
       this.interaction.patch({ shape: null });
       this.requestDraw();
-      this.autoSave?.();
+      this.autoSave();
     }
   }
 
@@ -88,8 +94,8 @@ export class Draftly {
       shape.draw(this.ctx, this.roughCanvas);
     });
 
-    if (shape && type !== 'drawing') {
-      shape.drawSelection(this.ctx);
+    if (type !== 'drawing') {
+      shape?.drawSelection(this.ctx);
     }
   }
     
@@ -109,7 +115,7 @@ export class Draftly {
       switch (this.currentTool) {
         case 'pencil': {
           newShape = new Pencil({
-            color: getRandomColor(),
+            color: this.currentColor,
             strokeWidth: getRandomStrokeWidth(),
             points: [mouse],
           });
@@ -119,7 +125,7 @@ export class Draftly {
 
         case 'rectangle': {
           newShape = new Rectangle({
-            color: getRandomColor(),
+            color: this.currentColor,
             strokeWidth: getRandomStrokeWidth(),
             x: mouse.x,
             y: mouse.y,
@@ -132,7 +138,7 @@ export class Draftly {
 
         case 'circle': {
           newShape = new Circle({
-            color: getRandomColor(),
+            color: this.currentColor,
             strokeWidth: getRandomStrokeWidth(),
             x: mouse.x,
             y: mouse.y,
@@ -144,7 +150,7 @@ export class Draftly {
 
         case 'line': {
           newShape = new Line({
-            color: getRandomColor(),
+            color: this.currentColor,
             strokeWidth: getRandomStrokeWidth(),
             x1: mouse.x,
             y1: mouse.y,
@@ -267,6 +273,8 @@ export class Draftly {
         dragOffset: { x: 0, y: 0 },
       });
     }
+
+    this.requestDraw();
 
     this.autoSave();
   }

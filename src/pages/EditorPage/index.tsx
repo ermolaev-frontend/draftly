@@ -2,28 +2,25 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { DraftlyWrapper } from 'entities/canvas/CanvasWrapper';
 import { Draftly } from 'entities/canvas/classes/Draftly';
 import { Toolbar } from 'widgets/Toolbar/Toolbar';
+import { BASE_PALETTE, TOOLS } from 'shared/types/colors';
 
 import type { ToolType } from 'shared/types/canvas';
 
-import styles from './EditorPage.module.scss';
+import styles from './style.module.scss';
 
 const getSystemTheme = () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 export const EditorPage: React.FC = () => {
-  const [activeTool, setActiveTool] = useState<ToolType>('select');
+  const [tool, setTool] = useState<ToolType>(TOOLS[4]);
   const [isDarkMode, setIsDarkMode] = useState(getSystemTheme());
-  const draftlyRef = useRef<Draftly | null>(null);
-
-  // Handler to set tool
+  const [color, setColor] = useState<string>(BASE_PALETTE[0]);
+  const draftlyRef = useRef<Draftly>(null);
+  
   const handleTool = useCallback((tool: ToolType) => {
-    setActiveTool(tool);
-    
-    if (draftlyRef.current) {
-      draftlyRef.current.setTool(tool);
-    }
+    setTool(tool);
+    draftlyRef.current?.setTool(tool);
   }, []);
 
-  // Toggle dark mode
   const handleToggleDarkMode = useCallback(() => {
     setIsDarkMode(prev => !prev);
   }, []);
@@ -32,10 +29,20 @@ export const EditorPage: React.FC = () => {
     draftlyRef.current?.clearCanvas();
   }, []);
 
-  useEffect(() => {
-    function handleResize() {
-      draftlyRef.current?.resizeCanvasToWrapper();
+  const handleColorChange = useCallback((color: string) => {
+    setColor(color);
+    draftlyRef.current?.setColor(color);
+
+    if (tool === TOOLS[0]) {
+      handleTool(TOOLS[4]);
+      draftlyRef.current?.deselectShape();
     }
+  }, [handleTool, tool]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      draftlyRef.current?.resizeCanvasToWrapper();
+    };
 
     window.addEventListener('resize', handleResize);
     handleResize();
@@ -45,19 +52,18 @@ export const EditorPage: React.FC = () => {
     };
   }, []);
 
-  // Listen for Escape key to select the Selection tool and Delete/Backspace to delete selected shape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
         case 'Escape':
-          setActiveTool('select');
-          draftlyRef.current?.setTool('select');
+          setTool(TOOLS[0]);
+          draftlyRef.current?.setTool(TOOLS[0]);
           draftlyRef.current?.deselectShape();
 
           return;
         case 'Delete':
         case 'Backspace':
-          draftlyRef.current?.deleteSelectedShape?.();
+          draftlyRef.current?.deleteSelectedShape();
 
           return;
         default:
@@ -73,7 +79,6 @@ export const EditorPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Listen for system theme changes
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
     mq.addEventListener('change', handleChange);
@@ -81,14 +86,20 @@ export const EditorPage: React.FC = () => {
     return () => mq.removeEventListener('change', handleChange);
   }, []);
 
+  useEffect(() => {
+    draftlyRef.current?.setColor(color);
+  }, [color]);
+
   return (
     <div className={styles.editorPage} data-theme={isDarkMode ? 'dark' : 'light'}>
       <Toolbar
-        activeTool={activeTool}
+        activeTool={tool}
         onToolChange={handleTool}
         onClearCanvas={handleClearCanvas}
         isDarkMode={isDarkMode}
         onToggleDarkMode={handleToggleDarkMode}
+        selectedColor={color}
+        onColorChange={handleColorChange}
       />
       <DraftlyWrapper ref={draftlyRef} />
     </div>

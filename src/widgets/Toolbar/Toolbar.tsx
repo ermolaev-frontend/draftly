@@ -6,22 +6,24 @@ import cn from 'classnames';
 
 import type { ToolType } from 'shared/types/canvas';
 
+import ColorPicker from '../ColorPicker';
 import styles from './style.module.scss';
 
 interface ToolbarProps {
   activeTool: ToolType;
-  // eslint-disable-next-line no-unused-vars
   onToolChange: (tool: ToolType) => void;
-  onClearCanvas?: () => void;
+  onClearCanvas: () => void;
   isDarkMode?: boolean;
-  onToggleDarkMode?: () => void;
+  onToggleDarkMode: () => void;
+  selectedColor: string;
+  onColorChange: (color: string) => void;
 }
 
 const toolButtons = [
+  { tool: 'select', icon: faArrowPointer, title: 'Select' },
   { tool: 'rectangle', icon: faSquareRegular, title: 'Rectangle' },
   { tool: 'circle', icon: faCircleRegular, title: 'Circle' },
   { tool: 'line', icon: faSlash, title: 'Line' },
-  { tool: 'select', icon: faArrowPointer, title: 'Select' },
   { tool: 'pencil', icon: faPencil, title: 'Pencil' },
 ];
 
@@ -31,23 +33,25 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onClearCanvas,
   isDarkMode,
   onToggleDarkMode,
+  selectedColor,
+  onColorChange,
 }) => (
   <div className={styles.toolbar}>
-    {toolButtons.map(({ tool, icon, title }) => (
-      <button
-        key={tool}
-        className={
-          activeTool === tool
-            ? `${styles.toolbarButton} ${styles.active}`
-            : styles.toolbarButton
-        }
-        onClick={() => onToolChange(tool as ToolType)}
-        title={title}
-      >
-        <FontAwesomeIcon icon={icon} />
-      </button>
-    ))}
-    {onClearCanvas && (
+    <div className={styles.toolbarButtons}>
+      {toolButtons.map(({ tool, icon, title }) => (
+        <button
+          key={tool}
+          className={
+            activeTool === tool
+              ? `${styles.toolbarButton} ${styles.active}`
+              : styles.toolbarButton
+          }
+          onClick={() => onToolChange(tool as ToolType)}
+          title={title}
+        >
+          <FontAwesomeIcon icon={icon} />
+        </button>
+      ))}
       <button
         onClick={onClearCanvas}
         title="Clear Canvas"
@@ -55,8 +59,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       >
         <FontAwesomeIcon icon={faBroom} />
       </button>
-    )}
-    {onToggleDarkMode && (
       <button
         onClick={onToggleDarkMode}
         title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
@@ -64,7 +66,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       >
         <FontAwesomeIcon icon={isDarkMode ? faLightbulb : faMoon} />
       </button>
-    )}
+    </div>
+    <div className={styles.colorPickerWrapper}>
+      <ColorPicker selectedColor={selectedColor} onColorChange={onColorChange} />
+    </div>
   </div>
 );
 
