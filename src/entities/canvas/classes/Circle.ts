@@ -112,8 +112,8 @@ export class Circle implements IShape {
     ctx.restore();
   }
 
-  isPointInShape({ x, y }: Point): boolean {
-    return isPointInCircle(x, y, this.x, this.y, this.radius);
+  isPointInShape(point: Point): boolean {
+    return isPointInCircle(point, { x: this.x, y: this.y }, this.radius);
   }
 
   resize(mouse: Point): void {

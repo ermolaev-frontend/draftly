@@ -106,9 +106,8 @@ export class Line implements IShape {
     ctx.restore();
   }
 
-  isPointInShape({ x, y }: Point): boolean {
-    const { x1, y1, x2, y2 } = this;
-    return pointToSegmentDistance(x, y, x1, y1, x2, y2) < 64;
+  isPointInShape(point: Point): boolean {
+    return pointToSegmentDistance(point, { x: this.x1, y: this.y1 }, { x: this.x2, y: this.y2 }) < 64;
   }
 
   resize(mouse: Point, { handle }: Interaction): void {
@@ -142,7 +141,8 @@ export class Line implements IShape {
   }
 
   move(mouse: Point, { dragOffset }: Interaction): void {
-    const { x: prevCenterX, y: prevCenterY } = getRectCenter(this.x1, this.y1, this.x2 - this.x1, this.y2 - this.y1);
+    const bounds = { x: this.x1, y: this.y1, width: this.x2 - this.x1, height: this.y2 - this.y1 };
+    const { x: prevCenterX, y: prevCenterY } = getRectCenter(bounds);
     const newCenterX = mouse.x - dragOffset.x;
     const newCenterY = mouse.y - dragOffset.y;
     const dx = newCenterX - prevCenterX;

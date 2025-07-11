@@ -1,85 +1,69 @@
 import type { Bounds, Point } from 'shared/types/canvas';
 
 // 1. Rotate a point around a center by an angle
-export const rotatePoint = (px: number, py: number, cx: number, cy: number, angle: number): Point => {
-  const dx = px - cx;
-  const dy = py - cy;
+export const rotatePoint = (point: Point, center: Point, angle: number, local = false): Point => {
+  const dx = point.x - center.x;
+  const dy = point.y - center.y;
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
-  return {
-    x: cos * dx - sin * dy + cx,
-    y: sin * dx + cos * dy + cy,
-  };
+  const rotatedX = cos * dx - sin * dy;
+  const rotatedY = sin * dx + cos * dy;
+  
+  return local 
+    ? { x: rotatedX, y: rotatedY }
+    : { x: rotatedX + center.x, y: rotatedY + center.y };
 };
 
 // 2. Check if a point is inside an axis-aligned rectangle (AABB)
-export const isPointInRect = (px: number, py: number, rx: number, ry: number, rw: number, rh: number): boolean => {
-  return px >= rx && px <= rx + rw && py >= ry && py <= ry + rh;
+export const isPointInRect = (point: Point, rect: Bounds): boolean => {
+  return point.x >= rect.x && point.x <= rect.x + rect.width && 
+         point.y >= rect.y && point.y <= rect.y + rect.height;
 };
 
 // 3. Check if a point is inside a circle
-export const isPointInCircle = (px: number, py: number, cx: number, cy: number, r: number): boolean => {
-  const dx = px - cx;
-  const dy = py - cy;
-  return dx * dx + dy * dy <= r * r;
+export const isPointInCircle = (point: Point, center: Point, radius: number): boolean => {
+  const dx = point.x - center.x;
+  const dy = point.y - center.y;
+  return dx * dx + dy * dy <= radius * radius;
 };
 
 // 4. Distance from a point to a segment
-export const pointToSegmentDistance = (
-  px: number,
-  py: number,
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-): number => {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
+export const pointToSegmentDistance = (point: Point, start: Point, end: Point): number => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
   if (dx === 0 && dy === 0) {
     // The segment is degenerate (a point)
-    return Math.hypot(px - x1, py - y1);
+    return Math.hypot(point.x - start.x, point.y - start.y);
   }
   const t = Math.max(
     0,
     Math.min(
       1,
-      ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy),
+      ((point.x - start.x) * dx + (point.y - start.y) * dy) / (dx * dx + dy * dy),
     ),
   );
-  const closestX = x1 + t * dx;
-  const closestY = y1 + t * dy;
-  return Math.hypot(px - closestX, py - closestY);
+  const closestX = start.x + t * dx;
+  const closestY = start.y + t * dy;
+  return Math.hypot(point.x - closestX, point.y - closestY);
 };
 
 // 5. Check if a point is near a segment (with threshold)
-export const isPointNearSegment = (
-  px: number,
-  py: number,
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-  threshold: number,
-): boolean => {
-  return pointToSegmentDistance(px, py, x1, y1, x2, y2) <= threshold;
+export const isPointNearSegment = (point: Point, start: Point, end: Point, threshold: number): boolean => {
+  return pointToSegmentDistance(point, start, end) <= threshold;
 };
 
 // 6. Get the center of a rectangle
-export const getRectCenter = (x: number, y: number, width: number, height: number): Point => {
+export const getRectCenter = (rect: Bounds): Point => {
   return {
-    x: x + width / 2,
-    y: y + height / 2,
+    x: rect.x + rect.width / 2,
+    y: rect.y + rect.height / 2,
   };
 };
 
 // 7. Scale a point relative to a rectangle
-export const scalePointInRect = (
-  pt: Point,
-  bounds: Bounds,
-  newBounds: Bounds,
-): Point => {
-  const relX = (pt.x - bounds.x) / bounds.width;
-  const relY = (pt.y - bounds.y) / bounds.height;
+export const scalePointInRect = (point: Point, bounds: Bounds, newBounds: Bounds): Point => {
+  const relX = (point.x - bounds.x) / bounds.width;
+  const relY = (point.y - bounds.y) / bounds.height;
   return {
     x: newBounds.x + relX * newBounds.width,
     y: newBounds.y + relY * newBounds.height,
@@ -97,18 +81,11 @@ export const angleBetweenPoints = (p1: Point, p2: Point): number => {
 };
 
 // 10. Translate a point by delta
-export const translatePoint = (pt: Point, dx: number, dy: number): Point => {
-  return { x: pt.x + dx, y: pt.y + dy };
+export const translatePoint = (point: Point, dx: number, dy: number): Point => {
+  return { x: point.x + dx, y: point.y + dy };
 };
 
-// 11. Convert point to local coordinates relative to center with rotation
-export const toLocalRotatedCoords = (px: number, py: number, cx: number, cy: number, angle: number): Point => {
-  const dx = px - cx;
-  const dy = py - cy;
-  const cos = Math.cos(angle);
-  const sin = Math.sin(angle);
-  return {
-    x: cos * dx - sin * dy,
-    y: sin * dx + cos * dy,
-  };
+// 11. Convert point to local coordinates relative to center with rotation (alias for convenience)
+export const toLocalRotatedCoords = (point: Point, center: Point, angle: number): Point => {
+  return rotatePoint(point, center, angle, true);
 }; 

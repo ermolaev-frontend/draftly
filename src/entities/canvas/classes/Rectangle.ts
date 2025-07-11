@@ -5,7 +5,7 @@ import { BASE_PALETTE } from 'shared/types/colors';
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
 import { generateId, hashStringToSeed } from '../canvasUtils';
-import { rotatePoint, getRectCenter, toLocalRotatedCoords } from '../geometryUtils';
+import { toLocalRotatedCoords, getRectCenter, rotatePoint } from '../geometryUtils';
 
 export class Rectangle implements IShape {
   readonly type = 'rectangle';
@@ -75,10 +75,7 @@ export class Rectangle implements IShape {
   }
 
   private getCenter(): Point {
-    return {
-      x: this.x + this.width / 2,
-      y: this.y + this.height / 2,
-    };
+    return getRectCenter({ x: this.x, y: this.y, width: this.width, height: this.height });
   }
 
   draw(ctx: CanvasRenderingContext2D, roughCanvas: ReturnType<typeof rough.canvas>): void {
@@ -156,13 +153,12 @@ export class Rectangle implements IShape {
   }
 
   isPointInShape(point: Point): boolean {
-    const { x, y } = point;
-    const { x: cx, y: cy } = getRectCenter(this.x, this.y, this.width, this.height);
+    const center = this.getCenter();
     const angle = -(this.rotation ?? 0);
-    const { x: lx, y: ly } = rotatePoint(x, y, cx, cy, angle);
+    const { x: lx, y: ly } = toLocalRotatedCoords(point, center, angle);
     return (
-      lx >= this.x && lx <= this.x + this.width &&
-      ly >= this.y && ly <= this.y + this.height
+      lx >= -this.width/2 && lx <= this.width/2 &&
+      ly >= -this.height/2 && ly <= this.height/2
     );
   }
 
@@ -171,13 +167,12 @@ export class Rectangle implements IShape {
 
     if (handle === 'rotate') {
       this.rotate(mouse, interaction);
-
       return;
     }
 
-    const { x: cx, y: cy } = getRectCenter(this.x, this.y, this.width, this.height);
+    const center = this.getCenter();
     const angle = -(this.rotation ?? 0);
-    const { x: lx, y: ly } = toLocalRotatedCoords(mouse.x, mouse.y, cx, cy, angle);
+    const { x: lx, y: ly } = toLocalRotatedCoords(mouse, center, angle);
     let left = -this.width/2, right = this.width/2, top = -this.height/2, bottom = this.height/2;
 
     switch (handle) {
@@ -213,22 +208,17 @@ export class Rectangle implements IShape {
 
     const newWidth = right - left;
     const newHeight = bottom - top;
-
-    const newCx = cx + (
-      Math.cos(this.rotation ?? 0) * (left + right) / 2 -
-          Math.sin(this.rotation ?? 0) * (top + bottom) / 2
-    );
-
-    const newCy = cy + (
-      Math.sin(this.rotation ?? 0) * (left + right) / 2 +
-          Math.cos(this.rotation ?? 0) * (top + bottom) / 2
+    const newCenter = rotatePoint(
+      { x: (left + right) / 2, y: (top + bottom) / 2 },
+      { x: 0, y: 0 },
+      this.rotation ?? 0
     );
       
     this.patch({
       width: newWidth,
       height: newHeight,
-      x: newCx - newWidth/2,
-      y: newCy - newHeight/2,
+      x: center.x + newCenter.x - newWidth/2,
+      y: center.y + newCenter.y - newHeight/2,
     });
   }
 
@@ -284,9 +274,9 @@ export class Rectangle implements IShape {
   }
 
   getHandleAt({ x, y }: Point): Handle | null {
-    const { x: cx, y: cy } = getRectCenter(this.x, this.y, this.width, this.height);
+    const center = this.getCenter();
     const angle = -(this.rotation ?? 0);
-    const { x: lx, y: ly } = toLocalRotatedCoords(x, y, cx, cy, angle);
+    const { x: lx, y: ly } = toLocalRotatedCoords({ x, y }, center, angle);
 
     for (const h of this.getHandles()) {
       if (h.type === 'rotate') {

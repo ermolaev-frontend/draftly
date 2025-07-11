@@ -134,12 +134,12 @@ export class Pencil implements IShape {
     ];
   }
 
-  isPointInShape({ x, y }: Point): boolean {
+  isPointInShape(point: Point): boolean {
     if (!this.points || this.points.length < 2) return false;
     for (let i = 1; i < this.points.length; i++) {
-      const xStart = this.points[i-1].x, yStart = this.points[i-1].y;
-      const xEnd = this.points[i].x, yEnd = this.points[i].y;
-      if (pointToSegmentDistance(x, y, xStart, yStart, xEnd, yEnd) < 64) return true;
+      const start = this.points[i-1];
+      const end = this.points[i];
+      if (pointToSegmentDistance(point, start, end) < 64) return true;
     }
     return false;
   }
