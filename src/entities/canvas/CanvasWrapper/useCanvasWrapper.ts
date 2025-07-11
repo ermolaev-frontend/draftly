@@ -1,4 +1,4 @@
-import { useRef, useImperativeHandle, useCallback } from 'react';
+import { useRef, useImperativeHandle, useCallback, type PointerEvent } from 'react';
 
 import type { EventOffset } from 'shared/types/canvas';
 
@@ -15,7 +15,7 @@ export const useCanvasWrapper = (ref: React.Ref<Draftly>) => {
     }
   }, []);
 
-  const getPointerOffset = (e: React.PointerEvent<HTMLCanvasElement>): EventOffset => {
+  const getPointerOffset = (e: PointerEvent<HTMLCanvasElement>): EventOffset => {
     const bounding = canvasRef.current?.getBoundingClientRect();
     return {
       offsetX: e.clientX - (bounding?.left ?? 0),
@@ -23,18 +23,18 @@ export const useCanvasWrapper = (ref: React.Ref<Draftly>) => {
     };
   };
 
-  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+  const handlePointerDown = useCallback((e: PointerEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     draftlyRef.current?.handlePointerDown(getPointerOffset(e));
     (e.target as HTMLCanvasElement).setPointerCapture(e.pointerId);
   }, []);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+  const handlePointerMove = useCallback((e: PointerEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     draftlyRef.current?.handlePointerMove(getPointerOffset(e));
   }, []);
 
-  const handlePointerEnd = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+  const handlePointerEnd = useCallback((e: PointerEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     draftlyRef.current?.handlePointerUp();
     (e.target as HTMLCanvasElement).releasePointerCapture(e.pointerId);
