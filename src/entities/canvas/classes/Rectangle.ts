@@ -163,15 +163,7 @@ export class Rectangle implements IShape {
     const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
     const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
 
-    const tolerance = this.strokeWidth / 2 + 2;
-    
-    const withinBounds = 
-      lx >= -this.width/2 - tolerance && 
-      lx <= this.width/2 + tolerance && 
-      ly >= -this.height/2 - tolerance && 
-      ly <= this.height/2 + tolerance;
-    
-    return withinBounds;
+    return lx >= -this.width/2 && lx <= this.width/2 && ly >= -this.height/2 && ly <= this.height/2;
   }
 
   resize(mouse: Point, interaction: Interaction): void {
