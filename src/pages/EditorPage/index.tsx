@@ -6,7 +6,7 @@ import { BASE_PALETTE, TOOLS } from 'shared/types/colors';
 
 import type { ToolType } from 'shared/types/canvas';
 
-import styles from './EditorPage.module.scss';
+import styles from './style.module.scss';
 
 const getSystemTheme = () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
