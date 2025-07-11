@@ -26,6 +26,22 @@ export class Draftly {
   private readonly roughCanvas: ReturnType<typeof rough.canvas>;
   private static readonly DRAWING_TOOLS = [TOOLS[1], TOOLS[2], TOOLS[3], TOOLS[4]];
   private currentColor: string = BASE_PALETTE[0];
+  private static readonly HANDLE_CURSOR_MAP = new Map([
+    ['nw', 'nwse-resize'],
+    ['n', 'ns-resize'],
+    ['ne', 'nesw-resize'],
+    ['e', 'ew-resize'],
+    ['se', 'nwse-resize'],
+    ['s', 'ns-resize'],
+    ['sw', 'nesw-resize'],
+    ['w', 'ew-resize'],
+    ['rotate', 'grab'],
+  ]);
+  // Viewport for pan/zoom
+  private viewport = {
+    x: 0,
+    y: 0,
+  };
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -73,8 +89,12 @@ export class Draftly {
 
   deselectShape(): void {
     this.interaction.patch({ shape: null, handle: null, type: 'idle' });
-    this.canvas.style.cursor = 'default';
+    this.setCursor('default');
     this.requestDraw();
+  }
+
+  private setCursor(cursor: CSSStyleDeclaration['cursor']): void {
+    this.canvas.style.cursor = cursor;
   }
 
   private addShape(shape: IShape) {
@@ -87,6 +107,8 @@ export class Draftly {
 
   private drawShapes(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.save();
+    this.ctx.translate(this.viewport.x, this.viewport.y);
         
     const { shape, type } = this.interaction;
 
@@ -97,12 +119,13 @@ export class Draftly {
     if (type !== 'drawing') {
       shape?.drawSelection(this.ctx);
     }
+    this.ctx.restore();
   }
     
   private getMousePos(e: EventOffset): Point {
     return {
-      x: e.offsetX,
-      y: e.offsetY, 
+      x: e.offsetX - this.viewport.x,
+      y: e.offsetY - this.viewport.y,
     };
   }
 
@@ -186,14 +209,20 @@ export class Draftly {
     
         if (shape.isPointInShape(mouse)) {
           shape.startDragging(this.interaction, mouse);
-          this.canvas.style.cursor = 'move';
+          this.setCursor('move');
           shapeSelected = true;
           break;
         }
       }
     
       if (!shapeSelected) {
-        this.deselectShape();
+        this.interaction.patch({
+          type: 'panning',
+          panOffset: { x: this.viewport.x - e.offsetX, y: this.viewport.y - e.offsetY },
+          shape: null,
+          handle: null,
+        });
+        this.setCursor('grab');
       }
       
       this.requestDraw();
@@ -206,7 +235,11 @@ export class Draftly {
 
     const { shape: interShape, type: interType } = this.interaction;
 
-    if (interType === 'drawing') {
+    if (interType === 'panning') {
+      this.handlePanning(e);
+      this.requestDraw();
+      this.setCursor('grabbing');
+    } else if (interType === 'drawing') {
       interShape?.drawNewShape(mouse);
       this.requestDraw();
       cursor = 'crosshair';
@@ -220,34 +253,13 @@ export class Draftly {
       cursor = this.getCursorForHandle(this.interaction.handle);
     } else {
       // Check if mouse is hovering over a handle
-      let hoveredHandle = null;
-
-      if (interShape) {
-        hoveredHandle = interShape.getHandleAt(mouse);
-      }
+      const hoveredHandle = interShape?.getHandleAt(mouse) ?? null;
 
       if (hoveredHandle) {
         cursor = this.getCursorForHandle(hoveredHandle);
       } else {
-        let hoveredSelected = false;
-        let hovered = false;
-
-        for (let i = this.shapes.length - 1; i >= 0; i--) {
-          if (this.shapes[i].isPointInShape(mouse)) {
-            hovered = true;
-
-            if (this.shapes[i] === interShape) {
-              hoveredSelected = true;
-            }
-
-            break;
-          }
-        }
-
-        if (hoveredSelected) {
+        if (this.isAnyShapeHovered(mouse)) {
           cursor = 'move';
-        } else if (hovered) {
-          cursor = 'pointer';
         }
       }
     }
@@ -257,11 +269,23 @@ export class Draftly {
       cursor = 'crosshair';
     }
 
-    this.canvas.style.cursor = cursor;
+    this.setCursor(cursor);
+  }
+
+  private handlePanning(e: EventOffset): void {
+    const { panOffset } = this.interaction;
+    this.viewport.x = panOffset.x + e.offsetX;
+    this.viewport.y = panOffset.y + e.offsetY;
   }
     
   handlePointerUp(): void {
-    if (this.interaction.type === 'drawing') {
+    if (this.interaction.type === 'panning') {
+      this.interaction.patch({
+        type: 'idle',
+        panOffset: { x: 0, y: 0 },
+      });
+      this.setCursor('default');
+    } else if (this.interaction.type === 'drawing') {
       this.interaction.patch({
         shape: null,
         type: 'idle',
@@ -290,20 +314,12 @@ export class Draftly {
   private getCursorForHandle(handle: Handle | null): string {
     if (!handle) return 'default';
 
-    return Draftly.handleCursorMap.get(handle) ?? 'default';
+    return Draftly.HANDLE_CURSOR_MAP.get(handle) ?? 'default';
   }
 
-  static handleCursorMap = new Map([
-    ['nw', 'nwse-resize'],
-    ['n', 'ns-resize'],
-    ['ne', 'nesw-resize'],
-    ['e', 'ew-resize'],
-    ['se', 'nwse-resize'],
-    ['s', 'ns-resize'],
-    ['sw', 'nesw-resize'],
-    ['w', 'ew-resize'],
-    ['rotate', 'grab'],
-  ]);
+  private isAnyShapeHovered(mouse: Point): boolean {
+    return this.shapes.some(shape => shape.isPointInShape(mouse));
+  }
 
   resizeCanvasToWrapper() {
     const wrapper = this.canvas.parentElement;
