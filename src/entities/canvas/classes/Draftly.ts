@@ -37,6 +37,11 @@ export class Draftly {
     ['w', 'ew-resize'],
     ['rotate', 'grab'],
   ]);
+  // Viewport for pan/zoom
+  private viewport = {
+    x: 0,
+    y: 0,
+  };
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -102,6 +107,8 @@ export class Draftly {
 
   private drawShapes(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.save();
+    this.ctx.translate(this.viewport.x, this.viewport.y);
         
     const { shape, type } = this.interaction;
 
@@ -112,12 +119,13 @@ export class Draftly {
     if (type !== 'drawing') {
       shape?.drawSelection(this.ctx);
     }
+    this.ctx.restore();
   }
     
   private getMousePos(e: EventOffset): Point {
     return {
-      x: e.offsetX,
-      y: e.offsetY, 
+      x: e.offsetX - this.viewport.x,
+      y: e.offsetY - this.viewport.y,
     };
   }
 
@@ -208,7 +216,13 @@ export class Draftly {
       }
     
       if (!shapeSelected) {
-        this.deselectShape();
+        this.interaction.patch({
+          type: 'panning',
+          panOffset: { x: this.viewport.x - e.offsetX, y: this.viewport.y - e.offsetY },
+          shape: null,
+          handle: null,
+        });
+        this.setCursor('grab');
       }
       
       this.requestDraw();
@@ -221,7 +235,11 @@ export class Draftly {
 
     const { shape: interShape, type: interType } = this.interaction;
 
-    if (interType === 'drawing') {
+    if (interType === 'panning') {
+      this.handlePanning(e);
+      this.requestDraw();
+      this.setCursor('grabbing');
+    } else if (interType === 'drawing') {
       interShape?.drawNewShape(mouse);
       this.requestDraw();
       cursor = 'crosshair';
@@ -253,9 +271,21 @@ export class Draftly {
 
     this.setCursor(cursor);
   }
+
+  private handlePanning(e: EventOffset): void {
+    const { panOffset } = this.interaction;
+    this.viewport.x = panOffset.x + e.offsetX;
+    this.viewport.y = panOffset.y + e.offsetY;
+  }
     
   handlePointerUp(): void {
-    if (this.interaction.type === 'drawing') {
+    if (this.interaction.type === 'panning') {
+      this.interaction.patch({
+        type: 'idle',
+        panOffset: { x: 0, y: 0 },
+      });
+      this.setCursor('default');
+    } else if (this.interaction.type === 'drawing') {
       this.interaction.patch({
         shape: null,
         type: 'idle',
