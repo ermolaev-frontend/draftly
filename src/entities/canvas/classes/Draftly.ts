@@ -93,7 +93,7 @@ export class Draftly {
     this.requestDraw();
   }
 
-  private setCursor(cursor: string): void {
+  private setCursor(cursor: CSSStyleDeclaration['cursor']): void {
     this.canvas.style.cursor = cursor;
   }
 
