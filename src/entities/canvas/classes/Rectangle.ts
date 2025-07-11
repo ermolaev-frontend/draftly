@@ -5,6 +5,7 @@ import { BASE_PALETTE } from 'shared/types/colors';
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
 import { generateId, hashStringToSeed } from '../canvasUtils';
+import { rotatePoint, getRectCenter } from '../geometryUtils';
 
 export class Rectangle implements IShape {
   readonly type = 'rectangle';
@@ -156,14 +157,13 @@ export class Rectangle implements IShape {
 
   isPointInShape(point: Point): boolean {
     const { x, y } = point;
-    const cx = this.x + this.width/2;
-    const cy = this.y + this.height/2;
+    const { x: cx, y: cy } = getRectCenter(this.x, this.y, this.width, this.height);
     const angle = -(this.rotation ?? 0);
-    const dx = x - cx, dy = y - cy;
-    const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
-    const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
-
-    return lx >= -this.width/2 && lx <= this.width/2 && ly >= -this.height/2 && ly <= this.height/2;
+    const { x: lx, y: ly } = rotatePoint(x, y, cx, cy, angle);
+    return (
+      lx >= this.x && lx <= this.x + this.width &&
+      ly >= this.y && ly <= this.y + this.height
+    );
   }
 
   resize(mouse: Point, interaction: Interaction): void {
@@ -175,12 +175,9 @@ export class Rectangle implements IShape {
       return;
     }
 
-    const cx = this.x + this.width/2;
-    const cy = this.y + this.height/2;
+    const { x: cx, y: cy } = getRectCenter(this.x, this.y, this.width, this.height);
     const angle = -(this.rotation ?? 0);
-    const dx = mouse.x - cx, dy = mouse.y - cy;
-    const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
-    const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
+    const { x: lx, y: ly } = rotatePoint(mouse.x, mouse.y, cx, cy, angle);
     let left = -this.width/2, right = this.width/2, top = -this.height/2, bottom = this.height/2;
 
     switch (handle) {
@@ -287,12 +284,9 @@ export class Rectangle implements IShape {
   }
 
   getHandleAt({ x, y }: Point): Handle | null {
-    const cx = this.x + this.width/2;
-    const cy = this.y + this.height/2;
+    const { x: cx, y: cy } = getRectCenter(this.x, this.y, this.width, this.height);
     const angle = -(this.rotation ?? 0);
-    const dx = x - cx, dy = y - cy;
-    const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
-    const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
+    const { x: lx, y: ly } = rotatePoint(x, y, cx, cy, angle);
 
     for (const h of this.getHandles()) {
       if (h.type === 'rotate') {

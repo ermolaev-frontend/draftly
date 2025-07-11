@@ -4,6 +4,7 @@ import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
 import { generateId, hashStringToSeed } from '../canvasUtils';
+import { isPointInCircle, distance } from '../geometryUtils';
 
 export class Circle implements IShape {
   readonly type = 'circle';
@@ -112,16 +113,11 @@ export class Circle implements IShape {
   }
 
   isPointInShape({ x, y }: Point): boolean {
-    const dx = x - this.x, dy = y - this.y;
-
-    return dx * dx + dy * dy <= this.radius * this.radius;
+    return isPointInCircle(x, y, this.x, this.y, this.radius);
   }
 
   resize(mouse: Point): void {
-    const dx = mouse.x - this.x;
-    const dy = mouse.y - this.y;
-    const newRadius = Math.sqrt(dx * dx + dy * dy);
-
+    const newRadius = distance({ x: this.x, y: this.y }, mouse);
     this.patch({
       radius: Math.max(20, newRadius),
     });
@@ -136,9 +132,9 @@ export class Circle implements IShape {
     };
   }
 
-  drawNewShape(mouse: Point): void {    
+  drawNewShape(mouse: Point): void {
     this.patch({
-      radius: Math.sqrt((mouse.x - this.x) ** 2 + (mouse.y - this.y) ** 2),
+      radius: distance({ x: this.x, y: this.y }, mouse),
     });
   }
 

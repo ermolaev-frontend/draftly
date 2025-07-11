@@ -3,6 +3,7 @@ import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
 import { generateId } from '../canvasUtils';
+import { pointToSegmentDistance, scalePointInRect } from '../geometryUtils';
 
 export class Pencil implements IShape {
   readonly type = 'pencil';
@@ -135,36 +136,20 @@ export class Pencil implements IShape {
 
   isPointInShape({ x, y }: Point): boolean {
     if (!this.points || this.points.length < 2) return false;
-
     for (let i = 1; i < this.points.length; i++) {
       const xStart = this.points[i-1].x, yStart = this.points[i-1].y;
       const xEnd = this.points[i].x, yEnd = this.points[i].y;
-      const dxToStart = x - xStart;
-      const dyToStart = y - yStart;
-      const segmentDx = xEnd - xStart;
-      const segmentDy = yEnd - yStart;
-      const projection = dxToStart * segmentDx + dyToStart * segmentDy;
-      const segmentLengthSq = segmentDx * segmentDx + segmentDy * segmentDy;
-      let t = segmentLengthSq ? projection / segmentLengthSq : -1;
-      t = Math.max(0, Math.min(1, t));
-      const closestX = xStart + t * segmentDx;
-      const closestY = yStart + t * segmentDy;
-      const sqDistance = (x - closestX) ** 2 + (y - closestY) ** 2;
-
-      if (sqDistance < 64) return true;
+      if (pointToSegmentDistance(x, y, xStart, yStart, xEnd, yEnd) < 64) return true;
     }
-
     return false;
   }
 
   resize(mouse: Point, { handle, initialBounds, initialPoints }: Interaction): void {
     if (!initialPoints || !initialBounds) return;
-      
     let newX = initialBounds.x,
       newY = initialBounds.y,
       newW = initialBounds.width,
       newH = initialBounds.height;
-
     switch (handle) {
       case 'nw':
         newX = mouse.x;
@@ -201,20 +186,9 @@ export class Pencil implements IShape {
         newW = initialBounds.x + initialBounds.width - mouse.x;
         break;
     }
-
     newW = Math.max(10, newW);
     newH = Math.max(10, newH);
-
-    const newPoints = initialPoints.map((pt: Point) => {
-      const relX = (pt.x - initialBounds.x) / initialBounds.width;
-      const relY = (pt.y - initialBounds.y) / initialBounds.height;
-
-      return {
-        x: newX + relX * newW,
-        y: newY + relY * newH,
-      };
-    });
-
+    const newPoints = initialPoints.map((pt: Point) => scalePointInRect(pt, initialBounds, { x: newX, y: newY, width: newW, height: newH }));
     this.patch({ points: newPoints });
   }
 
