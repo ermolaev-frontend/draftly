@@ -1,4 +1,5 @@
 import rough from 'roughjs';
+import { BASE_PALETTE, TOOLS } from 'shared/types/colors';
 
 import type {
   ToolType,
@@ -24,14 +25,14 @@ export class Draftly {
   private INITIAL_SHAPES_COUNT = 100;
   private readonly roughCanvas: ReturnType<typeof rough.canvas>;
   static readonly DRAWING_TOOLS = ['rectangle', 'circle', 'line', 'pencil'];
-  private currentColor: string = '#ff6b6b';
+  private currentColor: string = BASE_PALETTE[0];
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
     this.roughCanvas = rough.canvas(this.canvas);
     this.interaction = new Interaction();
-    this.currentTool = 'select';
+    this.currentTool = TOOLS[4];
     this.resizeCanvasToWrapper();
 
     this.shapes = getInitialShapes(canvas, this.INITIAL_SHAPES_COUNT);
@@ -93,8 +94,8 @@ export class Draftly {
       shape.draw(this.ctx, this.roughCanvas);
     });
 
-    if (shape && type !== 'drawing') {
-      shape.drawSelection(this.ctx);
+    if (type !== 'drawing') {
+      shape?.drawSelection(this.ctx);
     }
   }
     
@@ -175,8 +176,6 @@ export class Draftly {
           shape.startResizing(this.interaction, handle, mouse);
   
           return;
-        } else {
-          
         }
       }
 
@@ -264,7 +263,7 @@ export class Draftly {
   handlePointerUp(): void {
     if (this.interaction.type === 'drawing') {
       this.interaction.patch({
-        // shape: null,
+        shape: null,
         type: 'idle',
       });
     } else {

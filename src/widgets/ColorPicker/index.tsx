@@ -1,19 +1,17 @@
 import React, { memo } from 'react';
 import cn from 'classnames';
+import { BASE_PALETTE } from 'shared/types/colors';
 
 import styles from './style.module.scss';
 
-const COLORS = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
-
 interface ColorPickerProps {
   selectedColor: string;
-  // eslint-disable-next-line no-unused-vars
   onColorChange: (color: string) => void;
 }
 
 const ColorPicker: React.FC<ColorPickerProps> = ({ selectedColor, onColorChange }) =>
   <div className={styles.colorPicker}>
-    {COLORS.map(color => (
+    {BASE_PALETTE.map(color => (
       <button
         key={color}
         className={cn(styles.colorSwatch, { [styles.selected]: selectedColor === color })}

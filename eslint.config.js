@@ -101,7 +101,7 @@ export default tseslint.config([
       ],
       '@typescript-eslint/camelcase': 'off',
       '@typescript-eslint/no-unused-vars': [
-        'error',
+        'warn',
         {
           ignoreRestSiblings: true,
         },

@@ -1,5 +1,6 @@
 import rough from 'roughjs';
 import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts';
+import { BASE_PALETTE } from 'shared/types/colors';
 
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
@@ -18,7 +19,7 @@ export class Rectangle implements IShape {
 
   constructor(shape: Partial<Rectangle>) {
     this.id = generateId();
-    this.color = shape.color ?? 'red';
+    this.color = shape.color ?? BASE_PALETTE[0];
     this.strokeWidth = shape.strokeWidth ?? 1;
     this.x = shape.x ?? 0;
     this.y = shape.y ?? 0;
@@ -162,23 +163,15 @@ export class Rectangle implements IShape {
     const lx = Math.cos(angle)*dx - Math.sin(angle)*dy;
     const ly = Math.sin(angle)*dx + Math.cos(angle)*dy;
 
-    // Check if point is on the border of the rectangle
-    const tolerance = this.strokeWidth / 2 + 2; // Add some tolerance for better UX
+    const tolerance = this.strokeWidth / 2 + 2;
     
-    // Check if point is within the rectangle bounds
-    const withinBounds = lx >= -this.width/2 && lx <= this.width/2 && 
-                        ly >= -this.height/2 && ly <= this.height/2;
+    const withinBounds = 
+      lx >= -this.width/2 - tolerance && 
+      lx <= this.width/2 + tolerance && 
+      ly >= -this.height/2 - tolerance && 
+      ly <= this.height/2 + tolerance;
     
-    if (!withinBounds) return false;
-    
-    // Check if point is on any of the four edges
-    const onLeftEdge = Math.abs(lx - (-this.width/2)) <= tolerance;
-    const onRightEdge = Math.abs(lx - this.width/2) <= tolerance;
-    const onTopEdge = Math.abs(ly - (-this.height/2)) <= tolerance;
-    const onBottomEdge = Math.abs(ly - this.height/2) <= tolerance;
-    
-    // Return true only if point is on an edge
-    return onLeftEdge || onRightEdge || onTopEdge || onBottomEdge;
+    return withinBounds;
   }
 
   resize(mouse: Point, interaction: Interaction): void {
