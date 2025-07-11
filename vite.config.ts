@@ -36,7 +36,7 @@ export default defineConfig({
       pages: '/src/pages',
       entities: '/src/entities',
       widgets: '/src/widgets',
-      assets: '/src/assets',
+      assets: '/src/shared/assets',
     },
   },
 });
