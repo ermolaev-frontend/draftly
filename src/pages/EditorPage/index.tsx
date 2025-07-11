@@ -34,11 +34,10 @@ export const EditorPage: React.FC = () => {
     draftlyRef.current?.setColor(color);
 
     if (tool === TOOLS[0]) {
-      setTool(TOOLS[4]);
-      draftlyRef.current?.setTool(TOOLS[4]);
+      handleTool(TOOLS[4]);
       draftlyRef.current?.deselectShape();
     }
-  }, [tool]);
+  }, [handleTool, tool]);
 
   useEffect(() => {
     const handleResize = () => {
