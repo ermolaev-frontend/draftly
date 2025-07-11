@@ -40,7 +40,7 @@ export interface IShape {
   getBounds(): Bounds | null;
   move(mouse: Point, inter: Interaction): void;
   getHandles?(bounds?: Bounds): (Point & { type: Handle })[];
-  getHandleAt({ x, y }: Point): Handle | null;
+  getHandleAt(mouse: Point): Handle | null;
   startDragging(interaction: Interaction, mouse: Point): void;
   startDrawing(interaction: Interaction, mouse?: Point): void;
   startResizing(interaction: Interaction, handle: Handle, mouse?: Point): void;

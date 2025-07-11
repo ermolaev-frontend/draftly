@@ -26,6 +26,17 @@ export class Draftly {
   private readonly roughCanvas: ReturnType<typeof rough.canvas>;
   private static readonly DRAWING_TOOLS = [TOOLS[1], TOOLS[2], TOOLS[3], TOOLS[4]];
   private currentColor: string = BASE_PALETTE[0];
+  private static readonly HANDLE_CURSOR_MAP = new Map([
+    ['nw', 'nwse-resize'],
+    ['n', 'ns-resize'],
+    ['ne', 'nesw-resize'],
+    ['e', 'ew-resize'],
+    ['se', 'nwse-resize'],
+    ['s', 'ns-resize'],
+    ['sw', 'nesw-resize'],
+    ['w', 'ew-resize'],
+    ['rotate', 'grab'],
+  ]);
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -73,8 +84,12 @@ export class Draftly {
 
   deselectShape(): void {
     this.interaction.patch({ shape: null, handle: null, type: 'idle' });
-    this.canvas.style.cursor = 'default';
+    this.setCursor('default');
     this.requestDraw();
+  }
+
+  private setCursor(cursor: string): void {
+    this.canvas.style.cursor = cursor;
   }
 
   private addShape(shape: IShape) {
@@ -186,7 +201,7 @@ export class Draftly {
     
         if (shape.isPointInShape(mouse)) {
           shape.startDragging(this.interaction, mouse);
-          this.canvas.style.cursor = 'move';
+          this.setCursor('move');
           shapeSelected = true;
           break;
         }
@@ -220,34 +235,13 @@ export class Draftly {
       cursor = this.getCursorForHandle(this.interaction.handle);
     } else {
       // Check if mouse is hovering over a handle
-      let hoveredHandle = null;
-
-      if (interShape) {
-        hoveredHandle = interShape.getHandleAt(mouse);
-      }
+      const hoveredHandle = interShape?.getHandleAt(mouse) ?? null;
 
       if (hoveredHandle) {
         cursor = this.getCursorForHandle(hoveredHandle);
       } else {
-        let hoveredSelected = false;
-        let hovered = false;
-
-        for (let i = this.shapes.length - 1; i >= 0; i--) {
-          if (this.shapes[i].isPointInShape(mouse)) {
-            hovered = true;
-
-            if (this.shapes[i] === interShape) {
-              hoveredSelected = true;
-            }
-
-            break;
-          }
-        }
-
-        if (hoveredSelected) {
+        if (this.isAnyShapeHovered(mouse)) {
           cursor = 'move';
-        } else if (hovered) {
-          cursor = 'pointer';
         }
       }
     }
@@ -257,7 +251,7 @@ export class Draftly {
       cursor = 'crosshair';
     }
 
-    this.canvas.style.cursor = cursor;
+    this.setCursor(cursor);
   }
     
   handlePointerUp(): void {
@@ -290,20 +284,12 @@ export class Draftly {
   private getCursorForHandle(handle: Handle | null): string {
     if (!handle) return 'default';
 
-    return Draftly.handleCursorMap.get(handle) ?? 'default';
+    return Draftly.HANDLE_CURSOR_MAP.get(handle) ?? 'default';
   }
 
-  static handleCursorMap = new Map([
-    ['nw', 'nwse-resize'],
-    ['n', 'ns-resize'],
-    ['ne', 'nesw-resize'],
-    ['e', 'ew-resize'],
-    ['se', 'nwse-resize'],
-    ['s', 'ns-resize'],
-    ['sw', 'nesw-resize'],
-    ['w', 'ew-resize'],
-    ['rotate', 'grab'],
-  ]);
+  private isAnyShapeHovered(mouse: Point): boolean {
+    return this.shapes.some(shape => shape.isPointInShape(mouse));
+  }
 
   resizeCanvasToWrapper() {
     const wrapper = this.canvas.parentElement;
