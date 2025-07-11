@@ -32,7 +32,7 @@ export function pointToSegmentDistance(
   x1: number,
   y1: number,
   x2: number,
-  y2: number
+  y2: number,
 ): number {
   const dx = x2 - x1;
   const dy = y2 - y1;
@@ -44,8 +44,8 @@ export function pointToSegmentDistance(
     0,
     Math.min(
       1,
-      ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)
-    )
+      ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy),
+    ),
   );
   const closestX = x1 + t * dx;
   const closestY = y1 + t * dy;
@@ -77,7 +77,7 @@ export function getRectCenter(x: number, y: number, width: number, height: numbe
 export function scalePointInRect(
   pt: Point,
   bounds: { x: number; y: number; width: number; height: number },
-  newBounds: { x: number; y: number; width: number; height: number }
+  newBounds: { x: number; y: number; width: number; height: number },
 ): Point {
   const relX = (pt.x - bounds.x) / bounds.width;
   const relY = (pt.y - bounds.y) / bounds.height;
