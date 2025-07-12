@@ -132,7 +132,7 @@ export class Draftly {
   handlePointerDown(e: EventOffset): void {    
     const mouse = this.getMousePos(e);
 
-    if (Draftly.DRAWING_TOOLS.includes(this.currentTool)) {
+    if (this.isDrawingToolSelected()) {
       let newShape: IShape | null = null;
 
       switch (this.currentTool) {
@@ -231,7 +231,6 @@ export class Draftly {
     
   handlePointerMove(e: EventOffset): void {
     const mouse = this.getMousePos(e);
-    let cursor = 'default';
 
     const { shape: interShape, type: interType } = this.interaction;
 
@@ -242,34 +241,36 @@ export class Draftly {
     } else if (interType === 'drawing') {
       interShape?.drawNewShape(mouse);
       this.requestDraw();
-      cursor = 'crosshair';
+      this.setCursor('crosshair');
     } else if (interType === 'dragging') {
       interShape?.move(mouse, this.interaction);
       this.requestDraw();
-      cursor = 'move';
+      this.setCursor('move');
     } else if (interType === 'resizing') {
       interShape?.resize(mouse, this.interaction);
       this.requestDraw();
-      cursor = this.getCursorForHandle(this.interaction.handle);
-    } else {
-      // Check if mouse is hovering over a handle
+      this.setCursor(this.getCursorForHandle(this.interaction.handle));
+    } else if (interType === 'idle') {
+      if (this.isDrawingToolSelected()) {
+        this.setCursor('crosshair');
+        return;
+      }
+
       const hoveredHandle = interShape?.getHandleAt(mouse) ?? null;
 
       if (hoveredHandle) {
-        cursor = this.getCursorForHandle(hoveredHandle);
+        this.setCursor(this.getCursorForHandle(hoveredHandle));
+      } else if (this.isAnyShapeHovered(mouse)) {
+        this.setCursor('move');
       } else {
-        if (this.isAnyShapeHovered(mouse)) {
-          cursor = 'move';
-        }
+        this.setCursor('default');
       }
     }
 
-    // --- FINAL cursor logic for drawing tools ---
-    if (Draftly.DRAWING_TOOLS.includes(this.currentTool)) {
-      cursor = 'crosshair';
-    }
+  }
 
-    this.setCursor(cursor);
+  private isDrawingToolSelected(): boolean {
+    return Draftly.DRAWING_TOOLS.includes(this.currentTool);
   }
 
   private handlePanning(e: EventOffset): void {
