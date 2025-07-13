@@ -18,7 +18,7 @@ import { Pencil } from './Pencil';
 export class Draftly {
   private readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
-  private shapes: IShape[];
+  private shapes: IShape[] = [];
   private currentTool: ToolType;
   private readonly interaction: Interaction;
   private animationFrameId: number | null = null;
@@ -50,9 +50,6 @@ export class Draftly {
     this.interaction = new Interaction();
     this.currentTool = TOOLS[4];
     this.resizeCanvasToWrapper();
-
-    // Инициализируем пустой массив фигур - они будут загружены через WebSocket
-    this.shapes = [];
     
     this.requestDraw();
   }
