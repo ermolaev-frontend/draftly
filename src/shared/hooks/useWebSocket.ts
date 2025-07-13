@@ -1,10 +1,31 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 
 import type { IShape } from '../types/canvas';
+
 import { Rectangle } from '../../entities/canvas/classes/Rectangle';
 import { Circle } from '../../entities/canvas/classes/Circle';
 import { Line } from '../../entities/canvas/classes/Line';
 import { Pencil } from '../../entities/canvas/classes/Pencil';
+
+// Интерфейс для данных фигур, получаемых по сети
+interface ShapeData {
+  type: string;
+  id: string;
+  color: string;
+  strokeWidth: number;
+  // Специфичные свойства для каждого типа
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  rotation?: number;
+  radius?: number;
+  x1?: number;
+  y1?: number;
+  x2?: number;
+  y2?: number;
+  points?: Array<{ x: number; y: number }>;
+}
 
 interface WebSocketMessage {
   type: string;
@@ -40,6 +61,24 @@ export const useWebSocket = ({
   const [error, setError] = useState<string | null>(null);
   const connectingRef = useRef(false);
 
+  // Функция для создания фигур из данных
+  const createShapesFromData = useCallback((data: IShape[]): IShape[] => {
+    return data.map((shapeData: IShape) => {
+      switch (shapeData.type) {
+        case 'rectangle':
+          return new Rectangle(shapeData);
+        case 'circle':
+          return new Circle(shapeData);
+        case 'line':
+          return new Line(shapeData);
+        case 'pencil':
+          return new Pencil(shapeData);
+        default:
+          throw new Error(`Неизвестный тип shape: ${shapeData.type}`);
+      }
+    });
+  }, []);
+
   const connect = useCallback(() => {
     console.log('Попытка подключения к WebSocket...');
     if (wsRef.current?.readyState === WebSocket.OPEN || connectingRef.current) {
@@ -59,7 +98,7 @@ export const useWebSocket = ({
       connectingRef.current = false;
     };
 
-    ws.onmessage = (event) => {
+    ws.onmessage = event => {
       try {
         const data: WebSocketMessage = JSON.parse(event.data);
         
@@ -102,20 +141,7 @@ export const useWebSocket = ({
             if (data.data && onShapesReceived) {
               console.log(`Получены shapes от другого клиента: ${data.count} объектов`);
               try {
-                const shapes = data.data.map((shapeData: any) => {
-                  switch (shapeData.type) {
-                    case 'rectangle':
-                      return new Rectangle(shapeData);
-                    case 'circle':
-                      return new Circle(shapeData);
-                    case 'line':
-                      return new Line(shapeData);
-                    case 'pencil':
-                      return new Pencil(shapeData);
-                    default:
-                      throw new Error(`Неизвестный тип shape: ${shapeData.type}`);
-                  }
-                });
+                const shapes = createShapesFromData(data.data);
                 onShapesReceived(shapes);
               } catch (error) {
                 console.error('Ошибка создания shapes:', error);
@@ -127,20 +153,7 @@ export const useWebSocket = ({
             if (data.data && onShapesReceived) {
               console.log(`Получены shapes из комнаты: ${data.count} объектов`);
               try {
-                const shapes = data.data.map((shapeData: any) => {
-                  switch (shapeData.type) {
-                    case 'rectangle':
-                      return new Rectangle(shapeData);
-                    case 'circle':
-                      return new Circle(shapeData);
-                    case 'line':
-                      return new Line(shapeData);
-                    case 'pencil':
-                      return new Pencil(shapeData);
-                    default:
-                      throw new Error(`Неизвестный тип shape: ${shapeData.type}`);
-                  }
-                });
+                const shapes = createShapesFromData(data.data);
                 onShapesReceived(shapes);
               } catch (error) {
                 console.error('Ошибка создания shapes:', error);
@@ -165,7 +178,7 @@ export const useWebSocket = ({
       }
     };
 
-    ws.onclose = (event) => {
+    ws.onclose = event => {
       console.log('WebSocket соединение закрыто:', event.code, event.reason);
       setIsConnected(false);
       setCurrentRoom(null);
@@ -173,7 +186,7 @@ export const useWebSocket = ({
       connectingRef.current = false;
     };
 
-    ws.onerror = (error) => {
+    ws.onerror = error => {
       console.error('WebSocket ошибка подключения:', error);
       setError('Ошибка подключения к серверу');
       setIsConnected(false);
@@ -200,7 +213,7 @@ export const useWebSocket = ({
   const leaveRoom = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
-        type: 'leave_room'
+        type: 'leave_room',
       }));
     }
   }, []);
@@ -209,7 +222,7 @@ export const useWebSocket = ({
     if (wsRef.current?.readyState === WebSocket.OPEN && currentRoom) {
       wsRef.current.send(JSON.stringify({
         type: 'request_shapes',
-        roomId: currentRoom
+        roomId: currentRoom,
       }));
       console.log(`Запрашиваем shapes из комнаты ${currentRoom}`);
     }
