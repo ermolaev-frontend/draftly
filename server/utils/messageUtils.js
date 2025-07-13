@@ -90,7 +90,7 @@ export function parseMessage(data) {
 
 export function broadcastToRoom(room, message, excludeClient = null) {
   room.clients.forEach((client) => {
-    if (client !== excludeClient && client.readyState === 1) {
+    if (client !== excludeClient && client?.readyState === 1) {
       client.send(message);
     }
   });

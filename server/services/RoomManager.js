@@ -16,7 +16,7 @@ export class RoomManager {
 
   removeEmptyRoom(roomId) {
     const room = this.rooms.get(roomId);
-    if (room && room.clients.size === 0) {
+    if (room?.clients.size === 0) {
       this.rooms.delete(roomId);
       console.log(`Room ${roomId} deleted (empty)`);
     }
@@ -65,7 +65,7 @@ export class RoomManager {
 
   getShapes(roomId) {
     const room = this.rooms.get(roomId);
-    return room ? room.shapes : [];
+    return room?.shapes ?? [];
   }
 
   getAvailableRooms() {

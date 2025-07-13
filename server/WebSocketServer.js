@@ -79,7 +79,7 @@ export class DraftlyWebSocketServer {
   getStats() {
     return {
       port: this.port,
-      connections: this.wss ? this.wss.clients.size : 0,
+      connections: this.wss?.clients.size ?? 0,
       rooms: this.roomManager.getRoomStats()
     };
   }
