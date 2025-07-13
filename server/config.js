@@ -1,5 +1,5 @@
 export const config = {
-  PORT: process.env.PORT || 3002,
+  PORT: process.env.PORT ?? 3002,
   MESSAGE_TYPES: {
     CONNECTION: 'connection',
     JOIN_ROOM: 'join_room',

@@ -22,7 +22,7 @@ export class Draftly {
   private currentTool: ToolType;
   private readonly interaction: Interaction;
   private animationFrameId: number | null = null;
-  private static readonly INITIAL_SHAPES_COUNT = 100;
+  // private static readonly INITIAL_SHAPES_COUNT = 100;
   private readonly roughCanvas: ReturnType<typeof rough.canvas>;
   private static readonly DRAWING_TOOLS = [TOOLS[1], TOOLS[2], TOOLS[3], TOOLS[4]];
   private currentColor: string = BASE_PALETTE[0];
@@ -335,7 +335,7 @@ export class Draftly {
 
     if (wrapper) {
       const rect = wrapper.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = window.devicePixelRatio ?? 1;
       this.canvas.width = rect.width * dpr;
       this.canvas.height = rect.height * dpr;
       this.canvas.style.width = rect.width + 'px';

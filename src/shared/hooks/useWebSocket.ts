@@ -84,8 +84,8 @@ export const useWebSocket = ({
             break;
             
           case 'room_joined':
-            setCurrentRoom(data.roomId || null);
-            setClientsInRoom(data.clientsInRoom || 0);
+            setCurrentRoom(data.roomId ?? null);
+            setClientsInRoom(data.clientsInRoom ?? 0);
             console.log(`Joined room: ${data.roomId} (clients: ${data.clientsInRoom})`);
             break;
             
@@ -96,20 +96,20 @@ export const useWebSocket = ({
             break;
             
           case 'client_joined':
-            setClientsInRoom(data.clientsInRoom || 0);
-            onClientJoined?.(data.roomId || '', data.clientsInRoom || 0);
+            setClientsInRoom(data.clientsInRoom ?? 0);
+            onClientJoined?.(data.roomId ?? '', data.clientsInRoom ?? 0);
             console.log(`Client joined room ${data.roomId} (clients: ${data.clientsInRoom})`);
             break;
             
           case 'client_left':
-            setClientsInRoom(data.clientsInRoom || 0);
-            onClientLeft?.(data.roomId || '', data.clientsInRoom || 0);
+            setClientsInRoom(data.clientsInRoom ?? 0);
+            onClientLeft?.(data.roomId ?? '', data.clientsInRoom ?? 0);
             console.log(`Client left room ${data.roomId} (clients: ${data.clientsInRoom})`);
             break;
             
           case 'client_disconnected':
-            setClientsInRoom(data.clientsInRoom || 0);
-            onClientDisconnected?.(data.roomId || '', data.clientsInRoom || 0);
+            setClientsInRoom(data.clientsInRoom ?? 0);
+            onClientDisconnected?.(data.roomId ?? '', data.clientsInRoom ?? 0);
             console.log(`Client disconnected from room ${data.roomId} (clients: ${data.clientsInRoom})`);
             break;
             
@@ -142,7 +142,7 @@ export const useWebSocket = ({
             break;
             
           case 'error':
-            setError(data.message || 'Unknown error');
+            setError(data.message ?? 'Unknown error');
             console.error('WebSocket error:', data.message);
             break;
             
