@@ -4,7 +4,7 @@ import { Circle } from 'entities/canvas/classes/Circle';
 import { Line } from 'entities/canvas/classes/Line';
 import { Pencil } from 'entities/canvas/classes/Pencil';
 
-import type { IShape, IShapeFields } from '../types/canvas';
+import type { IShape, IShapeFields } from 'shared/types/canvas';
 
 interface WebSocketMessage {
   type: string;
@@ -26,6 +26,24 @@ interface UseWebSocketOptions {
   onClientDisconnected?: (roomId: string, clientsInRoom: number) => void;
 }
 
+// Function to create shapes from data
+const createShapesFromData = (data: IShapeFields[]): IShape[] => {
+  return data.map((shapeData: IShapeFields) => {
+    switch (shapeData.type) {
+      case 'rectangle':
+        return new Rectangle(shapeData as Partial<Rectangle>);
+      case 'circle':
+        return new Circle(shapeData as Partial<Circle>);
+      case 'line':
+        return new Line(shapeData as Partial<Line>);
+      case 'pencil':
+        return new Pencil(shapeData as Partial<Pencil>);
+      default:
+        throw new Error(`Unknown shape type: ${shapeData.type}`);      
+    }
+  });
+};
+
 export const useWebSocket = ({
   roomId,
   onShapesReceived,
@@ -38,24 +56,6 @@ export const useWebSocket = ({
   const [currentRoom, setCurrentRoom] = useState<string | null>(null);
   const [clientsInRoom, setClientsInRoom] = useState(0);
   const [error, setError] = useState<string | null>(null);
-
-  // Function to create shapes from data
-  const createShapesFromData = useCallback((data: IShapeFields[]): IShape[] => {
-    return data.map((shapeData: IShapeFields) => {
-      switch (shapeData.type) {
-        case 'rectangle':
-          return new Rectangle(shapeData as Partial<Rectangle>);
-        case 'circle':
-          return new Circle(shapeData as Partial<Circle>);
-        case 'line':
-          return new Line(shapeData as Partial<Line>);
-        case 'pencil':
-          return new Pencil(shapeData as Partial<Pencil>);
-        default:
-          throw new Error(`Неизвестный тип shape: ${shapeData.type}`);      
-      }
-    });
-  }, []);
 
   const connect = useCallback(() => {
     console.log('Attempting to connect to WebSocket...');
@@ -166,13 +166,7 @@ export const useWebSocket = ({
       setError('Connection error to server');
       setIsConnected(false);
     };
-  }, [
-    onClientJoined,
-    onClientLeft,
-    onClientDisconnected,
-    onShapesReceived,
-    createShapesFromData,
-  ]);
+  }, [onClientJoined, onClientLeft, onClientDisconnected, onShapesReceived]);
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {
