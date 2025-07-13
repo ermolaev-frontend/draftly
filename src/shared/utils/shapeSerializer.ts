@@ -1,4 +1,5 @@
 import type { IShape } from '../types/canvas';
+
 import { Rectangle } from '../../entities/canvas/classes/Rectangle';
 import { Circle } from '../../entities/canvas/classes/Circle';
 import { Line } from '../../entities/canvas/classes/Line';
@@ -12,60 +13,6 @@ interface SerializedShape {
   strokeWidth: number;
   [key: string]: any; // Дополнительные свойства для каждого типа
 }
-
-// Функция для сериализации shapes (убираем методы, оставляем только данные)
-export const serializeShapes = (shapes: IShape[]): SerializedShape[] => {
-  return shapes.map(shape => {
-    const serialized: SerializedShape = {
-      type: shape.type,
-      id: shape.id,
-      color: shape.color,
-      strokeWidth: shape.strokeWidth,
-    };
-
-    // Добавляем специфичные свойства для каждого типа
-    switch (shape.type) {
-      case 'rectangle':
-        const rect = shape as any;
-        Object.assign(serialized, {
-          x: rect.x,
-          y: rect.y,
-          width: rect.width,
-          height: rect.height,
-          rotation: rect.rotation,
-        });
-        break;
-
-      case 'circle':
-        const circle = shape as any;
-        Object.assign(serialized, {
-          x: circle.x,
-          y: circle.y,
-          radius: circle.radius,
-        });
-        break;
-
-      case 'line':
-        const line = shape as any;
-        Object.assign(serialized, {
-          x1: line.x1,
-          y1: line.y1,
-          x2: line.x2,
-          y2: line.y2,
-        });
-        break;
-
-      case 'pencil':
-        const pencil = shape as any;
-        Object.assign(serialized, {
-          points: pencil.points,
-        });
-        break;
-    }
-
-    return serialized;
-  });
-};
 
 // Функция для десериализации shapes (создаем новые объекты с методами)
 export const deserializeShapes = (serializedShapes: SerializedShape[]): IShape[] => {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 
 import type { IShape } from '../types/canvas';
-import { serializeShapes, deserializeShapes } from '../utils/shapeSerializer';
+import { deserializeShapes } from '../utils/shapeSerializer';
 
 interface WebSocketMessage {
   type: string;
@@ -161,8 +161,7 @@ export const useWebSocket = ({
 
   const sendShapes = useCallback((shapes: IShape[]) => {
     if (wsRef.current?.readyState === WebSocket.OPEN && currentRoom) {
-      const serializedShapes = serializeShapes(shapes);
-      wsRef.current.send(JSON.stringify(serializedShapes));
+      wsRef.current.send(JSON.stringify(shapes));
       console.log(`Отправляем ${shapes.length} shapes в комнату ${currentRoom}`);
     } else {
       console.warn('WebSocket не подключен или не в комнате');
