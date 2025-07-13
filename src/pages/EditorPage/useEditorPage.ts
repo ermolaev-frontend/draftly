@@ -7,11 +7,14 @@ import type { ToolType, IShape } from 'shared/types/canvas';
 
 const getSystemTheme = () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
+// Default room configuration
+const DEFAULT_ROOM_ID = import.meta.env.VITE_DEFAULT_ROOM_ID ?? 'room1';
+
 export const useEditorPage = () => {
   const [tool, setTool] = useState<ToolType>(TOOLS[4]);
   const [isDarkMode, setIsDarkMode] = useState(getSystemTheme());
   const [color, setColor] = useState<string>(BASE_PALETTE[0]);
-  const [roomId, setRoomId] = useState<string>('room1');
+  const [roomId, setRoomId] = useState<string>(DEFAULT_ROOM_ID);
   const draftlyRef = useRef<Draftly>(null);
 
   // WebSocket интеграция

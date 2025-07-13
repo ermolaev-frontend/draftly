@@ -16,10 +16,13 @@ interface WebSocketMessage {
   error?: string;
 }
 
-interface UseWebSocketOptions {
+interface Props {
   roomId: string;
-  onShapesReceived?: (shapes: IShape[]) => void;
+  onShapesReceived: (shapes: IShape[]) => void;
 }
+
+// WebSocket server configuration
+const WS_SERVER_URL = import.meta.env.VITE_WS_SERVER_URL ?? 'ws://localhost:3002';
 
 // Function to create shapes from data
 const createShapesFromData = (data: IShapeFields[]): IShape[] => {
@@ -39,10 +42,8 @@ const createShapesFromData = (data: IShapeFields[]): IShape[] => {
   });
 };
 
-export const useWebSocket = ({
-  roomId,
-  onShapesReceived,
-}: UseWebSocketOptions) => {
+export const useWebSocket = (props: Props) => {
+  const { roomId, onShapesReceived } = props;
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [currentRoom, setCurrentRoom] = useState<string | null>(null);
@@ -56,7 +57,7 @@ export const useWebSocket = ({
     }
 
     console.log('Creating new WebSocket connection...');
-    const ws = new WebSocket('ws://localhost:3002');
+    const ws = new WebSocket(WS_SERVER_URL);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -71,7 +72,7 @@ export const useWebSocket = ({
         
         switch (data.type) {
           case 'broadcast':
-            if (data.data && onShapesReceived) {
+            if (data.data) {
               console.log(`Received shapes from another client: ${data.count} objects`);
               try {
                 const shapes = createShapesFromData(data.data);
