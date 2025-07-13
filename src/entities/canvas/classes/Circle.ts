@@ -16,7 +16,7 @@ export class Circle implements IShape {
   readonly radius: number;
 
   constructor(shape: Partial<Circle>) {
-    this.id = generateId();
+    this.id = shape.id ?? generateId();
     this.color = shape.color ?? 'red';
     this.strokeWidth = shape.strokeWidth ?? 1;
     this.x = shape.x ?? 0;

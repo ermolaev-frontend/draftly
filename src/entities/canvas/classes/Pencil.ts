@@ -12,7 +12,7 @@ export class Pencil implements IShape {
   readonly points: Point[];
 
   constructor(shape: Partial<Pencil>) {
-    this.id = generateId();
+    this.id = shape.id ?? generateId();
     this.color = shape.color ?? 'red';
     this.strokeWidth = shape.strokeWidth ?? 1;
     this.points = shape.points ?? [];

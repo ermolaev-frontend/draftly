@@ -4,7 +4,7 @@ import type { EventOffset } from 'shared/types/canvas';
 
 import { Draftly } from '../classes/Draftly';
 
-export const useCanvasWrapper = (ref: React.Ref<Draftly>) => {
+export const useCanvasWrapper = (ref: React.Ref<Draftly>, onShapesUpdate?: () => void) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const draftlyRef = useRef<Draftly | null>(null);
 
@@ -38,7 +38,10 @@ export const useCanvasWrapper = (ref: React.Ref<Draftly>) => {
     e.preventDefault();
     draftlyRef.current?.handlePointerUp();
     (e.target as HTMLCanvasElement).releasePointerCapture(e.pointerId);
-  }, []);
+    
+    // Вызываем callback для отправки обновленных shapes
+    onShapesUpdate?.();
+  }, [onShapesUpdate]);
 
   useImperativeHandle(ref, () => draftlyRef.current as Draftly, []);
 

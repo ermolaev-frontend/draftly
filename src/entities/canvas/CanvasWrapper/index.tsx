@@ -3,14 +3,18 @@ import styles from './style.module.scss';
 import { useCanvasWrapper } from './useCanvasWrapper';
 import { Draftly } from '../classes/Draftly';
 
-export const DraftlyWrapper = forwardRef<Draftly>((_, ref) => {
+interface DraftlyWrapperProps {
+  onShapesUpdate?: () => void;
+}
+
+export const DraftlyWrapper = forwardRef<Draftly, DraftlyWrapperProps>(({ onShapesUpdate }, ref) => {
   const {
     setCanvasRef,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
     handlePointerCancel,
-  } = useCanvasWrapper(ref);
+  } = useCanvasWrapper(ref, onShapesUpdate);
 
   return (
     <div className={styles.canvasWrapper}>

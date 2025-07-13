@@ -18,7 +18,7 @@ export class Rectangle implements IShape {
   readonly rotation: number;
 
   constructor(shape: Partial<Rectangle>) {
-    this.id = generateId();
+    this.id = shape.id ?? generateId();
     this.color = shape.color ?? BASE_PALETTE[0];
     this.strokeWidth = shape.strokeWidth ?? 1;
     this.x = shape.x ?? 0;

@@ -17,7 +17,7 @@ export class Line implements IShape {
   readonly y2: number;
 
   constructor(shape: Partial<Line>) {
-    this.id = generateId();
+    this.id = shape.id ?? generateId();
     this.color = shape.color ?? 'red';
     this.strokeWidth = shape.strokeWidth ?? 1;
     this.x1 = shape.x1 ?? 0;

@@ -11,10 +11,17 @@ export const EditorPage: React.FC = () => {
     isDarkMode,
     color,
     draftlyRef,
+    isConnected,
+    currentRoom,
+    clientsInRoom,
+    wsError,
+    roomId,
+    setRoomId,
     handleTool,
     handleToggleDarkMode,
     handleClearCanvas,
     handleColorChange,
+    handleShapesUpdate,
   } = useEditorPage();
 
   return (
@@ -27,10 +34,15 @@ export const EditorPage: React.FC = () => {
         onToggleDarkMode={handleToggleDarkMode}
         selectedColor={color}
         onColorChange={handleColorChange}
+        isConnected={isConnected}
+        currentRoom={currentRoom}
+        clientsInRoom={clientsInRoom}
+        roomId={roomId}
+        onRoomChange={setRoomId}
       />
-      <DraftlyWrapper ref={draftlyRef} />
+      <DraftlyWrapper ref={draftlyRef} onShapesUpdate={handleShapesUpdate} />
     </div>
   );
 };
-
 export default EditorPage; 
+

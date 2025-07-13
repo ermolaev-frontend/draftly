@@ -9,7 +9,7 @@ import type {
 } from 'shared/types/canvas';
 
 import Interaction, { type Handle } from './Interaction';
-import { getInitialShapes, getRandomStrokeWidth } from '../canvasUtils';
+import { getRandomStrokeWidth } from '../canvasUtils';
 import { Rectangle } from './Rectangle';
 import { Circle } from './Circle';
 import { Line } from './Line';
@@ -51,7 +51,8 @@ export class Draftly {
     this.currentTool = TOOLS[4];
     this.resizeCanvasToWrapper();
 
-    this.shapes = getInitialShapes(canvas, Draftly.INITIAL_SHAPES_COUNT);
+    // Инициализируем пустой массив фигур - они будут загружены через WebSocket
+    this.shapes = [];
     
     this.requestDraw();
   }
@@ -309,6 +310,17 @@ export class Draftly {
     } catch (e) {
       console.warn('Error saving shapes:', e);
     }
+  }
+
+  // Метод для получения всех shapes (для отправки через WebSocket)
+  getShapes(): IShape[] {
+    return this.shapes;
+  }
+
+  // Метод для установки shapes (для получения от других клиентов)
+  setShapes(shapes: IShape[]): void {
+    this.shapes = shapes;
+    this.requestDraw();
   }
     
   private getCursorForHandle(handle: Handle | null): string {
