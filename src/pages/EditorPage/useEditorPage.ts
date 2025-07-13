@@ -4,7 +4,7 @@ import { Draftly } from 'entities/canvas/classes/Draftly';
 import { BASE_PALETTE, TOOLS } from 'shared/types/colors';
 import { useWebSocket } from 'shared/hooks/useWebSocket';
 
-import type { ToolType } from 'shared/types/canvas';
+import type { ToolType, IShape } from 'shared/types/canvas';
 
 const getSystemTheme = () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
@@ -16,7 +16,7 @@ export const useEditorPage = () => {
   const draftlyRef = useRef<Draftly>(null);
 
   // WebSocket интеграция
-  const handleShapesReceived = useCallback((shapes: any[]) => {
+  const handleShapesReceived = useCallback((shapes: IShape[]) => {
     if (draftlyRef.current) {
       draftlyRef.current.setShapes(shapes);
     }

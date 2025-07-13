@@ -1,7 +1,10 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 
 import type { IShape } from '../types/canvas';
-import { deserializeShapes } from '../utils/shapeSerializer';
+import { Rectangle } from '../../entities/canvas/classes/Rectangle';
+import { Circle } from '../../entities/canvas/classes/Circle';
+import { Line } from '../../entities/canvas/classes/Line';
+import { Pencil } from '../../entities/canvas/classes/Pencil';
 
 interface WebSocketMessage {
   type: string;
@@ -99,10 +102,23 @@ export const useWebSocket = ({
             if (data.data && onShapesReceived) {
               console.log(`Получены shapes от другого клиента: ${data.count} объектов`);
               try {
-                const deserializedShapes = deserializeShapes(data.data);
-                onShapesReceived(deserializedShapes);
+                const shapes = data.data.map((shapeData: any) => {
+                  switch (shapeData.type) {
+                    case 'rectangle':
+                      return new Rectangle(shapeData);
+                    case 'circle':
+                      return new Circle(shapeData);
+                    case 'line':
+                      return new Line(shapeData);
+                    case 'pencil':
+                      return new Pencil(shapeData);
+                    default:
+                      throw new Error(`Неизвестный тип shape: ${shapeData.type}`);
+                  }
+                });
+                onShapesReceived(shapes);
               } catch (error) {
-                console.error('Ошибка десериализации shapes:', error);
+                console.error('Ошибка создания shapes:', error);
               }
             }
             break;
@@ -111,10 +127,23 @@ export const useWebSocket = ({
             if (data.data && onShapesReceived) {
               console.log(`Получены shapes из комнаты: ${data.count} объектов`);
               try {
-                const deserializedShapes = deserializeShapes(data.data);
-                onShapesReceived(deserializedShapes);
+                const shapes = data.data.map((shapeData: any) => {
+                  switch (shapeData.type) {
+                    case 'rectangle':
+                      return new Rectangle(shapeData);
+                    case 'circle':
+                      return new Circle(shapeData);
+                    case 'line':
+                      return new Line(shapeData);
+                    case 'pencil':
+                      return new Pencil(shapeData);
+                    default:
+                      throw new Error(`Неизвестный тип shape: ${shapeData.type}`);
+                  }
+                });
+                onShapesReceived(shapes);
               } catch (error) {
-                console.error('Ошибка десериализации shapes:', error);
+                console.error('Ошибка создания shapes:', error);
               }
             }
             break;
