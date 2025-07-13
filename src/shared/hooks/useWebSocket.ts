@@ -7,32 +7,21 @@ import { Circle } from '../../entities/canvas/classes/Circle';
 import { Line } from '../../entities/canvas/classes/Line';
 import { Pencil } from '../../entities/canvas/classes/Pencil';
 
-// Интерфейс для данных фигур, получаемых по сети
-interface ShapeData {
+// Тип для данных фигур, получаемых по сети
+type ShapeData = {
   type: string;
   id: string;
   color: string;
   strokeWidth: number;
-  // Специфичные свойства для каждого типа
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  rotation?: number;
-  radius?: number;
-  x1?: number;
-  y1?: number;
-  x2?: number;
-  y2?: number;
-  points?: Array<{ x: number; y: number }>;
-}
+  [key: string]: unknown;
+};
 
 interface WebSocketMessage {
   type: string;
   roomId?: string;
   count?: number;
   timestamp: string;
-  data?: IShape[];
+  data?: ShapeData[];
   message?: string;
   error?: string;
   clientsInRoom?: number;
@@ -62,17 +51,17 @@ export const useWebSocket = ({
   const connectingRef = useRef(false);
 
   // Функция для создания фигур из данных
-  const createShapesFromData = useCallback((data: IShape[]): IShape[] => {
-    return data.map((shapeData: IShape) => {
+  const createShapesFromData = useCallback((data: ShapeData[]): IShape[] => {
+    return data.map((shapeData: ShapeData) => {
       switch (shapeData.type) {
         case 'rectangle':
-          return new Rectangle(shapeData);
+          return new Rectangle(shapeData as Partial<Rectangle>);
         case 'circle':
-          return new Circle(shapeData);
+          return new Circle(shapeData as Partial<Circle>);
         case 'line':
-          return new Line(shapeData);
+          return new Line(shapeData as Partial<Line>);
         case 'pencil':
-          return new Pencil(shapeData);
+          return new Pencil(shapeData as Partial<Pencil>);
         default:
           throw new Error(`Неизвестный тип shape: ${shapeData.type}`);
       }
