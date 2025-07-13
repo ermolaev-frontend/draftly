@@ -21,31 +21,14 @@ export const useEditorPage = () => {
     }
   }, []);
 
-  const handleClientJoined = useCallback((roomId: string, clientsInRoom: number) => {
-    console.log(`Клиент присоединился к комнате ${roomId}: ${clientsInRoom} клиентов`);
-  }, []);
-
-  const handleClientLeft = useCallback((roomId: string, clientsInRoom: number) => {
-    console.log(`Клиент покинул комнату ${roomId}: ${clientsInRoom} клиентов`);
-  }, []);
-
-  const handleClientDisconnected = useCallback((roomId: string, clientsInRoom: number) => {
-    console.log(`Клиент отключился из комнаты ${roomId}: ${clientsInRoom} клиентов`);
-  }, []);
-
   const {
     isConnected,
     currentRoom,
-    clientsInRoom,
     error: wsError,
     sendShapes,
-    requestShapes,
   } = useWebSocket({
     roomId,
     onShapesReceived: handleShapesReceived,
-    onClientJoined: handleClientJoined,
-    onClientLeft: handleClientLeft,
-    onClientDisconnected: handleClientDisconnected,
   });
   
   const handleTool = useCallback((tool: ToolType) => {
@@ -118,18 +101,6 @@ export const useEditorPage = () => {
     };
   }, []);
 
-  // Запрос фигур при подключении к комнате
-  useEffect(() => {
-    if (isConnected && currentRoom && draftlyRef.current) {
-      // Небольшая задержка для стабильности
-      const timer = setTimeout(() => {
-        requestShapes();
-      }, 200);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isConnected, currentRoom, requestShapes]);
-
   // Handle system theme changes
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -146,7 +117,6 @@ export const useEditorPage = () => {
     draftlyRef,
     isConnected,
     currentRoom,
-    clientsInRoom,
     wsError,
     roomId,
     setRoomId,

@@ -14,16 +14,11 @@ interface WebSocketMessage {
   data?: IShapeFields[];
   message?: string;
   error?: string;
-  clientsInRoom?: number;
-  availableRooms?: string[];
 }
 
 interface UseWebSocketOptions {
   roomId: string;
   onShapesReceived?: (shapes: IShape[]) => void;
-  onClientJoined?: (roomId: string, clientsInRoom: number) => void;
-  onClientLeft?: (roomId: string, clientsInRoom: number) => void;
-  onClientDisconnected?: (roomId: string, clientsInRoom: number) => void;
 }
 
 // Function to create shapes from data
@@ -47,14 +42,10 @@ const createShapesFromData = (data: IShapeFields[]): IShape[] => {
 export const useWebSocket = ({
   roomId,
   onShapesReceived,
-  onClientJoined,
-  onClientLeft,
-  onClientDisconnected,
 }: UseWebSocketOptions) => {
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [currentRoom, setCurrentRoom] = useState<string | null>(null);
-  const [clientsInRoom, setClientsInRoom] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const connect = useCallback(() => {
@@ -79,40 +70,6 @@ export const useWebSocket = ({
         const data: WebSocketMessage = JSON.parse(event.data);
         
         switch (data.type) {
-          case 'connection':
-            console.log('Connection established:', data.message);
-            break;
-            
-          case 'room_joined':
-            setCurrentRoom(data.roomId ?? null);
-            setClientsInRoom(data.clientsInRoom ?? 0);
-            console.log(`Joined room: ${data.roomId} (clients: ${data.clientsInRoom})`);
-            break;
-            
-          case 'room_left':
-            setCurrentRoom(null);
-            setClientsInRoom(0);
-            console.log('Left room');
-            break;
-            
-          case 'client_joined':
-            setClientsInRoom(data.clientsInRoom ?? 0);
-            onClientJoined?.(data.roomId ?? '', data.clientsInRoom ?? 0);
-            console.log(`Client joined room ${data.roomId} (clients: ${data.clientsInRoom})`);
-            break;
-            
-          case 'client_left':
-            setClientsInRoom(data.clientsInRoom ?? 0);
-            onClientLeft?.(data.roomId ?? '', data.clientsInRoom ?? 0);
-            console.log(`Client left room ${data.roomId} (clients: ${data.clientsInRoom})`);
-            break;
-            
-          case 'client_disconnected':
-            setClientsInRoom(data.clientsInRoom ?? 0);
-            onClientDisconnected?.(data.roomId ?? '', data.clientsInRoom ?? 0);
-            console.log(`Client disconnected from room ${data.roomId} (clients: ${data.clientsInRoom})`);
-            break;
-            
           case 'broadcast':
             if (data.data && onShapesReceived) {
               console.log(`Received shapes from another client: ${data.count} objects`);
@@ -123,22 +80,6 @@ export const useWebSocket = ({
                 console.error('Error creating shapes:', error);
               }
             }
-            break;
-            
-          case 'shapes_response':
-            if (data.data && onShapesReceived) {
-              console.log(`Received shapes from room: ${data.count} objects`);
-              try {
-                const shapes = createShapesFromData(data.data);
-                onShapesReceived(shapes);
-              } catch (error) {
-                console.error('Error creating shapes:', error);
-              }
-            }
-            break;
-            
-          case 'array_received':
-            console.log(`Shapes sent successfully: ${data.count} objects`);
             break;
             
           case 'error':
@@ -158,7 +99,6 @@ export const useWebSocket = ({
       console.log('WebSocket connection closed:', event.code, event.reason);
       setIsConnected(false);
       setCurrentRoom(null);
-      setClientsInRoom(0);
     };
 
     ws.onerror = error => {
@@ -166,7 +106,7 @@ export const useWebSocket = ({
       setError('Connection error to server');
       setIsConnected(false);
     };
-  }, [onClientJoined, onClientLeft, onClientDisconnected, onShapesReceived]);
+  }, [onShapesReceived]);
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {
@@ -181,24 +121,6 @@ export const useWebSocket = ({
       console.log(`Sending ${shapes.length} shapes to room ${currentRoom}`);
     } else {
       console.warn('WebSocket not connected or not in room');
-    }
-  }, [currentRoom]);
-
-  const leaveRoom = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({
-        type: 'leave_room',
-      }));
-    }
-  }, []);
-
-  const requestShapes = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN && currentRoom) {
-      wsRef.current.send(JSON.stringify({
-        type: 'request_shapes',
-        roomId: currentRoom,
-      }));
-      console.log(`Requesting shapes from room ${currentRoom}`);
     }
   }, [currentRoom]);
 
@@ -217,6 +139,7 @@ export const useWebSocket = ({
           type: 'join_room',
           roomId,
         }));
+        setCurrentRoom(roomId);
       }
     }
   }, [isConnected, roomId, currentRoom]);
@@ -224,12 +147,9 @@ export const useWebSocket = ({
   return {
     isConnected,
     currentRoom,
-    clientsInRoom,
     error,
     sendShapes,
     connect,
     disconnect,
-    leaveRoom,
-    requestShapes,
   };
 }; 

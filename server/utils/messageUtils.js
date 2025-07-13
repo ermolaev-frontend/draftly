@@ -9,61 +9,6 @@ export class MessageBuilder {
     });
   }
 
-  static createConnectionMessage(availableRooms) {
-    return this.createMessage(config.MESSAGE_TYPES.CONNECTION, {
-      message: 'Connection established',
-      availableRooms
-    });
-  }
-
-  static createRoomJoinedMessage(roomId, clientsInRoom) {
-    return this.createMessage(config.MESSAGE_TYPES.ROOM_JOINED, {
-      roomId,
-      clientsInRoom
-    });
-  }
-
-  static createRoomLeftMessage() {
-    return this.createMessage(config.MESSAGE_TYPES.ROOM_LEFT);
-  }
-
-  static createClientJoinedMessage(roomId, clientsInRoom) {
-    return this.createMessage(config.MESSAGE_TYPES.CLIENT_JOINED, {
-      roomId,
-      clientsInRoom
-    });
-  }
-
-  static createClientLeftMessage(roomId, clientsInRoom) {
-    return this.createMessage(config.MESSAGE_TYPES.CLIENT_LEFT, {
-      roomId,
-      clientsInRoom
-    });
-  }
-
-  static createClientDisconnectedMessage(roomId, clientsInRoom) {
-    return this.createMessage(config.MESSAGE_TYPES.CLIENT_DISCONNECTED, {
-      roomId,
-      clientsInRoom
-    });
-  }
-
-  static createShapesResponseMessage(roomId, count, data) {
-    return this.createMessage(config.MESSAGE_TYPES.SHAPES_RESPONSE, {
-      roomId,
-      count,
-      data
-    });
-  }
-
-  static createArrayReceivedMessage(roomId, count, data) {
-    return this.createMessage(config.MESSAGE_TYPES.ARRAY_RECEIVED, {
-      roomId,
-      count,
-      data
-    });
-  }
-
   static createBroadcastMessage(roomId, count, data) {
     return this.createMessage(config.MESSAGE_TYPES.BROADCAST, {
       roomId,

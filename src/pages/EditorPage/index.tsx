@@ -8,8 +8,7 @@ import styles from './style.module.scss';
 const ConnectionStatus: React.FC<{
   isConnected: boolean;
   currentRoom?: string | null;
-  clientsInRoom?: number;
-}> = ({ isConnected, currentRoom, clientsInRoom }) => (
+}> = ({ isConnected, currentRoom }) => (
   <div className={styles.connectionStatusBox}>
     <div className={styles.connectionIndicator + ' ' + (isConnected ? styles.connected : styles.disconnected)}>
       <span className={styles.connectionDot} />
@@ -17,7 +16,7 @@ const ConnectionStatus: React.FC<{
     </div>
     {currentRoom && (
       <div className={styles.roomInfo}>
-        Комната: {currentRoom} ({clientsInRoom} клиентов)
+        Комната: {currentRoom}
       </div>
     )}
   </div>
@@ -31,7 +30,6 @@ export const EditorPage: React.FC = () => {
     draftlyRef,
     isConnected,
     currentRoom,
-    clientsInRoom,
     handleTool,
     handleToggleDarkMode,
     handleClearCanvas,
@@ -57,7 +55,6 @@ export const EditorPage: React.FC = () => {
       <ConnectionStatus
         isConnected={isConnected}
         currentRoom={currentRoom}
-        clientsInRoom={clientsInRoom}
       />
     </div>
   );

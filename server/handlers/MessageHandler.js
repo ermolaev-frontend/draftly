@@ -18,10 +18,6 @@ export class MessageHandler {
       switch (message.type) {
         case config.MESSAGE_TYPES.JOIN_ROOM:
           return this.handleJoinRoom(ws, message);
-        case config.MESSAGE_TYPES.LEAVE_ROOM:
-          return this.handleLeaveRoom(ws, message);
-        case config.MESSAGE_TYPES.REQUEST_SHAPES:
-          return this.handleRequestShapes(ws, message);
         default:
           return this.handleUnknownMessage(ws, message);
       }
@@ -37,53 +33,19 @@ export class MessageHandler {
     const roomId = message.roomId;
     
     // Remove client from previous room
-    const prevRoom = this.roomManager.removeClientFromRoom(ws);
-    if (prevRoom) {
-      broadcastToRoom(prevRoom, MessageBuilder.createClientLeftMessage(
-        ws.clientInfo.roomId, 
-        prevRoom.clients.size
-      ));
-    }
+    this.roomManager.removeClientFromRoom(ws);
     
     // Add client to new room
     const room = this.roomManager.addClientToRoom(roomId, ws);
     
-    // Send confirmation to client
-    ws.send(MessageBuilder.createRoomJoinedMessage(roomId, room.clients.size));
-    
-    // Notify other clients in the room
-    broadcastToRoom(room, MessageBuilder.createClientJoinedMessage(
-      roomId, 
-      room.clients.size
-    ), ws);
-  }
-
-  handleLeaveRoom(ws, message) {
-    const room = this.roomManager.removeClientFromRoom(ws);
-    if (room) {
-      // Notify other clients in the room
-      broadcastToRoom(room, MessageBuilder.createClientLeftMessage(
-        ws.clientInfo.roomId, 
-        room.clients.size
+    // Send current shapes to the client
+    if (room.shapes.length > 0) {
+      ws.send(MessageBuilder.createBroadcastMessage(
+        roomId,
+        room.shapes.length,
+        room.shapes
       ));
-      
-      ws.send(MessageBuilder.createRoomLeftMessage());
     }
-  }
-
-  handleRequestShapes(ws, message) {
-    if (!ws.clientInfo.roomId) {
-      ws.send(MessageBuilder.createErrorMessage('Please join a room first'));
-      return;
-    }
-    
-    const shapes = this.roomManager.getShapes(ws.clientInfo.roomId);
-    ws.send(MessageBuilder.createShapesResponseMessage(
-      ws.clientInfo.roomId,
-      shapes.length,
-      shapes
-    ));
-    console.log(`Sent ${shapes.length} shapes to client in room ${ws.clientInfo.roomId}`);
   }
 
   handleShapesArray(ws, shapes) {
@@ -96,13 +58,6 @@ export class MessageHandler {
     const room = this.roomManager.getClientRoom(ws);
     if (room) {
       this.roomManager.updateShapes(ws.clientInfo.roomId, shapes);
-      
-      // Send confirmation back to client
-      ws.send(MessageBuilder.createArrayReceivedMessage(
-        ws.clientInfo.roomId,
-        shapes.length,
-        shapes
-      ));
       
       // Broadcast message to all clients in the same room (except sender)
       broadcastToRoom(room, MessageBuilder.createBroadcastMessage(
@@ -121,12 +76,6 @@ export class MessageHandler {
   }
 
   handleClientDisconnect(ws) {
-    const room = this.roomManager.removeClientFromRoom(ws);
-    if (room) {
-      broadcastToRoom(room, MessageBuilder.createClientDisconnectedMessage(
-        ws.clientInfo.roomId,
-        room.clients.size
-      ));
-    }
+    this.roomManager.removeClientFromRoom(ws);
   }
 } 

@@ -31,9 +31,6 @@ export class DraftlyWebSocketServer {
     // Initialize client information
     this.initializeClient(ws);
     
-    // Send welcome message
-    this.sendWelcomeMessage(ws);
-    
     // Setup event handlers for client
     this.setupClientEventHandlers(ws);
   }
@@ -43,11 +40,6 @@ export class DraftlyWebSocketServer {
       roomId: null,
       connectedAt: new Date()
     };
-  }
-
-  sendWelcomeMessage(ws) {
-    const availableRooms = this.roomManager.getAvailableRooms();
-    ws.send(MessageBuilder.createConnectionMessage(availableRooms));
   }
 
   setupClientEventHandlers(ws) {
