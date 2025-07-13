@@ -36,44 +36,41 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   selectedColor,
   onColorChange,
 }) => (
-      <div className={styles.toolbar}>
-      <div className={styles.toolbarButtons}>
-        {toolButtons.map(({ tool, icon, title }) => (
-          <button
-            key={tool}
-            className={
-              activeTool === tool
-                ? `${styles.toolbarButton} ${styles.active}`
-                : styles.toolbarButton
-            }
-            onClick={() => onToolChange(tool as ToolType)}
-            title={title}
-          >
-            <FontAwesomeIcon icon={icon} />
-          </button>
-        ))}
+  <div className={styles.toolbar}>
+    <div className={styles.toolbarButtons}>
+      {toolButtons.map(({ tool, icon, title }) => (
         <button
-          onClick={onClearCanvas}
-          title="Clear Canvas"
-          className={cn(styles.clearButton, styles.toolbarButton)}
+          key={tool}
+          className={
+            activeTool === tool
+              ? `${styles.toolbarButton} ${styles.active}`
+              : styles.toolbarButton
+          }
+          onClick={() => onToolChange(tool as ToolType)}
+          title={title}
         >
-          <FontAwesomeIcon icon={faBroom} />
+          <FontAwesomeIcon icon={icon} />
         </button>
-        <button
-          onClick={onToggleDarkMode}
-          title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          className={styles.toolbarButton}
-        >
-          <FontAwesomeIcon icon={isDarkMode ? faLightbulb : faMoon} />
-        </button>
-      </div>
-      
-      {/* WebSocket статус */}
-      
-      <div className={styles.colorPickerWrapper}>
-        <ColorPicker selectedColor={selectedColor} onColorChange={onColorChange} />
-      </div>
+      ))}
+      <button
+        onClick={onClearCanvas}
+        title="Clear Canvas"
+        className={cn(styles.clearButton, styles.toolbarButton)}
+      >
+        <FontAwesomeIcon icon={faBroom} />
+      </button>
+      <button
+        onClick={onToggleDarkMode}
+        title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        className={styles.toolbarButton}
+      >
+        <FontAwesomeIcon icon={isDarkMode ? faLightbulb : faMoon} />
+      </button>
     </div>
+    <div className={styles.colorPickerWrapper}>
+      <ColorPicker selectedColor={selectedColor} onColorChange={onColorChange} />
+    </div>
+  </div>
 );
 
 export default memo(Toolbar); 
