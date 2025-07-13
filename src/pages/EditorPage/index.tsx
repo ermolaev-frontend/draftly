@@ -5,6 +5,24 @@ import { Toolbar } from 'widgets/Toolbar/Toolbar';
 import { useEditorPage } from './useEditorPage';
 import styles from './style.module.scss';
 
+const ConnectionStatus: React.FC<{
+  isConnected: boolean;
+  currentRoom?: string | null;
+  clientsInRoom?: number;
+}> = ({ isConnected, currentRoom, clientsInRoom }) => (
+  <div className={styles.connectionStatusBox}>
+    <div className={styles.connectionIndicator + ' ' + (isConnected ? styles.connected : styles.disconnected)}>
+      <span className={styles.connectionDot} />
+      {isConnected ? 'Подключено' : 'Отключено'}
+    </div>
+    {currentRoom && (
+      <div className={styles.roomInfo}>
+        Комната: {currentRoom} ({clientsInRoom} клиентов)
+      </div>
+    )}
+  </div>
+);
+
 export const EditorPage: React.FC = () => {
   const {
     tool,
@@ -41,6 +59,7 @@ export const EditorPage: React.FC = () => {
         onRoomChange={setRoomId}
       />
       <DraftlyWrapper ref={draftlyRef} onShapesUpdate={handleShapesUpdate} />
+      <ConnectionStatus isConnected={isConnected} currentRoom={currentRoom} clientsInRoom={clientsInRoom} />
     </div>
   );
 };

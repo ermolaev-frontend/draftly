@@ -17,11 +17,6 @@ interface ToolbarProps {
   onToggleDarkMode: () => void;
   selectedColor: string;
   onColorChange: (color: string) => void;
-  isConnected?: boolean;
-  currentRoom?: string | null;
-  clientsInRoom?: number;
-  roomId?: string;
-  onRoomChange?: (roomId: string) => void;
 }
 
 const toolButtons = [
@@ -40,11 +35,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onToggleDarkMode,
   selectedColor,
   onColorChange,
-  isConnected,
-  currentRoom,
-  clientsInRoom,
-  roomId,
-  onRoomChange,
 }) => (
       <div className={styles.toolbar}>
       <div className={styles.toolbarButtons}>
@@ -79,29 +69,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       </div>
       
       {/* WebSocket статус */}
-      <div className={styles.websocketStatus}>
-        <div className={cn(styles.connectionIndicator, {
-          [styles.connected]: isConnected,
-          [styles.disconnected]: !isConnected,
-        })}>
-          <div className={styles.connectionDot} />
-          {isConnected ? 'Подключено' : 'Отключено'}
-        </div>
-        {currentRoom && (
-          <div className={styles.roomInfo}>
-            Комната: {currentRoom} ({clientsInRoom} клиентов)
-          </div>
-        )}
-        {roomId && onRoomChange && (
-          <input
-            type="text"
-            value={roomId}
-            onChange={(e) => onRoomChange(e.target.value)}
-            placeholder="Название комнаты"
-            className={styles.roomInput}
-          />
-        )}
-      </div>
       
       <div className={styles.colorPickerWrapper}>
         <ColorPicker selectedColor={selectedColor} onColorChange={onColorChange} />
