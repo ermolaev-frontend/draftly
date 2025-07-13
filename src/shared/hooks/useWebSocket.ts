@@ -1,27 +1,17 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { Rectangle } from 'entities/canvas/classes/Rectangle';
+import { Circle } from 'entities/canvas/classes/Circle';
+import { Line } from 'entities/canvas/classes/Line';
+import { Pencil } from 'entities/canvas/classes/Pencil';
 
-import type { IShape } from '../types/canvas';
-
-import { Rectangle } from '../../entities/canvas/classes/Rectangle';
-import { Circle } from '../../entities/canvas/classes/Circle';
-import { Line } from '../../entities/canvas/classes/Line';
-import { Pencil } from '../../entities/canvas/classes/Pencil';
-
-// Тип для данных фигур, получаемых по сети
-type ShapeData = {
-  type: string;
-  id: string;
-  color: string;
-  strokeWidth: number;
-  [key: string]: unknown;
-};
+import type { IShape, IShapeFields } from '../types/canvas';
 
 interface WebSocketMessage {
   type: string;
   roomId?: string;
   count?: number;
   timestamp: string;
-  data?: ShapeData[];
+  data?: IShapeFields[];
   message?: string;
   error?: string;
   clientsInRoom?: number;
@@ -48,11 +38,10 @@ export const useWebSocket = ({
   const [currentRoom, setCurrentRoom] = useState<string | null>(null);
   const [clientsInRoom, setClientsInRoom] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const connectingRef = useRef(false);
 
-  // Функция для создания фигур из данных
-  const createShapesFromData = useCallback((data: ShapeData[]): IShape[] => {
-    return data.map((shapeData: ShapeData) => {
+  // Function to create shapes from data
+  const createShapesFromData = useCallback((data: IShapeFields[]): IShape[] => {
+    return data.map((shapeData: IShapeFields) => {
       switch (shapeData.type) {
         case 'rectangle':
           return new Rectangle(shapeData as Partial<Rectangle>);
@@ -63,28 +52,26 @@ export const useWebSocket = ({
         case 'pencil':
           return new Pencil(shapeData as Partial<Pencil>);
         default:
-          throw new Error(`Неизвестный тип shape: ${shapeData.type}`);
+          throw new Error(`Неизвестный тип shape: ${shapeData.type}`);      
       }
     });
   }, []);
 
   const connect = useCallback(() => {
-    console.log('Попытка подключения к WebSocket...');
-    if (wsRef.current?.readyState === WebSocket.OPEN || connectingRef.current) {
-      console.log('WebSocket уже подключен или подключение в процессе');
+    console.log('Attempting to connect to WebSocket...');
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      console.log('WebSocket already connected or connection in progress');
       return;
     }
 
-    connectingRef.current = true;
-    console.log('Создание нового WebSocket соединения...');
+    console.log('Creating new WebSocket connection...');
     const ws = new WebSocket('ws://localhost:3002');
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log('WebSocket подключен успешно');
+      console.log('WebSocket connected successfully');
       setIsConnected(true);
       setError(null);
-      connectingRef.current = false;
     };
 
     ws.onmessage = event => {
@@ -93,95 +80,99 @@ export const useWebSocket = ({
         
         switch (data.type) {
           case 'connection':
-            console.log('Подключение установлено:', data.message);
+            console.log('Connection established:', data.message);
             break;
             
           case 'room_joined':
             setCurrentRoom(data.roomId || null);
             setClientsInRoom(data.clientsInRoom || 0);
-            console.log(`Присоединились к комнате: ${data.roomId} (клиентов: ${data.clientsInRoom})`);
+            console.log(`Joined room: ${data.roomId} (clients: ${data.clientsInRoom})`);
             break;
             
           case 'room_left':
             setCurrentRoom(null);
             setClientsInRoom(0);
-            console.log('Покинули комнату');
+            console.log('Left room');
             break;
             
           case 'client_joined':
             setClientsInRoom(data.clientsInRoom || 0);
             onClientJoined?.(data.roomId || '', data.clientsInRoom || 0);
-            console.log(`Клиент присоединился к комнате ${data.roomId} (клиентов: ${data.clientsInRoom})`);
+            console.log(`Client joined room ${data.roomId} (clients: ${data.clientsInRoom})`);
             break;
             
           case 'client_left':
             setClientsInRoom(data.clientsInRoom || 0);
             onClientLeft?.(data.roomId || '', data.clientsInRoom || 0);
-            console.log(`Клиент покинул комнату ${data.roomId} (клиентов: ${data.clientsInRoom})`);
+            console.log(`Client left room ${data.roomId} (clients: ${data.clientsInRoom})`);
             break;
             
           case 'client_disconnected':
             setClientsInRoom(data.clientsInRoom || 0);
             onClientDisconnected?.(data.roomId || '', data.clientsInRoom || 0);
-            console.log(`Клиент отключился из комнаты ${data.roomId} (клиентов: ${data.clientsInRoom})`);
+            console.log(`Client disconnected from room ${data.roomId} (clients: ${data.clientsInRoom})`);
             break;
             
           case 'broadcast':
             if (data.data && onShapesReceived) {
-              console.log(`Получены shapes от другого клиента: ${data.count} объектов`);
+              console.log(`Received shapes from another client: ${data.count} objects`);
               try {
                 const shapes = createShapesFromData(data.data);
                 onShapesReceived(shapes);
               } catch (error) {
-                console.error('Ошибка создания shapes:', error);
+                console.error('Error creating shapes:', error);
               }
             }
             break;
             
           case 'shapes_response':
             if (data.data && onShapesReceived) {
-              console.log(`Получены shapes из комнаты: ${data.count} объектов`);
+              console.log(`Received shapes from room: ${data.count} objects`);
               try {
                 const shapes = createShapesFromData(data.data);
                 onShapesReceived(shapes);
               } catch (error) {
-                console.error('Ошибка создания shapes:', error);
+                console.error('Error creating shapes:', error);
               }
             }
             break;
             
           case 'array_received':
-            console.log(`Shapes отправлены успешно: ${data.count} объектов`);
+            console.log(`Shapes sent successfully: ${data.count} objects`);
             break;
             
           case 'error':
-            setError(data.message || 'Неизвестная ошибка');
-            console.error('WebSocket ошибка:', data.message);
+            setError(data.message || 'Unknown error');
+            console.error('WebSocket error:', data.message);
             break;
             
           default:
-            console.log('Неизвестное сообщение:', data);
+            console.log('Unknown message:', data);
         }
       } catch (e) {
-        console.error('Ошибка парсинга WebSocket сообщения:', e);
+        console.error('Error parsing WebSocket message:', e);
       }
     };
 
     ws.onclose = event => {
-      console.log('WebSocket соединение закрыто:', event.code, event.reason);
+      console.log('WebSocket connection closed:', event.code, event.reason);
       setIsConnected(false);
       setCurrentRoom(null);
       setClientsInRoom(0);
-      connectingRef.current = false;
     };
 
     ws.onerror = error => {
-      console.error('WebSocket ошибка подключения:', error);
-      setError('Ошибка подключения к серверу');
+      console.error('WebSocket connection error:', error);
+      setError('Connection error to server');
       setIsConnected(false);
-      connectingRef.current = false;
     };
-  }, [onShapesReceived, onClientJoined, onClientLeft, onClientDisconnected]);
+  }, [
+    onClientJoined,
+    onClientLeft,
+    onClientDisconnected,
+    onShapesReceived,
+    createShapesFromData,
+  ]);
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {
@@ -193,9 +184,9 @@ export const useWebSocket = ({
   const sendShapes = useCallback((shapes: IShape[]) => {
     if (wsRef.current?.readyState === WebSocket.OPEN && currentRoom) {
       wsRef.current.send(JSON.stringify(shapes));
-      console.log(`Отправляем ${shapes.length} shapes в комнату ${currentRoom}`);
+      console.log(`Sending ${shapes.length} shapes to room ${currentRoom}`);
     } else {
-      console.warn('WebSocket не подключен или не в комнате');
+      console.warn('WebSocket not connected or not in room');
     }
   }, [currentRoom]);
 
@@ -213,20 +204,15 @@ export const useWebSocket = ({
         type: 'request_shapes',
         roomId: currentRoom,
       }));
-      console.log(`Запрашиваем shapes из комнаты ${currentRoom}`);
+      console.log(`Requesting shapes from room ${currentRoom}`);
     }
   }, [currentRoom]);
 
-  // Автоматическое подключение
+  // Automatic connection
   useEffect(() => {
-    const timer = setTimeout(() => {
-      connect();
-    }, 100);
+    connect();
     
-    return () => {
-      clearTimeout(timer);
-      disconnect();
-    };
+    return disconnect;
   }, [connect, disconnect]);
 
   // Присоединение к комнате после подключения

@@ -32,9 +32,6 @@ export const EditorPage: React.FC = () => {
     isConnected,
     currentRoom,
     clientsInRoom,
-    wsError,
-    roomId,
-    setRoomId,
     handleTool,
     handleToggleDarkMode,
     handleClearCanvas,
@@ -52,16 +49,17 @@ export const EditorPage: React.FC = () => {
         onToggleDarkMode={handleToggleDarkMode}
         selectedColor={color}
         onColorChange={handleColorChange}
+      />
+      <DraftlyWrapper
+        ref={draftlyRef}
+        onShapesUpdate={handleShapesUpdate}
+      />
+      <ConnectionStatus
         isConnected={isConnected}
         currentRoom={currentRoom}
         clientsInRoom={clientsInRoom}
-        roomId={roomId}
-        onRoomChange={setRoomId}
       />
-      <DraftlyWrapper ref={draftlyRef} onShapesUpdate={handleShapesUpdate} />
-      <ConnectionStatus isConnected={isConnected} currentRoom={currentRoom} clientsInRoom={clientsInRoom} />
     </div>
   );
 };
 export default EditorPage; 
-

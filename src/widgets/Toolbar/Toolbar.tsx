@@ -3,8 +3,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSquare as faSquareRegular, faCircle as faCircleRegular } from '@fortawesome/free-regular-svg-icons';
 import { faSlash, faArrowPointer, faPencil, faBroom, faMoon, faLightbulb } from '@fortawesome/free-solid-svg-icons';
 import cn from 'classnames';
-
 import ColorPicker from 'widgets/ColorPicker';
+
 import type { ToolType } from 'shared/types/canvas';
 
 import styles from './style.module.scss';

@@ -1,5 +1,4 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-
 import { Draftly } from 'entities/canvas/classes/Draftly';
 import { BASE_PALETTE, TOOLS } from 'shared/types/colors';
 import { useWebSocket } from 'shared/hooks/useWebSocket';

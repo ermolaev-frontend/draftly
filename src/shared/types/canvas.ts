@@ -25,12 +25,14 @@ export interface EventOffset {
   offsetY: number 
 };
 
-export interface IShape {
+export interface IShapeFields {
   type: ShapeType;
+  id: string;
   color: string;
   strokeWidth: number;
-  id: string;
+};
 
+export interface IShape extends IShapeFields {
   draw(ctx: CanvasRenderingContext2D, roughCanvas?: ReturnType<typeof rough.canvas>): void;   
   drawSelection(ctx: CanvasRenderingContext2D): void
   isPointInShape(point: Point): boolean;
