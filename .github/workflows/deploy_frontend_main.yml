@@ -4,16 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'frontend/src/**'
-      - 'frontend/public/**'
-      - 'frontend/package.json'
-      - 'frontend/pnpm-lock.yaml'
-      - 'frontend/vite.config.ts'
-      - 'frontend/tsconfig*.json'
-      - 'frontend/Dockerfile'
-      - 'frontend/docker-compose.yml'
-      - 'frontend/index.html'
-      - '.github/workflows/deploy_main.yml'
+      - 'frontend/**'
+      - '.github/workflows/deploy_frontend_main.yml'
 
 jobs:
   deploy:
@@ -46,8 +38,6 @@ jobs:
           push: true
           pull: true
           tags: ghcr.io/${{ github.actor }}/draftly:latest
-          # cache-from: type=local,src=/tmp/.buildx-cache
-          # cache-to: type=local,dest=/tmp/.buildx-cache
 
       - name: SSH and deploy on server
         uses: appleboy/ssh-action@v1.0.3
@@ -58,5 +48,5 @@ jobs:
           script: |
             echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             cd $HOME/docker/draftly
-            docker-compose pull
-            docker-compose up -d 
+            docker-compose -f docker-compose.frontend.yml pull   
+            docker-compose -f docker-compose.frontend.yml up -d 

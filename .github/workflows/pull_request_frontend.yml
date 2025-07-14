@@ -4,6 +4,9 @@ on:
   pull_request:
     types: [opened, reopened, edited, synchronize]
     branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/pull_request_frontend.yml'
 
 jobs:
   build:
@@ -24,5 +27,3 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile.check-build
           push: false
-          # cache-from: type=local,src=/tmp/.buildx-cache
-          # cache-to: type=local,dest=/tmp/.buildx-cache
