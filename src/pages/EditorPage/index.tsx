@@ -5,31 +5,12 @@ import { Toolbar } from 'widgets/Toolbar/Toolbar';
 import { useEditorPage } from './useEditorPage';
 import styles from './style.module.scss';
 
-const ConnectionStatus: React.FC<{
-  isConnected: boolean;
-  currentRoom?: string | null;
-}> = ({ isConnected, currentRoom }) => (
-  <div className={styles.connectionStatusBox}>
-    <div className={styles.connectionIndicator + ' ' + (isConnected ? styles.connected : styles.disconnected)}>
-      <span className={styles.connectionDot} />
-      {isConnected ? 'Подключено' : 'Отключено'}
-    </div>
-    {currentRoom && (
-      <div className={styles.roomInfo}>
-        Комната: {currentRoom}
-      </div>
-    )}
-  </div>
-);
-
 export const EditorPage: React.FC = () => {
   const {
     tool,
     isDarkMode,
     color,
     draftlyRef,
-    isConnected,
-    currentRoom,
     handleTool,
     handleToggleDarkMode,
     handleClearCanvas,
@@ -51,10 +32,6 @@ export const EditorPage: React.FC = () => {
       <DraftlyWrapper
         ref={draftlyRef}
         onShapesUpdate={handleShapesUpdate}
-      />
-      <ConnectionStatus
-        isConnected={isConnected}
-        currentRoom={currentRoom}
       />
     </div>
   );

@@ -17,7 +17,7 @@ export const useEditorPage = () => {
   const [roomId, setRoomId] = useState<string>(DEFAULT_ROOM_ID);
   const draftlyRef = useRef<Draftly>(null);
 
-  // WebSocket интеграция
+  // WebSocket integration
   const handleShapesReceived = useCallback((shapes: IShape[]) => {
     if (draftlyRef.current) {
       draftlyRef.current.setShapes(shapes);
@@ -47,7 +47,7 @@ export const useEditorPage = () => {
     draftlyRef.current?.clearCanvas();
   }, []);
 
-  // Отправка shapes через WebSocket
+  // Sending shapes via WebSocket
   const handleShapesUpdate = useCallback(() => {
     if (draftlyRef.current && isConnected) {
       const shapes = draftlyRef.current.getShapes();

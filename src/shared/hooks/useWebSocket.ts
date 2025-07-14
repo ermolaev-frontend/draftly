@@ -132,7 +132,7 @@ export const useWebSocket = (props: Props) => {
     return disconnect;
   }, [connect, disconnect]);
 
-  // Присоединение к комнате после подключения
+  // Join room after connection
   useEffect(() => {
     if (isConnected && roomId && !currentRoom) {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
