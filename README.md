@@ -15,6 +15,7 @@
 - Automatic canvas state saving in the browser
 - Keyboard shortcuts (Escape — select, Delete — delete)
 - Touch device support (touch events)
+- Real-time collaboration via WebSocket
 
 ### Technologies
 
@@ -24,8 +25,30 @@
 - roughjs 4.6.6 (hand-drawn style)
 - SCSS (Sass 1.89.2)
 - FontAwesome 6.7.2 (icons)
+- WebSocket (real-time communication)
 - Caddy (production server)
 - pnpm 8.x (package manager)
+
+### Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```bash
+# WebSocket Server Configuration
+VITE_WS_SERVER_URL=ws://localhost:3002
+VITE_WS_SERVER_PORT=3002
+
+# Client Configuration
+VITE_DEFAULT_ROOM_ID=room1
+```
+
+For the server, create a `server/.env` file:
+
+```bash
+# Server Configuration
+PORT=3002
+NODE_ENV=development
+```
 
 ### Local Development
 
@@ -35,7 +58,14 @@
 pnpm install
 ```
 
-2. Start in development mode:
+2. Start the WebSocket server:
+
+```bash
+cd server
+npm start
+```
+
+3. Start the client in development mode:
 
 ```bash
 pnpm dev
@@ -43,13 +73,13 @@ pnpm dev
 
 The app will be available at: http://localhost:5173
 
-3. Build for production:
+4. Build for production:
 
 ```bash
 pnpm build
 ```
 
-4. Preview production build:
+5. Preview production build:
 
 ```bash
 pnpm preview
