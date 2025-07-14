@@ -19,9 +19,7 @@ export const useEditorPage = () => {
 
   // WebSocket integration
   const handleShapesReceived = useCallback((shapes: IShape[]) => {
-    if (draftlyRef.current) {
-      draftlyRef.current.setShapes(shapes);
-    }
+    draftlyRef.current?.setShapes(shapes);
   }, []);
 
   const {
