@@ -4,15 +4,15 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/**'
-      - 'public/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'vite.config.ts'
-      - 'tsconfig*.json'
-      - 'ci/Dockerfile'
-      - 'ci/docker-compose.yml'
-      - 'index.html'
+      - 'frontend/src/**'
+      - 'frontend/public/**'
+      - 'frontend/package.json'
+      - 'frontend/pnpm-lock.yaml'
+      - 'frontend/vite.config.ts'
+      - 'frontend/tsconfig*.json'
+      - 'frontend/Dockerfile'
+      - 'frontend/docker-compose.yml'
+      - 'frontend/index.html'
       - '.github/workflows/deploy_main.yml'
 
 jobs:
@@ -44,7 +44,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ci/Dockerfile
+          file: frontend/Dockerfile
           push: true
           pull: true
           tags: ghcr.io/${{ github.actor }}/draftly:latest
