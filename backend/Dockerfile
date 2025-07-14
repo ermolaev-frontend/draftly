@@ -7,7 +7,7 @@ RUN npm ci --omit=dev
 
 COPY . .
 
-# Открываем порт (по умолчанию 3002, но можно переопределить через ENV)
+# Expose port (default is 3002, but can be overridden via ENV)
 EXPOSE 3002
 
 CMD ["node", "index.js"] 
