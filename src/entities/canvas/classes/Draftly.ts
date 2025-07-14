@@ -50,7 +50,6 @@ export class Draftly {
     this.interaction = new Interaction();
     this.currentTool = TOOLS[4];
     this.resizeCanvasToWrapper();
-    
     this.requestDraw();
   }
 
@@ -309,15 +308,17 @@ export class Draftly {
     }
   }
 
-  // Метод для получения всех shapes (для отправки через WebSocket)
   getShapes(): IShape[] {
     return this.shapes;
   }
 
-  // Метод для установки shapes (для получения от других клиентов)
   setShapes(shapes: IShape[]): void {
     this.shapes = shapes;
     this.requestDraw();
+  }
+
+  getInteraction(): Interaction {
+    return this.interaction;
   }
     
   private getCursorForHandle(handle: Handle | null): string {

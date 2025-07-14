@@ -1,10 +1,11 @@
-import { useRef, useImperativeHandle, useCallback, type PointerEvent } from 'react';
+import { throttle } from 'shared/utils/throttle';
+import { useRef, useImperativeHandle, useCallback, useMemo, type PointerEvent } from 'react';
 
 import type { EventOffset } from 'shared/types/canvas';
 
 import { Draftly } from '../classes/Draftly';
 
-export const useCanvasWrapper = (ref: React.Ref<Draftly>, onShapesUpdate?: () => void) => {
+export const useCanvasWrapper = (ref: React.Ref<Draftly>, onShapesUpdate: () => void) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const draftlyRef = useRef<Draftly | null>(null);
 
@@ -23,6 +24,13 @@ export const useCanvasWrapper = (ref: React.Ref<Draftly>, onShapesUpdate?: () =>
     };
   };
 
+  const onShapesUpdateThrottled = useMemo(
+    () => throttle(() => {
+      onShapesUpdate?.();
+    }, 1000),
+    [onShapesUpdate],
+  );
+
   const handlePointerDown = useCallback((e: PointerEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     draftlyRef.current?.handlePointerDown(getPointerOffset(e));
@@ -32,15 +40,18 @@ export const useCanvasWrapper = (ref: React.Ref<Draftly>, onShapesUpdate?: () =>
   const handlePointerMove = useCallback((e: PointerEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     draftlyRef.current?.handlePointerMove(getPointerOffset(e));
-  }, []);
+    const interaction = draftlyRef.current?.getInteraction();
+
+    if (interaction?.type !== 'idle') {
+      onShapesUpdateThrottled();
+    }
+  }, [onShapesUpdateThrottled]);
 
   const handlePointerEnd = useCallback((e: PointerEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     draftlyRef.current?.handlePointerUp();
     (e.target as HTMLCanvasElement).releasePointerCapture(e.pointerId);
-    
-    // Вызываем callback для отправки обновленных shapes
-    onShapesUpdate?.();
+    onShapesUpdate();
   }, [onShapesUpdate]);
 
   useImperativeHandle(ref, () => draftlyRef.current as Draftly, []);

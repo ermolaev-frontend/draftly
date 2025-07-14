@@ -1,10 +1,11 @@
 import { forwardRef } from 'react';
+
 import styles from './style.module.scss';
 import { useCanvasWrapper } from './useCanvasWrapper';
 import { Draftly } from '../classes/Draftly';
 
 interface DraftlyWrapperProps {
-  onShapesUpdate?: () => void;
+  onShapesUpdate: () => void;
 }
 
 export const DraftlyWrapper = forwardRef<Draftly, DraftlyWrapperProps>(({ onShapesUpdate }, ref) => {
