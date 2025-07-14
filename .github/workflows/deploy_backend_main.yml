@@ -14,6 +14,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Create .env file for backend
+        working-directory: backend
+        run: |
+          echo "PORT=3002" > .env
+          echo "NODE_ENV=production" >> .env
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:

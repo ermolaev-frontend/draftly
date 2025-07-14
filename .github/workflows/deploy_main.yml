@@ -32,6 +32,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.CR_PAT }}
 
+      - name: Create .env file for frontend
+        working-directory: frontend
+        run: |
+          echo "VITE_WS_SERVER_URL=wss://draftly-backend.ermolaev-frontend.ru" > .env
+          echo "VITE_DEFAULT_ROOM_ID=room1" >> .env
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
