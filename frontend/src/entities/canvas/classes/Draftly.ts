@@ -1,9 +1,9 @@
 import rough from 'roughjs';
 import { BASE_PALETTE, TOOLS } from 'shared/types/colors';
 
+import type { Point } from 'shared/types/canvas';
 import type {
   ToolType,
-  Point,
   IShape,
   EventOffset,
 } from 'shared/types/canvas';
@@ -14,6 +14,28 @@ import { Rectangle } from './Rectangle';
 import { Circle } from './Circle';
 import { Line } from './Line';
 import { Pencil } from './Pencil';
+import ShapeHitTestWorker from '../shapeHitTest.worker.ts?worker';
+// Дублирую тип ShapeData локально, чтобы избежать ошибки импорта типа из воркера
+// (или можно импортировать напрямую из shapeHitTest.worker.ts, если нужно)
+type ShapeData =
+  | { type: 'rectangle'; x: number; y: number; width: number; height: number; rotation?: number }
+  | { type: 'circle'; x: number; y: number; radius: number }
+  | { type: 'line'; x1: number; y1: number; x2: number; y2: number }
+  | { type: 'pencil'; points: Point[] };
+
+// Type guards для фигур
+function isRectangle(shape: IShape): shape is Rectangle {
+  return shape.type === 'rectangle';
+}
+function isCircle(shape: IShape): shape is Circle {
+  return shape.type === 'circle';
+}
+function isLine(shape: IShape): shape is Line {
+  return shape.type === 'line';
+}
+function isPencil(shape: IShape): shape is Pencil {
+  return shape.type === 'pencil';
+}
 
 export class Draftly {
   private readonly canvas: HTMLCanvasElement;
@@ -42,6 +64,7 @@ export class Draftly {
     x: 0,
     y: 0,
   };
+  private hitTestWorker = new ShapeHitTestWorker();
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -226,7 +249,7 @@ export class Draftly {
     }
   }
     
-  handlePointerMove(e: EventOffset): void {
+  async handlePointerMove(e: EventOffset): Promise<void> {
     const mouse = this.getMousePos(e);
 
     const { shape: interShape, type: interType } = this.interaction;
@@ -257,7 +280,7 @@ export class Draftly {
 
       if (hoveredHandle) {
         this.setCursor(this.getCursorForHandle(hoveredHandle));
-      } else if (this.isAnyShapeHovered(mouse)) {
+      } else if (await this.isAnyShapeHoveredAsync(mouse)) {
         this.setCursor('move');
       } else {
         this.setCursor('default');
@@ -328,8 +351,56 @@ export class Draftly {
     return Draftly.HANDLE_CURSOR_MAP.get(handle) ?? 'default';
   }
 
-  private isAnyShapeHovered(mouse: Point): boolean {
-    return this.shapes.some(shape => shape.isPointInShape(mouse));
+  /**
+   * Асинхронно ищет индекс фигуры, в которую попадает точка (mouse), используя Web Worker
+   */
+  private async hitTestShapes(mouse: Point): Promise<number> {
+    const shapesData: ShapeData[] = this.shapes.map(shape => {
+      if (isRectangle(shape)) {
+        return {
+          type: 'rectangle',
+          x: shape.x,
+          y: shape.y,
+          width: shape.width,
+          height: shape.height,
+          rotation: shape.rotation ?? 0,
+        };
+      } else if (isCircle(shape)) {
+        return {
+          type: 'circle',
+          x: shape.x,
+          y: shape.y,
+          radius: shape.radius,
+        };
+      } else if (isLine(shape)) {
+        return {
+          type: 'line',
+          x1: shape.x1,
+          y1: shape.y1,
+          x2: shape.x2,
+          y2: shape.y2,
+        };
+      } else if (isPencil(shape)) {
+        return {
+          type: 'pencil',
+          points: shape.points,
+        };
+      } else {
+        throw new Error('Unknown shape type');
+      }
+    });
+    return new Promise<number>(resolve => {
+      this.hitTestWorker.onmessage = (e: MessageEvent<{ hitIndex: number }>) => {
+        resolve(e.data.hitIndex);
+      };
+      this.hitTestWorker.postMessage({ point: mouse, shapes: shapesData });
+    });
+  }
+
+  // Заменяю isAnyShapeHovered на асинхронную версию
+  async isAnyShapeHoveredAsync(mouse: Point): Promise<boolean> {
+    const hitIndex = await this.hitTestShapes(mouse);
+    return hitIndex !== -1;
   }
 
   resizeCanvasToWrapper() {
