@@ -61,7 +61,7 @@ export class Circle implements IShape {
 
   draw(ctx: CanvasRenderingContext2D, roughCanvas: ReturnType<typeof rough.canvas>): void {
     ctx.save();
-
+    
     roughCanvas?.circle(
       this.x,
       this.y,
