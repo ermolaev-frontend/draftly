@@ -11,10 +11,6 @@ export class MessageHandler {
       const message = parseMessage(data);
       console.log('Message received:', message);
 
-      if (Array.isArray(message)) {
-        return this.handleShapesArray(ws, message);
-      }
-
       switch (message.type) {
         case config.MESSAGE_TYPES.JOIN_ROOM:
           return this.handleJoinRoom(ws, message);
@@ -53,26 +49,6 @@ export class MessageHandler {
         room.shapes.length,
         room.shapes
       ));
-    }
-  }
-
-  handleShapesArray(ws, shapes) {
-    if (!ws.clientInfo.roomId) {
-      ws.send(MessageBuilder.createErrorMessage('Please join a room first'));
-      return;
-    }
-    
-    // Save shapes in the room
-    const room = this.roomManager.getClientRoom(ws);
-    if (room) {
-      this.roomManager.updateShapes(ws.clientInfo.roomId, shapes);
-      
-      // Broadcast message to all clients in the same room (except sender)
-      broadcastToRoom(room, MessageBuilder.createBroadcastMessage(
-        ws.clientInfo.roomId,
-        shapes.length,
-        shapes
-      ), ws);
     }
   }
 
