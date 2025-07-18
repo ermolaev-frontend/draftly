@@ -23,7 +23,7 @@ export const EditorPage: React.FC = () => {
       <Toolbar
         activeTool={tool}
         onToolChange={handleTool}
-        onClearCanvas={handleEmptyShapes}
+        onEmptyShapes={handleEmptyShapes}
         isDarkMode={isDarkMode}
         onToggleDarkMode={handleToggleDarkMode}
         selectedColor={color}

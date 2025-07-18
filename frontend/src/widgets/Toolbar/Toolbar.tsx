@@ -12,7 +12,7 @@ import styles from './style.module.scss';
 interface ToolbarProps {
   activeTool: ToolType;
   onToolChange: (tool: ToolType) => void;
-  onClearCanvas: () => void;
+  onEmptyShapes: () => void;
   isDarkMode?: boolean;
   onToggleDarkMode: () => void;
   selectedColor: string;
@@ -30,7 +30,7 @@ const toolButtons = [
 export const Toolbar: React.FC<ToolbarProps> = ({
   activeTool,
   onToolChange,
-  onClearCanvas,
+  onEmptyShapes,
   isDarkMode,
   onToggleDarkMode,
   selectedColor,
@@ -53,7 +53,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </button>
       ))}
       <button
-        onClick={onClearCanvas}
+        onClick={onEmptyShapes}
         title="Clear Canvas"
         className={cn(styles.clearButton, styles.toolbarButton)}
       >
