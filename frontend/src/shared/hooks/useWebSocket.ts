@@ -6,19 +6,12 @@ import { Pencil } from 'entities/canvas/classes/Pencil';
 
 import type { IShape, IShapeFields } from 'shared/types/canvas';
 
-interface WebSocketMessage {
-  type: string;
-  roomId?: string;
-  count?: number;
-  timestamp: string;
-  data?: IShapeFields[];
-  message?: string;
-  error?: string;
-}
-
 interface Props {
   roomId: string;
   onShapesReceived: (shapes: IShape[]) => void;
+  onShapeAdded?: (shape: IShape) => void;
+  onShapeUpdated?: (shape: IShape) => void;
+  onShapeDeleted?: (shapeId: string) => void;
 }
 
 // WebSocket server configuration
@@ -43,7 +36,7 @@ const createShapesFromData = (data: IShapeFields[]): IShape[] => {
 };
 
 export const useWebSocket = (props: Props) => {
-  const { roomId, onShapesReceived } = props;
+  const { roomId, onShapesReceived, onShapeAdded, onShapeUpdated, onShapeDeleted } = props;
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [currentRoom, setCurrentRoom] = useState<string | null>(null);
@@ -68,26 +61,33 @@ export const useWebSocket = (props: Props) => {
 
     ws.onmessage = event => {
       try {
-        const data: WebSocketMessage = JSON.parse(event.data);
-        
+        const data: any = JSON.parse(event.data);
         switch (data.type) {
           case 'broadcast':
             if (data.data) {
-              console.log(`Received shapes from another client: ${data.count} objects`);
-              try {
-                const shapes = createShapesFromData(data.data);
-                onShapesReceived(shapes);
-              } catch (error) {
-                console.error('Error creating shapes:', error);
-              }
+              const shapes = createShapesFromData(data.data);
+              onShapesReceived(shapes);
             }
             break;
-            
+          case 'add_shape':
+            if (data.shape && onShapeAdded) {
+              onShapeAdded(createShapesFromData([data.shape])[0]);
+            }
+            break;
+          case 'update_shape':
+            if (data.shape && onShapeUpdated) {
+              onShapeUpdated(createShapesFromData([data.shape])[0]);
+            }
+            break;
+          case 'delete_shape':
+            if (data.shapeId && onShapeDeleted) {
+              onShapeDeleted(data.shapeId);
+            }
+            break;
           case 'error':
             setError(data.message ?? 'Unknown error');
             console.error('WebSocket error:', data.message);
             break;
-            
           default:
             console.log('Unknown message:', data);
         }
@@ -107,7 +107,7 @@ export const useWebSocket = (props: Props) => {
       setError('Connection error to server');
       setIsConnected(false);
     };
-  }, [onShapesReceived]);
+  }, [onShapesReceived, onShapeAdded, onShapeUpdated, onShapeDeleted]);
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {
@@ -122,6 +122,24 @@ export const useWebSocket = (props: Props) => {
       console.log(`Sending ${shapes.length} shapes to room ${currentRoom}`);
     } else {
       console.warn('WebSocket not connected or not in room');
+    }
+  }, [currentRoom]);
+
+  const sendAddShape = useCallback((shape: IShape) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN && currentRoom) {
+      wsRef.current.send(JSON.stringify({ type: 'add_shape', shape }));
+    }
+  }, [currentRoom]);
+
+  const sendUpdateShape = useCallback((shape: IShape) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN && currentRoom) {
+      wsRef.current.send(JSON.stringify({ type: 'update_shape', shape }));
+    }
+  }, [currentRoom]);
+
+  const sendDeleteShape = useCallback((shapeId: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN && currentRoom) {
+      wsRef.current.send(JSON.stringify({ type: 'delete_shape', shapeId }));
     }
   }, [currentRoom]);
 
@@ -150,6 +168,9 @@ export const useWebSocket = (props: Props) => {
     currentRoom,
     error,
     sendShapes,
+    sendAddShape,
+    sendUpdateShape,
+    sendDeleteShape,
     connect,
     disconnect,
   };

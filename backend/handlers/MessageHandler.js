@@ -18,6 +18,12 @@ export class MessageHandler {
       switch (message.type) {
         case config.MESSAGE_TYPES.JOIN_ROOM:
           return this.handleJoinRoom(ws, message);
+        case config.MESSAGE_TYPES.ADD_SHAPE:
+          return this.handleAddShape(ws, message);
+        case config.MESSAGE_TYPES.UPDATE_SHAPE:
+          return this.handleUpdateShape(ws, message);
+        case config.MESSAGE_TYPES.DELETE_SHAPE:
+          return this.handleDeleteShape(ws, message);
         default:
           return this.handleUnknownMessage(ws, message);
       }
@@ -65,6 +71,42 @@ export class MessageHandler {
         shapes.length,
         shapes
       ), ws);
+    }
+  }
+
+  handleAddShape(ws, message) {
+    if (!ws.clientInfo.roomId) {
+      ws.send(MessageBuilder.createErrorMessage('Please join a room first'));
+      return;
+    }
+    const room = this.roomManager.getClientRoom(ws);
+    if (room && message.shape) {
+      this.roomManager.addShape(ws.clientInfo.roomId, message.shape);
+      broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.ADD_SHAPE, { shape: message.shape }), ws);
+    }
+  }
+
+  handleUpdateShape(ws, message) {
+    if (!ws.clientInfo.roomId) {
+      ws.send(MessageBuilder.createErrorMessage('Please join a room first'));
+      return;
+    }
+    const room = this.roomManager.getClientRoom(ws);
+    if (room && message.shape) {
+      this.roomManager.updateShape(ws.clientInfo.roomId, message.shape);
+      broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.UPDATE_SHAPE, { shape: message.shape }), ws);
+    }
+  }
+
+  handleDeleteShape(ws, message) {
+    if (!ws.clientInfo.roomId) {
+      ws.send(MessageBuilder.createErrorMessage('Please join a room first'));
+      return;
+    }
+    const room = this.roomManager.getClientRoom(ws);
+    if (room && message.shapeId) {
+      this.roomManager.deleteShape(ws.clientInfo.roomId, message.shapeId);
+      broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.DELETE_SHAPE, { shapeId: message.shapeId }), ws);
     }
   }
 

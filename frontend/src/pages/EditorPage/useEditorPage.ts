@@ -1,7 +1,8 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { Draftly } from 'entities/canvas/classes/Draftly';
 import { BASE_PALETTE, TOOLS } from 'shared/types/colors';
 import { useWebSocket } from 'shared/hooks/useWebSocket';
+import { throttle } from 'shared/utils/throttle';
 
 import type { ToolType, IShape } from 'shared/types/canvas';
 
@@ -22,14 +23,31 @@ export const useEditorPage = () => {
     draftlyRef.current?.setShapes(shapes);
   }, []);
 
+  const handleShapeAdded = useCallback((shape: IShape) => {
+    draftlyRef.current?.applyAddShape(shape);
+  }, []);
+
+  const handleShapeUpdated = useCallback((shape: IShape) => {
+    draftlyRef.current?.applyUpdateShape(shape);
+  }, []);
+
+  const handleShapeDeleted = useCallback((shapeId: string) => {
+    draftlyRef.current?.applyDeleteShape(shapeId);
+  }, []);
+
   const {
     isConnected,
     currentRoom,
     error: wsError,
-    sendShapes,
+    sendAddShape,
+    sendUpdateShape,
+    sendDeleteShape,
   } = useWebSocket({
     roomId,
     onShapesReceived: handleShapesReceived,
+    onShapeAdded: handleShapeAdded,
+    onShapeUpdated: handleShapeUpdated,
+    onShapeDeleted: handleShapeDeleted,
   });
   
   const handleTool = useCallback((tool: ToolType) => {
@@ -45,13 +63,22 @@ export const useEditorPage = () => {
     draftlyRef.current?.clearCanvas();
   }, []);
 
+  // Троттлинг для update_shape через useMemo
+  const throttledSendUpdateShape = useMemo(() => throttle((shape: IShape) => {
+    sendUpdateShape(shape);
+  }, 50), [sendUpdateShape]);
+
   // Sending shapes via WebSocket
-  const handleShapesUpdate = useCallback(() => {
-    if (draftlyRef.current && isConnected) {
-      const shapes = draftlyRef.current.getShapes();
-      sendShapes(shapes);
+  const handleShapesUpdate = useCallback((action?: 'add' | 'update' | 'delete', shape?: IShape, shapeId?: string) => {
+    if (!isConnected) return;
+    if (action === 'add' && shape) {
+      sendAddShape(shape);
+    } else if (action === 'update' && shape) {
+      throttledSendUpdateShape(shape);
+    } else if (action === 'delete' && shapeId) {
+      sendDeleteShape(shapeId);
     }
-  }, [isConnected, sendShapes]);
+  }, [isConnected, sendAddShape, throttledSendUpdateShape, sendDeleteShape]);
 
   const handleColorChange = useCallback((color: string) => {
     setColor(color);

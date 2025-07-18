@@ -346,4 +346,28 @@ export class Draftly {
       this.requestDraw();
     }
   }
+
+  // --- Синхронизация с сервером ---
+  applyAddShape(shape: IShape): void {
+    if (!this.shapes.find(s => s.id === shape.id)) {
+      this.shapes.push(shape);
+      this.requestDraw();
+    }
+  }
+
+  applyUpdateShape(shape: IShape): void {
+    const idx = this.shapes.findIndex(s => s.id === shape.id);
+    if (idx !== -1) {
+      this.shapes[idx] = shape;
+      this.requestDraw();
+    }
+  }
+
+  applyDeleteShape(shapeId: string): void {
+    const prevLen = this.shapes.length;
+    this.shapes = this.shapes.filter(s => s.id !== shapeId);
+    if (this.shapes.length !== prevLen) {
+      this.requestDraw();
+    }
+  }
 } 

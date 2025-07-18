@@ -4,6 +4,9 @@ export const config = {
   MESSAGE_TYPES: {
     JOIN_ROOM: 'join_room',
     BROADCAST: 'broadcast',
-    ERROR: 'error'
+    ERROR: 'error',
+    ADD_SHAPE: 'add_shape',
+    UPDATE_SHAPE: 'update_shape',
+    DELETE_SHAPE: 'delete_shape'
   }
 }; 

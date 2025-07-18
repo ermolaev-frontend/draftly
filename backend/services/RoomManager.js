@@ -68,6 +68,42 @@ export class RoomManager {
     return room?.shapes ?? [];
   }
 
+  addShape(roomId, shape) {
+    const room = this.rooms.get(roomId);
+    if (room) {
+      room.shapes.push(shape);
+      console.log(`Added shape with id ${shape.id} to room ${roomId}`);
+      return true;
+    }
+    return false;
+  }
+
+  updateShape(roomId, shape) {
+    const room = this.rooms.get(roomId);
+    if (room) {
+      const idx = room.shapes.findIndex(s => s.id === shape.id);
+      if (idx !== -1) {
+        room.shapes[idx] = shape;
+        console.log(`Updated shape with id ${shape.id} in room ${roomId}`);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  deleteShape(roomId, shapeId) {
+    const room = this.rooms.get(roomId);
+    if (room) {
+      const idx = room.shapes.findIndex(s => s.id === shapeId);
+      if (idx !== -1) {
+        room.shapes.splice(idx, 1);
+        console.log(`Deleted shape with id ${shapeId} from room ${roomId}`);
+        return true;
+      }
+    }
+    return false;
+  }
+
   getAvailableRooms() {
     return Array.from(this.rooms.keys());
   }

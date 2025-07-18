@@ -5,7 +5,7 @@ import { useCanvasWrapper } from './useCanvasWrapper';
 import { Draftly } from '../classes/Draftly';
 
 interface DraftlyWrapperProps {
-  onShapesUpdate: () => void;
+  onShapesUpdate: (action?: 'add' | 'update' | 'delete', shape?: any, shapeId?: string) => void;
 }
 
 export const DraftlyWrapper = forwardRef<Draftly, DraftlyWrapperProps>(({ onShapesUpdate }, ref) => {
