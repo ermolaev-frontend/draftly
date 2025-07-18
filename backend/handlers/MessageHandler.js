@@ -76,52 +76,49 @@ export class MessageHandler {
     }
   }
 
-  handleAddShape(ws, message) {
-    if (!ws.clientInfo.roomId) {
-      ws.send(MessageBuilder.createErrorMessage('Please join a room first'));
-      return;
-    }
-    const room = this.roomManager.getClientRoom(ws);
-    if (room && message.shape) {
-      this.roomManager.addShape(ws.clientInfo.roomId, message.shape);
-      broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.ADD_SHAPE, { shape: message.shape }), ws);
-    }
-  }
-
-  handleUpdateShape(ws, message) {
-    if (!ws.clientInfo.roomId) {
-      ws.send(MessageBuilder.createErrorMessage('Please join a room first'));
-      return;
-    }
-    const room = this.roomManager.getClientRoom(ws);
-    if (room && message.shape) {
-      this.roomManager.updateShape(ws.clientInfo.roomId, message.shape);
-      broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.UPDATE_SHAPE, { shape: message.shape }), ws);
-    }
-  }
-
-  handleDeleteShape(ws, message) {
-    if (!ws.clientInfo.roomId) {
-      ws.send(MessageBuilder.createErrorMessage('Please join a room first'));
-      return;
-    }
-    const room = this.roomManager.getClientRoom(ws);
-    if (room && message.shapeId) {
-      this.roomManager.deleteShape(ws.clientInfo.roomId, message.shapeId);
-      broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.DELETE_SHAPE, { shapeId: message.shapeId }), ws);
-    }
-  }
-
-  handleEmptyShapes(ws, message) {
+  withRoom(ws, callback) {
     if (!ws.clientInfo.roomId) {
       ws.send(MessageBuilder.createErrorMessage('Please join a room first'));
       return;
     }
     const room = this.roomManager.getClientRoom(ws);
     if (room) {
+      callback(room);
+    }
+  }
+
+  handleAddShape(ws, message) {
+    this.withRoom(ws, (room) => {
+      if (message.shape) {
+        this.roomManager.addShape(ws.clientInfo.roomId, message.shape);
+        broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.ADD_SHAPE, { shape: message.shape }), ws);
+      }
+    });
+  }
+
+  handleUpdateShape(ws, message) {
+    this.withRoom(ws, (room) => {
+      if (message.shape) {
+        this.roomManager.updateShape(ws.clientInfo.roomId, message.shape);
+        broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.UPDATE_SHAPE, { shape: message.shape }), ws);
+      }
+    });
+  }
+
+  handleDeleteShape(ws, message) {
+    this.withRoom(ws, (room) => {
+      if (message.shapeId) {
+        this.roomManager.deleteShape(ws.clientInfo.roomId, message.shapeId);
+        broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.DELETE_SHAPE, { shapeId: message.shapeId }), ws);
+      }
+    });
+  }
+
+  handleEmptyShapes(ws, message) {
+    this.withRoom(ws, (room) => {
       this.roomManager.updateShapes(ws.clientInfo.roomId, []);
       broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.EMPTY_SHAPES, {}), ws);
-    }
+    });
   }
 
   handleUnknownMessage(ws, message) {
