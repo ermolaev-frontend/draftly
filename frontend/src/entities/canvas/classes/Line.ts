@@ -4,6 +4,7 @@ import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
 import { generateId, hashStringToSeed } from '../canvasUtils';
+import { getPointToSegmentDistance, getRectCenter } from '../geometryUtils';
 
 export class Line implements IShape {
   readonly type = 'line';
@@ -105,21 +106,8 @@ export class Line implements IShape {
     ctx.restore();
   }
 
-  isPointInShape({ x, y }: Point): boolean {
-    const { x1, y1, x2, y2 } = this;
-    const dxToStart = x - x1;
-    const dyToStart = y - y1;
-    const lineDx = x2 - x1;
-    const lineDy = y2 - y1;
-    const projection = dxToStart * lineDx + dyToStart * lineDy;
-    const lineLengthSq = lineDx * lineDx + lineDy * lineDy;
-    let t = lineLengthSq ? projection / lineLengthSq : -1;
-    t = Math.max(0, Math.min(1, t));
-    const closestX = x1 + t * lineDx;
-    const closestY = y1 + t * lineDy;
-    const sqDistance = (x - closestX) ** 2 + (y - closestY) ** 2;
-
-    return sqDistance < 64;
+  isPointInShape(point: Point): boolean {
+    return getPointToSegmentDistance(point, { x: this.x1, y: this.y1 }, { x: this.x2, y: this.y2 }) < 64;
   }
 
   resize(mouse: Point, { handle }: Interaction): void {
@@ -153,13 +141,12 @@ export class Line implements IShape {
   }
 
   move(mouse: Point, { dragOffset }: Interaction): void {
-    const prevCenterX = (this.x1 + this.x2) / 2;
-    const prevCenterY = (this.y1 + this.y2) / 2;
+    const bounds = { x: this.x1, y: this.y1, width: this.x2 - this.x1, height: this.y2 - this.y1 };
+    const { x: prevCenterX, y: prevCenterY } = getRectCenter(bounds);
     const newCenterX = mouse.x - dragOffset.x;
     const newCenterY = mouse.y - dragOffset.y;
     const dx = newCenterX - prevCenterX;
     const dy = newCenterY - prevCenterY;
-
     this.patch({
       x1: this.x1 + dx,
       y1: this.y1 + dy,

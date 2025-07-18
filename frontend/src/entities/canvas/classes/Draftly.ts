@@ -22,7 +22,6 @@ export class Draftly {
   private currentTool: ToolType;
   private readonly interaction: Interaction;
   private animationFrameId: number | null = null;
-  // private static readonly INITIAL_SHAPES_COUNT = 100;
   private readonly roughCanvas: ReturnType<typeof rough.canvas>;
   private static readonly DRAWING_TOOLS = [TOOLS[1], TOOLS[2], TOOLS[3], TOOLS[4]];
   private currentColor: string = BASE_PALETTE[0];
@@ -37,7 +36,7 @@ export class Draftly {
     ['w', 'ew-resize'],
     ['rotate', 'grab'],
   ]);
-  // Viewport for pan/zoom
+
   private viewport = {
     x: 0,
     y: 0,
