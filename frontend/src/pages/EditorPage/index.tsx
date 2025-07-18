@@ -13,7 +13,7 @@ export const EditorPage: React.FC = () => {
     draftlyRef,
     handleTool,
     handleToggleDarkMode,
-    handleClearCanvas,
+    handleEmptyShapes,
     handleColorChange,
     handleShapesUpdate,
   } = useEditorPage();
@@ -23,7 +23,7 @@ export const EditorPage: React.FC = () => {
       <Toolbar
         activeTool={tool}
         onToolChange={handleTool}
-        onClearCanvas={handleClearCanvas}
+        onClearCanvas={handleEmptyShapes}
         isDarkMode={isDarkMode}
         onToggleDarkMode={handleToggleDarkMode}
         selectedColor={color}
