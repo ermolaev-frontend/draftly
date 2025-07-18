@@ -100,12 +100,12 @@ export default tseslint.config([
         },
       ],
       '@typescript-eslint/camelcase': 'off',
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        {
-          ignoreRestSiblings: true,
-        },
-      ],
+      // '@typescript-eslint/no-unused-vars': [
+      //   'warn',
+      //   {
+      //     ignoreRestSiblings: true,
+      //   },
+      // ],
       'no-unused-vars': [
         'error',
         {
@@ -132,18 +132,18 @@ export default tseslint.config([
         },
       ],
       'no-nested-ternary': 'error',
-      // 'padding-line-between-statements': [
-      //   'error',
-      //   { blankLine: 'always', prev: '*', next: 'return' },
-      //   { blankLine: 'always', prev: '*', next: 'multiline-block-like' },
-      //   { blankLine: 'always', prev: 'multiline-block-like', next: '*' },
-      //   { blankLine: 'always', prev: '*', next: 'multiline-const' },
-      //   { blankLine: 'always', prev: 'multiline-const', next: '*' },
-      //   { blankLine: 'always', prev: '*', next: 'multiline-let' },
-      //   { blankLine: 'always', prev: 'multiline-let', next: '*' },
-      //   { blankLine: 'always', prev: '*', next: 'multiline-expression' },
-      //   { blankLine: 'always', prev: 'multiline-expression', next: '*' },
-      // ],
+      'padding-line-between-statements': [
+        'warn',
+        { blankLine: 'always', prev: '*', next: 'return' },
+        { blankLine: 'always', prev: '*', next: 'multiline-block-like' },
+        { blankLine: 'always', prev: 'multiline-block-like', next: '*' },
+        { blankLine: 'always', prev: '*', next: 'multiline-const' },
+        { blankLine: 'always', prev: 'multiline-const', next: '*' },
+        { blankLine: 'always', prev: '*', next: 'multiline-let' },
+        { blankLine: 'always', prev: 'multiline-let', next: '*' },
+        { blankLine: 'always', prev: '*', next: 'multiline-expression' },
+        { blankLine: 'always', prev: 'multiline-expression', next: '*' },
+      ],
     },
   },
 ])
