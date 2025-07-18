@@ -370,7 +370,6 @@ export class Draftly {
     }
   }
 
-  // --- Синхронизация с сервером ---
   applyAddShape(shape: IShape): void {
     if (!this.shapeMap.has(shape.id)) {
       this.shapeOrder.push(shape.id);
