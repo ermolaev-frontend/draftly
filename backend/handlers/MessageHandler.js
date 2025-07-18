@@ -24,6 +24,8 @@ export class MessageHandler {
           return this.handleUpdateShape(ws, message);
         case config.MESSAGE_TYPES.DELETE_SHAPE:
           return this.handleDeleteShape(ws, message);
+        case config.MESSAGE_TYPES.EMPTY_SHAPES:
+          return this.handleEmptyShapes(ws, message);
         default:
           return this.handleUnknownMessage(ws, message);
       }
@@ -107,6 +109,18 @@ export class MessageHandler {
     if (room && message.shapeId) {
       this.roomManager.deleteShape(ws.clientInfo.roomId, message.shapeId);
       broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.DELETE_SHAPE, { shapeId: message.shapeId }), ws);
+    }
+  }
+
+  handleEmptyShapes(ws, message) {
+    if (!ws.clientInfo.roomId) {
+      ws.send(MessageBuilder.createErrorMessage('Please join a room first'));
+      return;
+    }
+    const room = this.roomManager.getClientRoom(ws);
+    if (room) {
+      this.roomManager.updateShapes(ws.clientInfo.roomId, []);
+      broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.EMPTY_SHAPES, {}), ws);
     }
   }
 

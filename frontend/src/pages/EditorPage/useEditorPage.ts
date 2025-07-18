@@ -35,6 +35,10 @@ export const useEditorPage = () => {
     draftlyRef.current?.applyDeleteShape(shapeId);
   }, []);
 
+  const handleEmptyShapesReceived = useCallback(() => {
+    draftlyRef.current?.clearCanvas();
+  }, []);
+
   const {
     isConnected,
     currentRoom,
@@ -42,12 +46,14 @@ export const useEditorPage = () => {
     sendAddShape,
     sendUpdateShape,
     sendDeleteShape,
+    sendEmptyShapes,
   } = useWebSocket({
     roomId,
     onShapesReceived: handleShapesReceived,
     onShapeAdded: handleShapeAdded,
     onShapeUpdated: handleShapeUpdated,
     onShapeDeleted: handleShapeDeleted,
+    onEmptyShapes: handleEmptyShapesReceived,
   });
   
   const handleTool = useCallback((tool: ToolType) => {
@@ -59,9 +65,12 @@ export const useEditorPage = () => {
     setIsDarkMode(prev => !prev);
   }, []);
 
-  const handleClearCanvas = useCallback(() => {
+  const handleEmptyShapes = useCallback(() => {
     draftlyRef.current?.clearCanvas();
-  }, []);
+    if (isConnected) {
+      sendEmptyShapes();
+    }
+  }, [isConnected, sendEmptyShapes]);
 
   // Троттлинг для update_shape через useMemo
   const throttledSendUpdateShape = useMemo(() => throttle((shape: IShape) => {
@@ -150,7 +159,7 @@ export const useEditorPage = () => {
     setRoomId,
     handleTool,
     handleToggleDarkMode,
-    handleClearCanvas,
+    handleEmptyShapes,
     handleColorChange,
     handleShapesUpdate,
   };

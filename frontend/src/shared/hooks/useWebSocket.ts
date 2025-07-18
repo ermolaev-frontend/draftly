@@ -12,6 +12,7 @@ interface Props {
   onShapeAdded?: (shape: IShape) => void;
   onShapeUpdated?: (shape: IShape) => void;
   onShapeDeleted?: (shapeId: string) => void;
+  onEmptyShapes?: () => void;
 }
 
 // WebSocket server configuration
@@ -36,7 +37,7 @@ const createShapesFromData = (data: IShapeFields[]): IShape[] => {
 };
 
 export const useWebSocket = (props: Props) => {
-  const { roomId, onShapesReceived, onShapeAdded, onShapeUpdated, onShapeDeleted } = props;
+  const { roomId, onShapesReceived, onShapeAdded, onShapeUpdated, onShapeDeleted, onEmptyShapes } = props;
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [currentRoom, setCurrentRoom] = useState<string | null>(null);
@@ -84,6 +85,9 @@ export const useWebSocket = (props: Props) => {
               onShapeDeleted(data.shapeId);
             }
             break;
+          case 'empty_shapes':
+            if (onEmptyShapes) onEmptyShapes();
+            break;
           case 'error':
             setError(data.message ?? 'Unknown error');
             console.error('WebSocket error:', data.message);
@@ -107,7 +111,7 @@ export const useWebSocket = (props: Props) => {
       setError('Connection error to server');
       setIsConnected(false);
     };
-  }, [onShapesReceived, onShapeAdded, onShapeUpdated, onShapeDeleted]);
+  }, [onShapesReceived, onShapeAdded, onShapeUpdated, onShapeDeleted, onEmptyShapes]);
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {
@@ -143,6 +147,12 @@ export const useWebSocket = (props: Props) => {
     }
   }, [currentRoom]);
 
+  const sendEmptyShapes = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN && currentRoom) {
+      wsRef.current.send(JSON.stringify({ type: 'empty_shapes' }));
+    }
+  }, [currentRoom]);
+
   // Automatic connection
   useEffect(() => {
     connect();
@@ -171,6 +181,7 @@ export const useWebSocket = (props: Props) => {
     sendAddShape,
     sendUpdateShape,
     sendDeleteShape,
+    sendEmptyShapes,
     connect,
     disconnect,
   };
