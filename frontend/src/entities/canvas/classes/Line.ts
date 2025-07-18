@@ -4,7 +4,7 @@ import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
 import { generateId, hashStringToSeed } from '../canvasUtils';
-import { pointToSegmentDistance, getRectCenter } from '../geometryUtils';
+import { getPointToSegmentDistance, getRectCenter } from '../geometryUtils';
 
 export class Line implements IShape {
   readonly type = 'line';
@@ -107,7 +107,7 @@ export class Line implements IShape {
   }
 
   isPointInShape(point: Point): boolean {
-    return pointToSegmentDistance(point, { x: this.x1, y: this.y1 }, { x: this.x2, y: this.y2 }) < 64;
+    return getPointToSegmentDistance(point, { x: this.x1, y: this.y1 }, { x: this.x2, y: this.y2 }) < 64;
   }
 
   resize(mouse: Point, { handle }: Interaction): void {

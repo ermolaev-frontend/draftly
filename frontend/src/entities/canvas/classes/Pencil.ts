@@ -3,7 +3,7 @@ import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
 import { generateId } from '../canvasUtils';
-import { pointToSegmentDistance, scalePointInRect } from '../geometryUtils';
+import { getPointToSegmentDistance, getScaledPointInRect } from '../geometryUtils';
 
 export class Pencil implements IShape {
   readonly type = 'pencil';
@@ -139,7 +139,7 @@ export class Pencil implements IShape {
     for (let i = 1; i < this.points.length; i++) {
       const start = this.points[i-1];
       const end = this.points[i];
-      if (pointToSegmentDistance(point, start, end) < 64) return true;
+      if (getPointToSegmentDistance(point, start, end) < 64) return true;
     }
     return false;
   }
@@ -188,7 +188,13 @@ export class Pencil implements IShape {
     }
     newW = Math.max(10, newW);
     newH = Math.max(10, newH);
-    const newPoints = initialPoints.map((pt: Point) => scalePointInRect(pt, initialBounds, { x: newX, y: newY, width: newW, height: newH }));
+    const newPoints = initialPoints.map((pt: Point) =>
+      getScaledPointInRect(
+        pt,
+        initialBounds,
+        { x: newX, y: newY, width: newW, height: newH },
+      ),
+    );
     this.patch({ points: newPoints });
   }
 

@@ -1,7 +1,7 @@
 import type { Bounds, Point } from 'shared/types/canvas';
 
 // 1. Rotate a point around a center by an angle
-export const rotatePoint = (point: Point, center: Point, angle: number, local = false): Point => {
+export const getRotatedPoint = (point: Point, center: Point, angle: number, local = false): Point => {
   const dx = point.x - center.x;
   const dy = point.y - center.y;
   const cos = Math.cos(angle);
@@ -28,7 +28,7 @@ export const isPointInCircle = (point: Point, center: Point, radius: number): bo
 };
 
 // 4. Distance from a point to a segment
-export const pointToSegmentDistance = (point: Point, start: Point, end: Point): number => {
+export const getPointToSegmentDistance = (point: Point, start: Point, end: Point): number => {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   if (dx === 0 && dy === 0) {
@@ -49,7 +49,7 @@ export const pointToSegmentDistance = (point: Point, start: Point, end: Point): 
 
 // 5. Check if a point is near a segment (with threshold)
 export const isPointNearSegment = (point: Point, start: Point, end: Point, threshold: number): boolean => {
-  return pointToSegmentDistance(point, start, end) <= threshold;
+  return getPointToSegmentDistance(point, start, end) <= threshold;
 };
 
 // 6. Get the center of a rectangle
@@ -61,7 +61,7 @@ export const getRectCenter = (rect: Bounds): Point => {
 };
 
 // 7. Scale a point relative to a rectangle
-export const scalePointInRect = (point: Point, bounds: Bounds, newBounds: Bounds): Point => {
+export const getScaledPointInRect = (point: Point, bounds: Bounds, newBounds: Bounds): Point => {
   const relX = (point.x - bounds.x) / bounds.width;
   const relY = (point.y - bounds.y) / bounds.height;
   return {
@@ -71,21 +71,21 @@ export const scalePointInRect = (point: Point, bounds: Bounds, newBounds: Bounds
 };
 
 // 8. Distance between two points
-export const distance = (p1: Point, p2: Point): number => {
+export const getDistanceBetweenPoints = (p1: Point, p2: Point): number => {
   return Math.hypot(p1.x - p2.x, p1.y - p2.y);
 };
 
 // 9. Angle between two points (from p1 to p2)
-export const angleBetweenPoints = (p1: Point, p2: Point): number => {
+export const getAngleBetweenPoints = (p1: Point, p2: Point): number => {
   return Math.atan2(p2.y - p1.y, p2.x - p1.x);
 };
 
 // 10. Translate a point by delta
-export const translatePoint = (point: Point, dx: number, dy: number): Point => {
+export const getTranslatedPoint = (point: Point, dx: number, dy: number): Point => {
   return { x: point.x + dx, y: point.y + dy };
 };
 
 // 11. Convert point to local coordinates relative to center with rotation (alias for convenience)
-export const toLocalRotatedCoords = (point: Point, center: Point, angle: number): Point => {
-  return rotatePoint(point, center, angle, true);
+export const getLocalRotatedCoords = (point: Point, center: Point, angle: number): Point => {
+  return getRotatedPoint(point, center, angle, true);
 }; 

@@ -5,7 +5,7 @@ import { BASE_PALETTE } from 'shared/types/colors';
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
 import { generateId, hashStringToSeed } from '../canvasUtils';
-import { toLocalRotatedCoords, getRectCenter, rotatePoint } from '../geometryUtils';
+import { getLocalRotatedCoords, getRectCenter, getRotatedPoint } from '../geometryUtils';
 
 export class Rectangle implements IShape {
   readonly type = 'rectangle';
@@ -155,7 +155,7 @@ export class Rectangle implements IShape {
   isPointInShape(point: Point): boolean {
     const center = this.getCenter();
     const angle = -(this.rotation ?? 0);
-    const { x: lx, y: ly } = toLocalRotatedCoords(point, center, angle);
+    const { x: lx, y: ly } = getLocalRotatedCoords(point, center, angle);
     return (
       lx >= -this.width/2 && lx <= this.width/2 &&
       ly >= -this.height/2 && ly <= this.height/2
@@ -172,7 +172,7 @@ export class Rectangle implements IShape {
 
     const center = this.getCenter();
     const angle = -(this.rotation ?? 0);
-    const { x: lx, y: ly } = toLocalRotatedCoords(mouse, center, angle);
+    const { x: lx, y: ly } = getLocalRotatedCoords(mouse, center, angle);
     let left = -this.width/2, right = this.width/2, top = -this.height/2, bottom = this.height/2;
 
     switch (handle) {
@@ -208,7 +208,7 @@ export class Rectangle implements IShape {
 
     const newWidth = right - left;
     const newHeight = bottom - top;
-    const newCenter = rotatePoint(
+    const newCenter = getRotatedPoint(
       { x: (left + right) / 2, y: (top + bottom) / 2 },
       { x: 0, y: 0 },
       this.rotation ?? 0
@@ -276,7 +276,7 @@ export class Rectangle implements IShape {
   getHandleAt({ x, y }: Point): Handle | null {
     const center = this.getCenter();
     const angle = -(this.rotation ?? 0);
-    const { x: lx, y: ly } = toLocalRotatedCoords({ x, y }, center, angle);
+    const { x: lx, y: ly } = getLocalRotatedCoords({ x, y }, center, angle);
 
     for (const h of this.getHandles()) {
       if (h.type === 'rotate') {
