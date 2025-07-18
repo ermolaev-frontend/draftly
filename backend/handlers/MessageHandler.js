@@ -11,13 +11,17 @@ export class MessageHandler {
       const message = parseMessage(data);
       console.log('Message received:', message);
 
-      if (Array.isArray(message)) {
-        return this.handleShapesArray(ws, message);
-      }
-
       switch (message.type) {
         case config.MESSAGE_TYPES.JOIN_ROOM:
           return this.handleJoinRoom(ws, message);
+        case config.MESSAGE_TYPES.ADD_SHAPE:
+          return this.handleAddShape(ws, message);
+        case config.MESSAGE_TYPES.UPDATE_SHAPE:
+          return this.handleUpdateShape(ws, message);
+        case config.MESSAGE_TYPES.DELETE_SHAPE:
+          return this.handleDeleteShape(ws, message);
+        case config.MESSAGE_TYPES.EMPTY_SHAPES:
+          return this.handleEmptyShapes(ws, message);
         default:
           return this.handleUnknownMessage(ws, message);
       }
@@ -48,24 +52,49 @@ export class MessageHandler {
     }
   }
 
-  handleShapesArray(ws, shapes) {
+  withRoom(ws, callback) {
     if (!ws.clientInfo.roomId) {
       ws.send(MessageBuilder.createErrorMessage('Please join a room first'));
       return;
     }
-    
-    // Save shapes in the room
     const room = this.roomManager.getClientRoom(ws);
     if (room) {
-      this.roomManager.updateShapes(ws.clientInfo.roomId, shapes);
-      
-      // Broadcast message to all clients in the same room (except sender)
-      broadcastToRoom(room, MessageBuilder.createBroadcastMessage(
-        ws.clientInfo.roomId,
-        shapes.length,
-        shapes
-      ), ws);
+      callback(room);
     }
+  }
+
+  handleAddShape(ws, message) {
+    this.withRoom(ws, (room) => {
+      if (message.shape) {
+        this.roomManager.addShape(ws.clientInfo.roomId, message.shape);
+        broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.ADD_SHAPE, { shape: message.shape }), ws);
+      }
+    });
+  }
+
+  handleUpdateShape(ws, message) {
+    this.withRoom(ws, (room) => {
+      if (message.shape) {
+        this.roomManager.updateShape(ws.clientInfo.roomId, message.shape);
+        broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.UPDATE_SHAPE, { shape: message.shape }), ws);
+      }
+    });
+  }
+
+  handleDeleteShape(ws, message) {
+    this.withRoom(ws, (room) => {
+      if (message.shapeId) {
+        this.roomManager.deleteShape(ws.clientInfo.roomId, message.shapeId);
+        broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.DELETE_SHAPE, { shapeId: message.shapeId }), ws);
+      }
+    });
+  }
+
+  handleEmptyShapes(ws, message) {
+    this.withRoom(ws, (room) => {
+      this.roomManager.updateShapes(ws.clientInfo.roomId, []);
+      broadcastToRoom(room, MessageBuilder.createMessage(config.MESSAGE_TYPES.EMPTY_SHAPES, {}), ws);
+    });
   }
 
   handleUnknownMessage(ws, message) {

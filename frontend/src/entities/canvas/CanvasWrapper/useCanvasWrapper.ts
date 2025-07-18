@@ -1,11 +1,13 @@
-import { throttle } from 'shared/utils/throttle';
-import { useRef, useImperativeHandle, useCallback, useMemo, type PointerEvent } from 'react';
+import { useRef, useImperativeHandle, useCallback, type PointerEvent } from 'react';
 
 import type { EventOffset } from 'shared/types/canvas';
 
 import { Draftly } from '../classes/Draftly';
 
-export const useCanvasWrapper = (ref: React.Ref<Draftly>, onShapesUpdate: () => void) => {
+export const useCanvasWrapper = (
+  ref: React.Ref<Draftly>,
+  onShapesUpdate: (...args: any[]) => void,
+) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const draftlyRef = useRef<Draftly | null>(null);
 
@@ -24,18 +26,16 @@ export const useCanvasWrapper = (ref: React.Ref<Draftly>, onShapesUpdate: () => 
     };
   };
 
-  const onShapesUpdateThrottled = useMemo(
-    () => throttle(() => {
-      onShapesUpdate?.();
-    }, 1000),
-    [onShapesUpdate],
-  );
-
   const handlePointerDown = useCallback((e: PointerEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     draftlyRef.current?.handlePointerDown(getPointerOffset(e));
     (e.target as HTMLCanvasElement).setPointerCapture(e.pointerId);
-  }, []);
+    // Добавление фигуры
+    const shapes = draftlyRef.current?.getShapes();
+    if (shapes && shapes.length > 0) {
+      onShapesUpdate('add', shapes[shapes.length - 1]);
+    }
+  }, [onShapesUpdate]);
 
   const handlePointerMove = useCallback((e: PointerEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -43,15 +43,24 @@ export const useCanvasWrapper = (ref: React.Ref<Draftly>, onShapesUpdate: () => 
     const interaction = draftlyRef.current?.getInteraction();
 
     if (interaction?.type !== 'idle') {
-      onShapesUpdateThrottled();
+      // Изменение фигуры (например, при рисовании/перетаскивании)
+      const shape = interaction?.shape;
+      if (shape) {
+        onShapesUpdate('update', shape);
+      }
     }
-  }, [onShapesUpdateThrottled]);
+  }, [onShapesUpdate]);
 
   const handlePointerEnd = useCallback((e: PointerEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     draftlyRef.current?.handlePointerUp();
     (e.target as HTMLCanvasElement).releasePointerCapture(e.pointerId);
-    onShapesUpdate();
+    // Завершение рисования/перемещения — обновление фигуры
+    const interaction = draftlyRef.current?.getInteraction();
+    const shape = interaction?.shape;
+    if (shape) {
+      onShapesUpdate('update', shape);
+    }
   }, [onShapesUpdate]);
 
   useImperativeHandle(ref, () => draftlyRef.current as Draftly, []);
