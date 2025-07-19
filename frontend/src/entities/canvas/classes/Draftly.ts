@@ -21,8 +21,8 @@ export class Draftly {
   private readonly ctx: CanvasRenderingContext2D;
   private shapeOrder: string[] = [];
   private shapeMap: Map<string, IShape>;
-  private currentTool: ToolType;
-  private readonly interaction: Interaction;
+  private currentTool: ToolType = TOOLS[4];
+  private readonly interaction: Interaction = new Interaction();
   private animationFrameId: number | null = null;
   private readonly roughCanvas: ReturnType<typeof rough.canvas>;
   private static readonly DRAWING_TOOLS = [TOOLS[1], TOOLS[2], TOOLS[3], TOOLS[4]];
@@ -48,13 +48,11 @@ export class Draftly {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
     this.roughCanvas = rough.canvas(this.canvas);
-    this.interaction = new Interaction();
-    this.currentTool = TOOLS[4];
     
     this.shapeMap = createDeepReactiveMap<string, IShape>(
       new Map(),
       (event, data) => {
-        this.requestDraw();
+        this.requestDraw2();
         console.log('ShapeMap changed:', event, data);
       },
     );
@@ -64,6 +62,16 @@ export class Draftly {
   }
 
   private requestDraw(): void {
+    return;
+    if (this.animationFrameId !== null) return;
+
+    this.animationFrameId = requestAnimationFrame(() => {
+      this.drawShapes();
+      this.animationFrameId = null;
+    });
+  }
+
+  private requestDraw2(): void {
     if (this.animationFrameId !== null) return;
 
     this.animationFrameId = requestAnimationFrame(() => {
@@ -88,9 +96,8 @@ export class Draftly {
 
   deleteSelectedShape(): void {
     if (this.interaction.shape) {
-      this.deleteShape(this.interaction.shape);
+      this.applyDeleteShape(this.interaction.shape.id);
       this.interaction.patch({ shape: null });
-      this.autoSave();
     }
   }
 
@@ -102,16 +109,6 @@ export class Draftly {
 
   private setCursor(cursor: CSSStyleDeclaration['cursor']): void {
     this.canvas.style.cursor = cursor;
-  }
-
-  private addShape(shape: IShape) {
-    this.shapeOrder.push(shape.id);
-    this.shapeMap.set(shape.id, shape);
-  }
-
-  private deleteShape(shape: IShape) {
-    this.shapeOrder = this.shapeOrder.filter(id => id !== shape.id);
-    this.shapeMap.delete(shape.id);
   }
 
   private drawShapes(): void {
@@ -201,7 +198,7 @@ export class Draftly {
 
       if (newShape) {
         newShape.startDrawing(this.interaction, mouse);
-        this.addShape(newShape);
+        this.applyAddShape(newShape);
       }
     } else {
       if (this.interaction.shape) {
@@ -249,19 +246,19 @@ export class Draftly {
 
     if (interType === 'panning') {
       this.handlePanning(e);
-      this.requestDraw();
+      this.requestDraw2();
       this.setCursor('grabbing');
     } else if (interType === 'drawing') {
       interShape?.drawNewShape(mouse);
-      this.requestDraw();
+      this.requestDraw2();
       this.setCursor('crosshair');
     } else if (interType === 'dragging') {
       interShape?.move(mouse, this.interaction);
-      this.requestDraw();
+      this.requestDraw2();
       this.setCursor('move');
     } else if (interType === 'resizing') {
       interShape?.resize(mouse, this.interaction);
-      this.requestDraw();
+      this.requestDraw2();
       this.setCursor(this.getCursorForHandle(this.interaction.handle));
     } else if (interType === 'idle') {
       if (this.isDrawingToolSelected()) {
@@ -315,16 +312,6 @@ export class Draftly {
     }
 
     this.requestDraw();
-
-    this.autoSave();
-  }
-    
-  private autoSave(): void {
-    try {
-      localStorage.setItem('shapes', JSON.stringify(this.shapeOrder));
-    } catch (e) {
-      console.warn('Error saving shapes:', e);
-    }
   }
 
   getShapes(): IShape[] {

@@ -1,5 +1,6 @@
 export function createDeepReactiveMap<TKey, TValue>(
   map: Map<TKey, TValue> = new Map(),
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onChange?: (event: string, data: any) => void,
 ): Map<TKey, TValue> {
   if (!(map instanceof Map)) {
