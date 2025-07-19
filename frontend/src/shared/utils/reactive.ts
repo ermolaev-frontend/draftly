@@ -1,4 +1,3 @@
-// Простая функция для реактивности объектов через Proxy
 export function makeReactive<T extends object>(
   _obj: T,
   onChange?: (event: string, data: any) => void,
@@ -10,7 +9,10 @@ export function makeReactive<T extends object>(
     set(target: T, prop: string | symbol, value: any) {
       const oldValue = Reflect.get(target, prop);
       const result = Reflect.set(target, prop, value);
-      onChange?.('nested-update', { target, prop, value, oldValue });
+      
+      if (!Object.is(oldValue, value)) {
+        onChange?.('nested-update', { target, prop, value, oldValue });
+      }
 
       return result;
     },
@@ -22,7 +24,7 @@ export function createDeepReactiveMap<TKey, TValue extends object>(
   onChange?: (event: string, data: any) => void,
 ): Map<TKey, TValue> {
   if (!(map instanceof Map)) {
-    throw new Error('Параметр должен быть экземпляром Map');
+    throw new Error('Parameter must be an instance of Map');
   }
 
   const wrapValue = (value: TValue): TValue => {
@@ -33,7 +35,13 @@ export function createDeepReactiveMap<TKey, TValue extends object>(
     return value;
   };
 
-  return new Proxy(map, {
+  const reactiveMap = new Map<TKey, TValue>();
+
+  for (const [key, value] of map.entries()) {
+    reactiveMap.set(key, wrapValue(value));
+  }
+
+  return new Proxy(reactiveMap, {
     get(target: Map<TKey, TValue>, prop: string | symbol) {
       if (prop === 'set') {
         return (key: TKey, value: TValue) => {

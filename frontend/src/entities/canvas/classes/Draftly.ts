@@ -1,6 +1,6 @@
 import rough from 'roughjs';
 import { BASE_PALETTE, TOOLS } from 'shared/types/colors';
-import { createDeepReactiveMap } from 'shared/utils/reactiveMap';
+import { createDeepReactiveMap, makeReactive } from 'shared/utils/reactive';
 
 import type {
   ToolType,
@@ -22,7 +22,7 @@ export class Draftly {
   private shapeOrder: string[] = [];
   private shapeMap: Map<string, IShape>;
   private currentTool: ToolType = TOOLS[4];
-  private readonly interaction: Interaction = new Interaction();
+  private readonly interaction: Interaction;
   private animationFrameId: number | null = null;
   private readonly roughCanvas: ReturnType<typeof rough.canvas>;
   private static readonly DRAWING_TOOLS = [TOOLS[1], TOOLS[2], TOOLS[3], TOOLS[4]];
@@ -39,10 +39,8 @@ export class Draftly {
     ['rotate', 'grab'],
   ]);
 
-  private viewport = {
-    x: 0,
-    y: 0,
-  };
+  private viewport: Point; 
+  private _drawCounter: number = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -56,22 +54,27 @@ export class Draftly {
         console.log('ShapeMap changed:', event, data);
       },
     );
+
+    this.interaction = makeReactive(new Interaction(), (event, data) => {
+      this.requestDraw2();
+      console.log('Interaction changed:', event, data);
+    });
+    
+    this.viewport = makeReactive({
+      x: 0,
+      y: 0,
+    }, (event, data) => {
+      this.requestDraw2();
+      console.log('Viewport changed:', event, data);
+    });
     
     this.resizeCanvasToWrapper();
-    this.requestDraw();
-  }
-
-  private requestDraw(): void {
-    return;
-    if (this.animationFrameId !== null) return;
-
-    this.animationFrameId = requestAnimationFrame(() => {
-      this.drawShapes();
-      this.animationFrameId = null;
-    });
   }
 
   private requestDraw2(): void {
+    if (!this._drawCounter) this._drawCounter = 0;
+    this._drawCounter++;
+    console.log(`requestDraw2 called ${this._drawCounter} times`);
     if (this.animationFrameId !== null) return;
 
     this.animationFrameId = requestAnimationFrame(() => {
@@ -94,17 +97,21 @@ export class Draftly {
     this.currentColor = color;
   }
 
-  deleteSelectedShape(): void {
+  deleteSelectedShape(): string | null {
     if (this.interaction.shape) {
-      this.applyDeleteShape(this.interaction.shape.id);
+      const idToDelete = this.interaction.shape.id;
+      this.applyDeleteShape(idToDelete);
       this.interaction.patch({ shape: null });
+
+      return idToDelete;
     }
+
+    return null;
   }
 
   deselectShape(): void {
     this.interaction.patch({ shape: null, handle: null, type: 'idle' });
     this.setCursor('default');
-    this.requestDraw();
   }
 
   private setCursor(cursor: CSSStyleDeclaration['cursor']): void {
@@ -304,8 +311,6 @@ export class Draftly {
         dragOffset: { x: 0, y: 0 },
       });
     }
-
-    this.requestDraw();
   }
 
   getShapes(): IShape[] {
@@ -313,12 +318,18 @@ export class Draftly {
   }
 
   setShapes(shapes: IShape[]): void {
+    this.shapeOrder = shapes.map(shape => shape.id);
     this.shapeMap.clear();
-    this.shapeOrder = [];
 
-    for (const shape of shapes) {
-      this.applyAddShape(shape);
-    }
+    this.shapeMap = createDeepReactiveMap<string, IShape>(
+      new Map(shapes.map(shape => [shape.id, shape])),
+      (event, data) => {
+        this.requestDraw2();
+        console.log('ShapeMap changed:', event, data);
+      },
+    );
+    
+    this.requestDraw2();
   }
 
   getInteraction(): Interaction {
@@ -351,7 +362,6 @@ export class Draftly {
       this.canvas.style.height = rect.height + 'px';
       this.ctx.setTransform(1, 0, 0, 1, 0, 0);
       this.ctx.scale(dpr, dpr);
-      this.requestDraw();
     }
   }
 

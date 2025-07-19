@@ -67,12 +67,13 @@ export const useEditorPage = () => {
 
   const handleEmptyShapes = useCallback(() => {
     draftlyRef.current?.clearCanvas();
+
     if (isConnected) {
       sendEmptyShapes();
     }
   }, [isConnected, sendEmptyShapes]);
 
-  // Троттлинг для update_shape через useMemo
+  // Throttling for update_shape using useMemo
   const throttledSendUpdateShape = useMemo(() => throttle((shape: IShape) => {
     sendUpdateShape(shape);
   }, 50), [sendUpdateShape]);
@@ -80,6 +81,7 @@ export const useEditorPage = () => {
   // Sending shapes via WebSocket
   const handleShapesUpdate = useCallback((action?: 'add' | 'update' | 'delete', shape?: IShape, shapeId?: string) => {
     if (!isConnected) return;
+
     if (action === 'add' && shape) {
       sendAddShape(shape);
     } else if (action === 'update' && shape) {
@@ -121,11 +123,20 @@ export const useEditorPage = () => {
           setTool(TOOLS[0]);
           draftlyRef.current?.setTool(TOOLS[0]);
           draftlyRef.current?.deselectShape();
-          return;
+
+          break;
+        
         case 'Delete':
-        case 'Backspace':
-          draftlyRef.current?.deleteSelectedShape();
-          return;
+        case 'Backspace': 
+          // eslint-disable-next-line no-case-declarations
+          const deletedShapeId = draftlyRef.current?.deleteSelectedShape();
+
+          if (deletedShapeId) {
+            sendDeleteShape(deletedShapeId);
+          }
+
+          break;
+
         default:
           break;
       }
@@ -136,7 +147,7 @@ export const useEditorPage = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [sendDeleteShape]);
 
   // Handle system theme changes
   useEffect(() => {
