@@ -3,10 +3,10 @@ export function createDeepReactiveMap<TKey, TValue>(
   onChange?: (event: string, data: any) => void,
 ): Map<TKey, TValue> {
   if (!(map instanceof Map)) {
-    throw new Error('Параметр должен быть экземпляром Map');
+    throw new Error('Parameter must be an instance of Map');
   }
 
-  // Прокси для Map
+  // Proxy for Map
   return new Proxy(map, {
     get(target: Map<TKey, TValue>, prop: string | symbol) {
       if (prop === 'set') {
@@ -46,12 +46,12 @@ export function createDeepReactiveMap<TKey, TValue>(
         };
       }
 
-      // Для свойств возвращаем значение напрямую
+      // For properties, return the value directly
       if (prop === 'size') {
         return Reflect.get(target, prop);
       }
 
-      // Для остальных методов используем Reflect для правильного контекста
+      // For other methods, use Reflect for proper context
       const method = Reflect.get(target, prop);
 
       if (typeof method === 'function') {
