@@ -2,6 +2,8 @@ import React, { memo } from 'react';
 import cn from 'classnames';
 import { BASE_PALETTE } from 'shared/types/colors';
 
+/* eslint-disable no-unused-vars */
+
 import styles from './style.module.scss';
 
 interface ColorPickerProps {

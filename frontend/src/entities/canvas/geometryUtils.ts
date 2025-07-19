@@ -7,6 +7,7 @@ export const getRotatedPoint = (point: Point, center: Point, angle: number, loca
   const sin = Math.sin(angle);
   const rotatedX = cos * dx - sin * dy;
   const rotatedY = sin * dx + cos * dy;
+
   return local 
     ? { x: rotatedX, y: rotatedY }
     : { x: rotatedX + center.x, y: rotatedY + center.y };
@@ -20,15 +21,18 @@ export const isPointInRect = (point: Point, rect: Bounds): boolean => {
 export const isPointInCircle = (point: Point, center: Point, radius: number): boolean => {
   const dx = point.x - center.x;
   const dy = point.y - center.y;
+
   return dx * dx + dy * dy <= radius * radius;
 };
 
 export const getPointToSegmentDistance = (point: Point, start: Point, end: Point): number => {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
+
   if (dx === 0 && dy === 0) {
     return Math.hypot(point.x - start.x, point.y - start.y);
   }
+
   const t = Math.max(
     0,
     Math.min(
@@ -36,8 +40,10 @@ export const getPointToSegmentDistance = (point: Point, start: Point, end: Point
       ((point.x - start.x) * dx + (point.y - start.y) * dy) / (dx * dx + dy * dy),
     ),
   );
+
   const closestX = start.x + t * dx;
   const closestY = start.y + t * dy;
+
   return Math.hypot(point.x - closestX, point.y - closestY);
 };
 
@@ -55,6 +61,7 @@ export const getRectCenter = (rect: Bounds): Point => {
 export const getScaledPointInRect = (point: Point, bounds: Bounds, newBounds: Bounds): Point => {
   const relX = (point.x - bounds.x) / bounds.width;
   const relY = (point.y - bounds.y) / bounds.height;
+
   return {
     x: newBounds.x + relX * newBounds.width,
     y: newBounds.y + relY * newBounds.height,

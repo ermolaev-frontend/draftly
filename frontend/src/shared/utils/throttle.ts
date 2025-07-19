@@ -1,4 +1,4 @@
-export function throttle<T extends (...args: any[]) => void>(func: T, wait: number): T {
+export function throttle<T extends (..._args: any[]) => void>(func: T, wait: number): T {
   let lastCall = 0;
   let timeout: ReturnType<typeof setTimeout> | null = null;
   let lastArgs: any[] | null = null;
@@ -7,11 +7,13 @@ export function throttle<T extends (...args: any[]) => void>(func: T, wait: numb
     const now = Date.now();
     const remaining = wait - (now - lastCall);
     lastArgs = args;
+
     if (remaining <= 0) {
       if (timeout) {
         clearTimeout(timeout);
         timeout = null;
       }
+
       lastCall = now;
       func.apply(this, args);
     } else if (!timeout) {

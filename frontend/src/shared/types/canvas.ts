@@ -46,4 +46,5 @@ export interface IShape extends IShapeFields {
   startDragging(interaction: Interaction, mouse: Point): void;
   startDrawing(interaction: Interaction, mouse?: Point): void;
   startResizing(interaction: Interaction, handle: Handle, mouse?: Point): void;
+  patch(shape: Partial<IShape>): void;
 }
