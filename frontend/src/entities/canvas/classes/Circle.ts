@@ -118,6 +118,7 @@ export class Circle implements IShape {
 
   resize(mouse: Point): void {
     const newRadius = getDistanceBetweenPoints({ x: this.x, y: this.y }, mouse);
+
     this.patch({
       radius: Math.max(20, newRadius),
     });

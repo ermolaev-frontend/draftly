@@ -136,20 +136,24 @@ export class Pencil implements IShape {
 
   isPointInShape(point: Point): boolean {
     if (!this.points || this.points.length < 2) return false;
+
     for (let i = 1; i < this.points.length; i++) {
       const start = this.points[i-1];
       const end = this.points[i];
       if (getPointToSegmentDistance(point, start, end) < 64) return true;
     }
+
     return false;
   }
 
   resize(mouse: Point, { handle, initialBounds, initialPoints }: Interaction): void {
     if (!initialPoints || !initialBounds) return;
+
     let newX = initialBounds.x,
       newY = initialBounds.y,
       newW = initialBounds.width,
       newH = initialBounds.height;
+
     switch (handle) {
       case 'nw':
         newX = mouse.x;
@@ -186,8 +190,10 @@ export class Pencil implements IShape {
         newW = initialBounds.x + initialBounds.width - mouse.x;
         break;
     }
+
     newW = Math.max(10, newW);
     newH = Math.max(10, newH);
+
     const newPoints = initialPoints.map((pt: Point) =>
       getScaledPointInRect(
         pt,
@@ -195,6 +201,7 @@ export class Pencil implements IShape {
         { x: newX, y: newY, width: newW, height: newH },
       ),
     );
+
     this.patch({ points: newPoints });
   }
 

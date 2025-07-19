@@ -147,6 +147,7 @@ export class Line implements IShape {
     const newCenterY = mouse.y - dragOffset.y;
     const dx = newCenterX - prevCenterX;
     const dy = newCenterY - prevCenterY;
+
     this.patch({
       x1: this.x1 + dx,
       y1: this.y1 + dy,

@@ -5,6 +5,8 @@ import { faSlash, faArrowPointer, faPencil, faBroom, faMoon, faLightbulb } from 
 import cn from 'classnames';
 import ColorPicker from 'widgets/ColorPicker';
 
+/* eslint-disable no-unused-vars */
+
 import type { ToolType } from 'shared/types/canvas';
 
 import styles from './style.module.scss';
