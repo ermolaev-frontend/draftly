@@ -1,5 +1,6 @@
 import rough from 'roughjs';
 import { BASE_PALETTE, TOOLS } from 'shared/types/colors';
+import { createDeepReactiveMap } from 'shared/utils/reactiveMap';
 
 import type {
   ToolType,
@@ -19,7 +20,7 @@ export class Draftly {
   private readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
   private shapeOrder: string[] = [];
-  private shapeMap: Map<string, IShape> = new Map();
+  private shapeMap: Map<string, IShape>;
   private currentTool: ToolType;
   private readonly interaction: Interaction;
   private animationFrameId: number | null = null;
@@ -49,6 +50,15 @@ export class Draftly {
     this.roughCanvas = rough.canvas(this.canvas);
     this.interaction = new Interaction();
     this.currentTool = TOOLS[4];
+    
+    this.shapeMap = createDeepReactiveMap<string, IShape>(
+      new Map(),
+      (event, data) => {
+        this.requestDraw();
+        console.log('ShapeMap changed:', event, data);
+      },
+    );
+    
     this.resizeCanvasToWrapper();
     this.requestDraw();
   }
@@ -80,7 +90,6 @@ export class Draftly {
     if (this.interaction.shape) {
       this.deleteShape(this.interaction.shape);
       this.interaction.patch({ shape: null });
-      this.requestDraw();
       this.autoSave();
     }
   }
@@ -193,7 +202,6 @@ export class Draftly {
       if (newShape) {
         newShape.startDrawing(this.interaction, mouse);
         this.addShape(newShape);
-        this.requestDraw();
       }
     } else {
       if (this.interaction.shape) {
@@ -231,8 +239,6 @@ export class Draftly {
 
         this.setCursor('grab');
       }
-      
-      this.requestDraw();
     }
   }
     
@@ -326,14 +332,12 @@ export class Draftly {
   }
 
   setShapes(shapes: IShape[]): void {
-    this.shapeOrder = shapes.map(s => s.id);
     this.shapeMap.clear();
+    this.shapeOrder = [];
 
     for (const shape of shapes) {
-      this.shapeMap.set(shape.id, shape);
+      this.applyAddShape(shape);
     }
-
-    this.requestDraw();
   }
 
   getInteraction(): Interaction {
@@ -364,7 +368,7 @@ export class Draftly {
       this.canvas.height = rect.height * dpr;
       this.canvas.style.width = rect.width + 'px';
       this.canvas.style.height = rect.height + 'px';
-      this.ctx.setTransform(1, 0, 0, 1, 0, 0); // reset any existing transforms
+      this.ctx.setTransform(1, 0, 0, 1, 0, 0);
       this.ctx.scale(dpr, dpr);
       this.requestDraw();
     }
@@ -374,14 +378,12 @@ export class Draftly {
     if (!this.shapeMap.has(shape.id)) {
       this.shapeOrder.push(shape.id);
       this.shapeMap.set(shape.id, shape);
-      this.requestDraw();
     }
   }
 
   applyUpdateShape(shape: IShape): void {
     if (this.shapeMap.has(shape.id)) {
       this.shapeMap.set(shape.id, shape);
-      this.requestDraw();
     }
   }
 
@@ -389,7 +391,6 @@ export class Draftly {
     if (this.shapeMap.has(shapeId)) {
       this.shapeOrder = this.shapeOrder.filter(id => id !== shapeId);
       this.shapeMap.delete(shapeId);
-      this.requestDraw();
     }
   }
 } 
