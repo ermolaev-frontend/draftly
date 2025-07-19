@@ -1,4 +1,4 @@
-import { makeReactive, createDeepReactiveMap } from './reactive';
+import { makeReactive, createDeepReactiveMap } from '../reactive';
 
 describe('makeReactive', () => {
   it('should create a reactive object that triggers onChange when properties are set', () => {

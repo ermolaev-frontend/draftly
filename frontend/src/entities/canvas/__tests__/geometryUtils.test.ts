@@ -12,7 +12,7 @@ import {
   getAngleBetweenPoints,
   getTranslatedPoint,
   getLocalRotatedCoords,
-} from './geometryUtils';
+} from '../geometryUtils';
 
 describe('geometryUtils', () => {
   describe('getRotatedPoint', () => {

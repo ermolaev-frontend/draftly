@@ -6,5 +6,5 @@
     "moduleResolution": "node",
     "verbatimModuleSyntax": false
   },
-  "include": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+  "include": ["src/**/__tests__/**/*.test.ts", "src/**/__tests__/**/*.test.tsx"]
 } 

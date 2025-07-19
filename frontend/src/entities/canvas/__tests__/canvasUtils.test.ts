@@ -1,6 +1,6 @@
 /* eslint-env jest */
 
-import { hashStringToSeed } from './canvasUtils';
+import { hashStringToSeed } from '../canvasUtils';
 
 describe('hashStringToSeed', () => {
   it('should return the same seed for the same string', () => {

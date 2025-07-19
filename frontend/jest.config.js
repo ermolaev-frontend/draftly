@@ -4,6 +4,10 @@ export default {
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
   extensionsToTreatAsEsm: ['.ts'],
+  testMatch: [
+    '**/__tests__/**/*.test.ts',
+    '**/__tests__/**/*.test.tsx'
+  ],
   moduleNameMapper: {
     '^shared/(.*)$': '<rootDir>/src/shared/$1',
     '^pages/(.*)$': '<rootDir>/src/pages/$1',
