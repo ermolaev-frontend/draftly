@@ -1,67 +1,78 @@
-export function createDeepReactiveMap<TKey, TValue>(
+export function createDeepReactiveMap<TKey, TValue extends object>(
   map: Map<TKey, TValue> = new Map(),
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onChange?: (event: string, data: any) => void,
+  makeReactive: <T extends object>(obj: T) => T = function<T extends object>(obj: T): T {
+    return new Proxy(obj, {
+      get(target: T, prop: string | symbol) {
+        return Reflect.get(target, prop);
+      },
+      set(target: T, prop: string | symbol, value: any) {
+        const oldValue = Reflect.get(target, prop);
+        const result = Reflect.set(target, prop, value);
+        onChange?.('nested-update', { target, prop, value, oldValue });
+
+        return result;
+      },
+    });
+  },
 ): Map<TKey, TValue> {
   if (!(map instanceof Map)) {
-    throw new Error('Parameter must be an instance of Map');
+    throw new Error('Параметр должен быть экземпляром Map');
   }
 
-  // Proxy for Map
+  const wrapValue = (value: TValue): TValue => {
+    if (typeof value === 'object' && value !== null) {
+      return makeReactive(value);
+    }
+
+    return value;
+  };
+
   return new Proxy(map, {
     get(target: Map<TKey, TValue>, prop: string | symbol) {
       if (prop === 'set') {
-        return function(this: Map<TKey, TValue>, key: TKey, value: TValue) {
-          const oldValue = Reflect.get(target, 'get').call(target, key);
-          const result = Reflect.get(target, 'set').call(target, key, value);
+        return (key: TKey, value: TValue) => {
+          const oldValue = target.get(key);
+          const reactiveValue = wrapValue(value);
+          const result = target.set(key, reactiveValue);
 
-          onChange?.('set', { key, value, oldValue });
+          if (!Object.is(oldValue, reactiveValue)) {
+            onChange?.('set', { key, value: reactiveValue, oldValue });
+          }
 
           return result;
         };
       }
 
       if (prop === 'delete') {
-        return function(this: Map<TKey, TValue>, key: TKey) {
-          const oldValue = Reflect.get(target, 'get').call(target, key);
-          const result = Reflect.get(target, 'delete').call(target, key);
-          
-          if (Reflect.get(target, 'has').call(target, key) !== result) {
+        return (key: TKey) => {
+          const oldValue = target.get(key);
+          const result = target.delete(key);
+
+          if (oldValue !== undefined && !target.has(key)) {
             onChange?.('delete', { key, oldValue });
           }
-          
+
           return result;
         };
       }
 
       if (prop === 'clear') {
-        return function() {
-          const entries = Array.from(Reflect.get(target, 'entries').call(target));
-          const result = Reflect.get(target, 'clear').call(target);
-          
+        return () => {
+          const entries = Array.from(target.entries());
+          const result = target.clear();
+
           if (entries.length > 0) {
             onChange?.('clear', { entries });
           }
-          
+
           return result;
         };
       }
 
-      // For properties, return the value directly
-      if (prop === 'size') {
-        return Reflect.get(target, prop);
-      }
+      const value = (target as any)[prop];
 
-      // For other methods, use Reflect for proper context
-      const method = Reflect.get(target, prop);
-
-      if (typeof method === 'function') {
-        return function(...args: any[]) {
-          return method.apply(target, args);
-        };
-      }
-      
-      return method;
+      return typeof value === 'function' ? value.bind(target) : value;
     },
   });
-} 
+}

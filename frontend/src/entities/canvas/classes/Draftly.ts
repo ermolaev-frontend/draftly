@@ -197,8 +197,9 @@ export class Draftly {
       }
 
       if (newShape) {
-        newShape.startDrawing(this.interaction, mouse);
         this.applyAddShape(newShape);
+        const shape = this.shapeMap.get(newShape.id);
+        shape?.startDrawing(this.interaction, mouse);
       }
     } else {
       if (this.interaction.shape) {
@@ -246,19 +247,15 @@ export class Draftly {
 
     if (interType === 'panning') {
       this.handlePanning(e);
-      this.requestDraw2();
       this.setCursor('grabbing');
     } else if (interType === 'drawing') {
       interShape?.drawNewShape(mouse);
-      this.requestDraw2();
       this.setCursor('crosshair');
     } else if (interType === 'dragging') {
       interShape?.move(mouse, this.interaction);
-      this.requestDraw2();
       this.setCursor('move');
     } else if (interType === 'resizing') {
       interShape?.resize(mouse, this.interaction);
-      this.requestDraw2();
       this.setCursor(this.getCursorForHandle(this.interaction.handle));
     } else if (interType === 'idle') {
       if (this.isDrawingToolSelected()) {
@@ -370,7 +367,14 @@ export class Draftly {
 
   applyUpdateShape(shape: IShape): void {
     if (this.shapeMap.has(shape.id)) {
-      this.shapeMap.set(shape.id, shape);
+      const existingShape = this.shapeMap.get(shape.id);
+      if (existingShape && typeof existingShape.patch === 'function') {
+        // Используем patch для обновления свойств существующего реактивного объекта
+        existingShape.patch(shape);
+      } else {
+        // Fallback: заменяем объект целиком
+        this.shapeMap.set(shape.id, shape);
+      }
     }
   }
 
