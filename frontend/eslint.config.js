@@ -100,16 +100,18 @@ export default tseslint.config([
         },
       ],
       '@typescript-eslint/camelcase': 'off',
-      // '@typescript-eslint/no-unused-vars': [
-      //   'warn',
-      //   {
-      //     ignoreRestSiblings: true,
-      //   },
-      // ],
-      'no-unused-vars': [
+      '@typescript-eslint/no-unused-vars': [
         'error',
         {
           ignoreRestSiblings: true,
+          argsIgnorePattern: '^_',
+        },
+      ],
+      'no-unused-vars': [
+        'error',
+        {
+          ignoreRestSiblings: false,
+          argsIgnorePattern: '^_',
         },
       ],
       'no-extra-boolean-cast': 'off',

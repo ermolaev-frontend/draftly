@@ -6,7 +6,7 @@ import { Draftly } from '../classes/Draftly';
 
 export const useCanvasWrapper = (
   ref: React.Ref<Draftly>,
-  onShapesUpdate: (...args: any[]) => void,
+  onShapesUpdate: (..._args: any[]) => void,
 ) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const draftlyRef = useRef<Draftly | null>(null);

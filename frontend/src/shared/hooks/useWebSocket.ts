@@ -8,10 +8,10 @@ import type { IShape, IShapeFields } from 'shared/types/canvas';
 
 interface Props {
   roomId: string;
-  onShapesReceived: (shapes: IShape[]) => void;
-  onShapeAdded?: (shape: IShape) => void;
-  onShapeUpdated?: (shape: IShape) => void;
-  onShapeDeleted?: (shapeId: string) => void;
+  onShapesReceived: (_shapes: IShape[]) => void;
+  onShapeAdded?: (_shape: IShape) => void;
+  onShapeUpdated?: (_shape: IShape) => void;
+  onShapeDeleted?: (_shapeId: string) => void;
   onEmptyShapes?: () => void;
 }
 

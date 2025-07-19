@@ -1,6 +1,6 @@
 export function makeReactive<T extends object>(
   _obj: T,
-  onChange?: (event: string, data: any) => void,
+  onChange?: (_event: string, _data: any) => void,
 ): T {
   return new Proxy(_obj, {
     get(target: T, prop: string | symbol) {
@@ -21,7 +21,7 @@ export function makeReactive<T extends object>(
 
 export function createDeepReactiveMap<TKey, TValue extends object>(
   map: Map<TKey, TValue> = new Map(),
-  onChange?: (event: string, data: any) => void,
+  onChange?: (_event: string, _data: any) => void,
 ): Map<TKey, TValue> {
   if (!(map instanceof Map)) {
     throw new Error('Parameter must be an instance of Map');
