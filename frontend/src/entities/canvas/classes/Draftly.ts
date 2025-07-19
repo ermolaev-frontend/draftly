@@ -120,10 +120,7 @@ export class Draftly {
 
     this.shapeOrder.forEach(id => {
       const currentShape = this.shapeMap.get(id);
-
-      if (currentShape) {
-        currentShape.draw(this.ctx, this.roughCanvas);
-      }
+      currentShape?.draw(this.ctx, this.roughCanvas);
     });
 
     if (type !== 'drawing') {
@@ -219,7 +216,7 @@ export class Draftly {
         const shapeId = this.shapeOrder[i];
         const shape = this.shapeMap.get(shapeId);
     
-        if (shape && shape.isPointInShape(mouse)) {
+        if (shape?.isPointInShape(mouse)) {
           shape.startDragging(this.interaction, mouse);
           this.setCursor('move');
           shapeSelected = true;
@@ -368,11 +365,10 @@ export class Draftly {
   applyUpdateShape(shape: IShape): void {
     if (this.shapeMap.has(shape.id)) {
       const existingShape = this.shapeMap.get(shape.id);
-      if (existingShape && typeof existingShape.patch === 'function') {
-        // Используем patch для обновления свойств существующего реактивного объекта
+
+      if (existingShape) {
         existingShape.patch(shape);
       } else {
-        // Fallback: заменяем объект целиком
         this.shapeMap.set(shape.id, shape);
       }
     }

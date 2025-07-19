@@ -1,20 +1,25 @@
+// Простая функция для реактивности объектов через Proxy
+export function makeReactive<T extends object>(
+  _obj: T,
+  onChange?: (event: string, data: any) => void,
+): T {
+  return new Proxy(_obj, {
+    get(target: T, prop: string | symbol) {
+      return Reflect.get(target, prop);
+    },
+    set(target: T, prop: string | symbol, value: any) {
+      const oldValue = Reflect.get(target, prop);
+      const result = Reflect.set(target, prop, value);
+      onChange?.('nested-update', { target, prop, value, oldValue });
+
+      return result;
+    },
+  });
+}
+
 export function createDeepReactiveMap<TKey, TValue extends object>(
   map: Map<TKey, TValue> = new Map(),
   onChange?: (event: string, data: any) => void,
-  makeReactive: <T extends object>(obj: T) => T = function<T extends object>(obj: T): T {
-    return new Proxy(obj, {
-      get(target: T, prop: string | symbol) {
-        return Reflect.get(target, prop);
-      },
-      set(target: T, prop: string | symbol, value: any) {
-        const oldValue = Reflect.get(target, prop);
-        const result = Reflect.set(target, prop, value);
-        onChange?.('nested-update', { target, prop, value, oldValue });
-
-        return result;
-      },
-    });
-  },
 ): Map<TKey, TValue> {
   if (!(map instanceof Map)) {
     throw new Error('Параметр должен быть экземпляром Map');
@@ -22,7 +27,7 @@ export function createDeepReactiveMap<TKey, TValue extends object>(
 
   const wrapValue = (value: TValue): TValue => {
     if (typeof value === 'object' && value !== null) {
-      return makeReactive(value);
+      return makeReactive(value, onChange);
     }
 
     return value;
@@ -70,7 +75,7 @@ export function createDeepReactiveMap<TKey, TValue extends object>(
         };
       }
 
-      const value = (target as any)[prop];
+      const value = Reflect.get(target, prop);
 
       return typeof value === 'function' ? value.bind(target) : value;
     },
