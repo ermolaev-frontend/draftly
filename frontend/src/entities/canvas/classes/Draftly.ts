@@ -38,9 +38,7 @@ export class Draftly {
     ['w', 'ew-resize'],
     ['rotate', 'grab'],
   ]);
-
   private viewport: Point; 
-  private _drawCounter: number = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -50,13 +48,13 @@ export class Draftly {
     this.shapeMap = createDeepReactiveMap<string, IShape>(
       new Map(),
       (event, data) => {
-        this.requestDraw2();
+        this.requestDraw();
         console.log('ShapeMap changed:', event, data);
       },
     );
 
     this.interaction = makeReactive(new Interaction(), (event, data) => {
-      this.requestDraw2();
+      this.requestDraw();
       console.log('Interaction changed:', event, data);
     });
     
@@ -64,17 +62,14 @@ export class Draftly {
       x: 0,
       y: 0,
     }, (event, data) => {
-      this.requestDraw2();
+      this.requestDraw();
       console.log('Viewport changed:', event, data);
     });
     
     this.resizeCanvasToWrapper();
   }
 
-  private requestDraw2(): void {
-    if (!this._drawCounter) this._drawCounter = 0;
-    this._drawCounter++;
-    console.log(`requestDraw2 called ${this._drawCounter} times`);
+  private requestDraw(): void {
     if (this.animationFrameId !== null) return;
 
     this.animationFrameId = requestAnimationFrame(() => {
@@ -324,12 +319,12 @@ export class Draftly {
     this.shapeMap = createDeepReactiveMap<string, IShape>(
       new Map(shapes.map(shape => [shape.id, shape])),
       (event, data) => {
-        this.requestDraw2();
+        this.requestDraw();
         console.log('ShapeMap changed:', event, data);
       },
     );
     
-    this.requestDraw2();
+    this.requestDraw();
   }
 
   getInteraction(): Interaction {
