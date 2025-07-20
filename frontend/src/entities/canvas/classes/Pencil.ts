@@ -2,8 +2,8 @@ import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts
 
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
-import { generateId } from '../canvasUtils';
-import { getPointToSegmentDistance, getScaledPointInRect } from '../geometryUtils';
+import { generateId } from '../utils/canvas';
+import { getPointToSegmentDistance, getScaledPointInRect } from '../utils/geometry';
 
 export class Pencil implements IShape {
   readonly type = 'pencil';

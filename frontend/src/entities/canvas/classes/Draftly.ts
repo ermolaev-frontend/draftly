@@ -10,7 +10,7 @@ import type {
 } from 'shared/types/canvas';
 
 import Interaction, { type Handle } from './Interaction';
-import { getRandomStrokeWidth } from '../canvasUtils';
+import { getRandomStrokeWidth } from '../utils/canvas';
 import { Rectangle } from './Rectangle';
 import { Circle } from './Circle';
 import { Line } from './Line';

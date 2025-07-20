@@ -3,8 +3,8 @@ import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts
 
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
-import { generateId, hashStringToSeed } from '../canvasUtils';
-import { getPointToSegmentDistance, getRectCenter } from '../geometryUtils';
+import { generateId, hashStringToSeed } from '../utils/canvas';
+import { getPointToSegmentDistance, getRectCenter } from '../utils/geometry';
 
 export class Line implements IShape {
   readonly type = 'line';

@@ -4,8 +4,8 @@ import { BASE_PALETTE } from 'shared/types/colors';
 
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
-import { generateId, hashStringToSeed } from '../canvasUtils';
-import { getLocalRotatedCoords, getRectCenter, getRotatedPoint } from '../geometryUtils';
+import { generateId, hashStringToSeed } from '../utils/canvas';
+import { getLocalRotatedCoords, getRectCenter, getRotatedPoint } from '../utils/geometry';
 
 export class Rectangle implements IShape {
   readonly type = 'rectangle';
