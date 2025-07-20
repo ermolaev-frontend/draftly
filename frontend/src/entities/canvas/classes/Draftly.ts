@@ -38,7 +38,7 @@ export class Draftly {
     ['w', 'ew-resize'],
     ['rotate', 'grab'],
   ]);
-  private viewport: { x: number, y: number } = { x: 0, y: 0 }; 
+  private viewport: Point; 
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
