@@ -2,10 +2,10 @@ import { BASE_PALETTE } from 'shared/types/colors';
 
 import type { IShape } from 'shared/types/canvas';
 
-import { Rectangle } from './classes/Rectangle';
-import { Circle } from './classes/Circle';
-import { Line } from './classes/Line';
-import { Pencil } from './classes/Pencil';
+import { Rectangle } from '../classes/Rectangle';
+import { Circle } from '../classes/Circle';
+import { Line } from '../classes/Line';
+import { Pencil } from '../classes/Pencil';
 
 export function hashStringToSeed(str: string): number {
   let hash = 0;
