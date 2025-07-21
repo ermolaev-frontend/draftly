@@ -249,7 +249,7 @@ export class Draftly {
       this.handlePanning(e);
       this.setCursor('grabbing');
     } else if (interType === 'drawing') {
-      interShape?.drawNewShape(mouse);
+      interShape?.drawNewShape(mouse, this.interaction.startPoint);
       this.setCursor('crosshair');
     } else if (interType === 'dragging') {
       interShape?.move(mouse, this.interaction);

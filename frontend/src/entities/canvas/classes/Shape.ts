@@ -27,7 +27,7 @@ export abstract class Shape implements IShapeFields {
   abstract drawSelection(ctx: CanvasRenderingContext2D): void;
   abstract isPointInShape(point: Point): boolean;
   abstract resize(mouse: Point, inter: Interaction): void;
-  abstract drawNewShape(mouse: Point): void;
+  abstract drawNewShape(mouse: Point, start?: Point): void;
   abstract getBounds(): Bounds | null;
   abstract move(mouse: Point, inter: Interaction): void;
   abstract getHandleAt(mouse: Point): Handle | null;

@@ -33,12 +33,13 @@ export class Rectangle extends Shape {
     });
   }
 
-  startDrawing(interaction: Interaction): void {
+  startDrawing(interaction: Interaction, mouse: Point): void {
     interaction.patch({
       handle: null,
       shape: this,
       dragOffset: { x: 0, y: 0 },
       type: 'drawing',
+      startPoint: mouse,
     });
   }
 
@@ -225,12 +226,15 @@ export class Rectangle extends Shape {
     };
   }
 
-  drawNewShape(mouse: Point): void {    
+  drawNewShape(mouse: Point, start: Point): void {
+    const width = mouse.x - start.x;
+    const height = mouse.y - start.y;
+
     this.patch({
-      width: Math.abs(mouse.x - this.x),
-      height: Math.abs(mouse.y - this.y),
-      x: Math.min(this.x, mouse.x),
-      y: Math.min(this.y, mouse.y),
+      width: Math.abs(width),
+      height: Math.abs(height),
+      x: width >= 0 ? start.x : mouse.x,
+      y: height >= 0 ? start.y : mouse.y,
     } as Partial<this>);
   }
 

@@ -17,6 +17,7 @@ export default class Interaction {
   readonly initialPoints: Point[] = [];
   readonly initialBounds: Bounds = { x: 0, y: 0, width: 0, height: 0 };
   readonly panOffset: Point = systemCenter;
+  readonly startPoint?: Point;
 
   patch(inter: Partial<Interaction>) {
     Object.assign(this, inter);
