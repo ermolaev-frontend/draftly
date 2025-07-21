@@ -46,4 +46,18 @@ jobs:
 
       - name: Run E2E tests
         run: pnpm run e2e
-        working-directory: frontend 
+        working-directory: frontend
+
+      - name: Upload Playwright test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-test-results
+          path: frontend/test-results/
+          if-no-files-found: ignore
+
+      - name: Upload Playwright snapshots
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-snapshots
+          path: frontend/e2e/rectangle/*-snapshots/
+          if-no-files-found: ignore 
