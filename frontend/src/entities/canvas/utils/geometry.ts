@@ -80,6 +80,6 @@ export const getTranslatedPoint = (point: Point, dx: number, dy: number): Point 
   return { x: point.x + dx, y: point.y + dy };
 };
 
-export const getLocalRotatedCoords = (point: Point, center: Point, angle: number): Point => {
+export const getRotatedPointLocal = (point: Point, center: Point, angle: number): Point => {
   return getRotatedPoint(point, center, angle, true);
 }; 

@@ -5,7 +5,6 @@ import { createDeepReactiveMap, makeReactive } from 'shared/utils/reactive';
 import type {
   ToolType,
   Point,
-  IShape,
   EventOffset,
 } from 'shared/types/canvas';
 
@@ -15,12 +14,13 @@ import { Rectangle } from './Rectangle';
 import { Circle } from './Circle';
 import { Line } from './Line';
 import { Pencil } from './Pencil';
+import { Shape } from './Shape';
 
 export class Draftly {
   private readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
   private shapeOrder: string[] = [];
-  private shapeMap: Map<string, IShape>;
+  private shapeMap: Map<string, Shape>;
   private currentTool: ToolType = TOOLS[4];
   private readonly interaction: Interaction;
   private animationFrameId: number | null = null;
@@ -39,13 +39,14 @@ export class Draftly {
     ['rotate', 'grab'],
   ]);
   private viewport: Point; 
+  private lastHoveredShapeId: string | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
     this.roughCanvas = rough.canvas(this.canvas);
     
-    this.shapeMap = createDeepReactiveMap<string, IShape>(
+    this.shapeMap = createDeepReactiveMap<string, Shape>(
       new Map(),
       (event, data) => {
         this.requestDraw();
@@ -143,7 +144,7 @@ export class Draftly {
     const mouse = this.getMousePos(e);
 
     if (this.isDrawingToolSelected()) {
-      let newShape: IShape | null = null;
+      let newShape: Shape | null = null;
 
       switch (this.currentTool) {
         case 'pencil': {
@@ -248,7 +249,7 @@ export class Draftly {
       this.handlePanning(e);
       this.setCursor('grabbing');
     } else if (interType === 'drawing') {
-      interShape?.drawNewShape(mouse);
+      interShape?.drawNewShape(mouse, this.interaction.startPoint);
       this.setCursor('crosshair');
     } else if (interType === 'dragging') {
       interShape?.move(mouse, this.interaction);
@@ -308,15 +309,15 @@ export class Draftly {
     }
   }
 
-  getShapes(): IShape[] {
-    return this.shapeOrder.map(id => this.shapeMap.get(id)).filter(Boolean) as IShape[];
+  getShapes(): Shape[] {
+    return this.shapeOrder.map(id => this.shapeMap.get(id)).filter(Boolean) as Shape[];
   }
 
-  setShapes(shapes: IShape[]): void {
+  setShapes(shapes: Shape[]): void {
     this.shapeOrder = shapes.map(shape => shape.id);
     this.shapeMap.clear();
 
-    this.shapeMap = createDeepReactiveMap<string, IShape>(
+    this.shapeMap = createDeepReactiveMap<string, Shape>(
       new Map(shapes.map(shape => [shape.id, shape])),
       (event, data) => {
         this.requestDraw();
@@ -338,11 +339,35 @@ export class Draftly {
   }
 
   private isAnyShapeHovered(mouse: Point): boolean {
-    return this.shapeOrder.some(id => {
+    // First, check the last hovered shape
+    if (this.lastHoveredShapeId) {
+      const shape = this.shapeMap.get(this.lastHoveredShapeId);
+
+      if (shape?.isPointInShape(mouse)) {
+        return true;
+      }
+    }
+
+    // Then search among the rest and update lastHoveredShapeId if found
+    if (this.shapeOrder.some(id => {
+      if (id === this.lastHoveredShapeId) return false;
       const shape = this.shapeMap.get(id);
 
-      return shape?.isPointInShape(mouse) ?? false;
-    });
+      if (shape?.isPointInShape(mouse)) {
+        this.lastHoveredShapeId = id;
+
+        return true;
+      }
+
+      return false;
+    })) {
+      return true;
+    }
+
+    // If nothing is found, reset lastHoveredShapeId
+    this.lastHoveredShapeId = null;
+
+    return false;
   }
 
   resizeCanvasToWrapper() {
@@ -361,14 +386,14 @@ export class Draftly {
     }
   }
 
-  applyAddShape(shape: IShape): void {
+  applyAddShape(shape: Shape): void {
     if (!this.shapeMap.has(shape.id)) {
       this.shapeOrder.push(shape.id);
       this.shapeMap.set(shape.id, shape);
     }
   }
 
-  applyUpdateShape(shape: IShape): void {
+  applyUpdateShape(shape: Shape): void {
     if (this.shapeMap.has(shape.id)) {
       const existingShape = this.shapeMap.get(shape.id);
 

@@ -1,32 +1,23 @@
 import rough from 'roughjs';
 import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts';
+import { Shape } from 'entities/canvas/classes/Shape.ts';
 
-import type { Bounds, Point, IShape } from 'shared/types/canvas';
+import type { Bounds, Point } from 'shared/types/canvas';
 
-import { generateId, hashStringToSeed } from '../utils/canvas';
+import { hashStringToSeed } from '../utils/canvas';
 import { isPointInCircle, getDistanceBetweenPoints } from '../utils/geometry';
 
-export class Circle implements IShape {
+export class Circle extends Shape {
   readonly type = 'circle';
-  readonly color: string;
-  readonly strokeWidth: number;
-  readonly id: string;
-
   readonly x: number;
   readonly y: number;
   readonly radius: number;
 
   constructor(shape: Partial<Circle>) {
-    this.id = shape.id ?? generateId();
-    this.color = shape.color ?? 'red';
-    this.strokeWidth = shape.strokeWidth ?? 1;
+    super(shape);
     this.x = shape.x ?? 0;
     this.y = shape.y ?? 0;
     this.radius = shape.radius ?? 0;
-  }
-
-  patch(shape: Partial<Circle>): void {
-    Object.assign(this, shape);
   }
 
   startDragging(interaction: Interaction, mouse: Point): void {
@@ -113,6 +104,8 @@ export class Circle implements IShape {
   }
 
   isPointInShape(point: Point): boolean {
+    if (this.isPointOutsideBounds(point)) return false;
+
     return isPointInCircle(point, { x: this.x, y: this.y }, this.radius);
   }
 
@@ -121,7 +114,7 @@ export class Circle implements IShape {
 
     this.patch({
       radius: Math.max(20, newRadius),
-    });
+    } as Partial<this>);
   }
 
   getBounds(): Bounds {
@@ -136,14 +129,14 @@ export class Circle implements IShape {
   drawNewShape(mouse: Point): void {
     this.patch({
       radius: getDistanceBetweenPoints({ x: this.x, y: this.y }, mouse),
-    });
+    } as Partial<this>);
   }
 
   move(mouse: Point, { dragOffset }: Interaction): void {
     this.patch({
       x: mouse.x - dragOffset.x,
       y: mouse.y - dragOffset.y,
-    });
+    } as Partial<this>);
   }
 
   getHandleAt({ x, y }: Point): Handle | null {

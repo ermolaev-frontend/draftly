@@ -3,8 +3,9 @@ import { Draftly } from 'entities/canvas/classes/Draftly';
 import { BASE_PALETTE, TOOLS } from 'shared/types/colors';
 import { useWebSocket } from 'shared/hooks/useWebSocket';
 import { throttle } from 'shared/utils/throttle';
+import { Shape } from 'entities/canvas/classes/Shape.ts';
 
-import type { ToolType, IShape } from 'shared/types/canvas';
+import type { ToolType } from 'shared/types/canvas';
 
 const getSystemTheme = () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
@@ -19,15 +20,15 @@ export const useEditorPage = () => {
   const draftlyRef = useRef<Draftly>(null);
 
   // WebSocket integration
-  const handleShapesReceived = useCallback((shapes: IShape[]) => {
+  const handleShapesReceived = useCallback((shapes: Shape[]) => {
     draftlyRef.current?.setShapes(shapes);
   }, []);
 
-  const handleShapeAdded = useCallback((shape: IShape) => {
+  const handleShapeAdded = useCallback((shape: Shape) => {
     draftlyRef.current?.applyAddShape(shape);
   }, []);
 
-  const handleShapeUpdated = useCallback((shape: IShape) => {
+  const handleShapeUpdated = useCallback((shape: Shape) => {
     draftlyRef.current?.applyUpdateShape(shape);
   }, []);
 
@@ -74,12 +75,12 @@ export const useEditorPage = () => {
   }, [isConnected, sendEmptyShapes]);
 
   // Throttling for update_shape using useMemo
-  const throttledSendUpdateShape = useMemo(() => throttle((shape: IShape) => {
+  const throttledSendUpdateShape = useMemo(() => throttle((shape: Shape) => {
     sendUpdateShape(shape);
   }, 50), [sendUpdateShape]);
 
   // Sending shapes via WebSocket
-  const handleShapesUpdate = useCallback((action?: 'add' | 'update' | 'delete', shape?: IShape, shapeId?: string) => {
+  const handleShapesUpdate = useCallback((action?: 'add' | 'update' | 'delete', shape?: Shape, shapeId?: string) => {
     if (!isConnected) return;
 
     if (action === 'add' && shape) {

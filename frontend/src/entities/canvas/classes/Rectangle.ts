@@ -1,17 +1,14 @@
 import rough from 'roughjs';
 import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts';
-import { BASE_PALETTE } from 'shared/types/colors';
 
-import type { Bounds, Point, IShape } from 'shared/types/canvas';
+import type { Bounds, Point } from 'shared/types/canvas';
 
-import { generateId, hashStringToSeed } from '../utils/canvas';
-import { getLocalRotatedCoords, getRectCenter, getRotatedPoint } from '../utils/geometry';
+import { hashStringToSeed } from '../utils/canvas';
+import { getRotatedPointLocal, getRotatedPoint } from '../utils/geometry';
+import { Shape } from './Shape';
 
-export class Rectangle implements IShape {
+export class Rectangle extends Shape {
   readonly type = 'rectangle';
-  readonly color: string;
-  readonly strokeWidth: number;
-  readonly id: string;
   readonly x: number;
   readonly y: number;
   readonly width: number;
@@ -19,18 +16,12 @@ export class Rectangle implements IShape {
   readonly rotation: number;
 
   constructor(shape: Partial<Rectangle>) {
-    this.id = shape.id ?? generateId();
-    this.color = shape.color ?? BASE_PALETTE[0];
-    this.strokeWidth = shape.strokeWidth ?? 1;
+    super(shape);
     this.x = shape.x ?? 0;
     this.y = shape.y ?? 0;
     this.width = shape.width ?? 1;
     this.height = shape.height ?? 1;
     this.rotation = shape.rotation ?? 0;
-  }
-
-  patch(shape: Partial<Rectangle>) {
-    Object.assign(this, shape);
   }
 
   startDragging(interaction: Interaction, mouse: Point): void {
@@ -42,12 +33,13 @@ export class Rectangle implements IShape {
     });
   }
 
-  startDrawing(interaction: Interaction): void {
+  startDrawing(interaction: Interaction, mouse: Point): void {
     interaction.patch({
       handle: null,
       shape: this,
       dragOffset: { x: 0, y: 0 },
       type: 'drawing',
+      startPoint: mouse,
     });
   }
 
@@ -72,10 +64,6 @@ export class Rectangle implements IShape {
       initialPoints: undefined,
       initialBounds: undefined,
     });
-  }
-
-  private getCenter(): Point {
-    return getRectCenter({ x: this.x, y: this.y, width: this.width, height: this.height });
   }
 
   draw(ctx: CanvasRenderingContext2D, roughCanvas: ReturnType<typeof rough.canvas>): void {
@@ -153,14 +141,7 @@ export class Rectangle implements IShape {
   }
 
   isPointInShape(point: Point): boolean {
-    const center = this.getCenter();
-    const angle = -(this.rotation ?? 0);
-    const { x: lx, y: ly } = getLocalRotatedCoords(point, center, angle);
-
-    return (
-      lx >= -this.width/2 && lx <= this.width/2 &&
-      ly >= -this.height/2 && ly <= this.height/2
-    );
+    return !this.isPointOutsideBounds(point);
   }
 
   resize(mouse: Point, interaction: Interaction): void {
@@ -174,7 +155,7 @@ export class Rectangle implements IShape {
 
     const center = this.getCenter();
     const angle = -(this.rotation ?? 0);
-    const { x: lx, y: ly } = getLocalRotatedCoords(mouse, center, angle);
+    const { x: lx, y: ly } = getRotatedPointLocal(mouse, center, angle);
     let left = -this.width/2, right = this.width/2, top = -this.height/2, bottom = this.height/2;
 
     switch (handle) {
@@ -222,7 +203,7 @@ export class Rectangle implements IShape {
       height: newHeight,
       x: center.x + newCenter.x - newWidth/2,
       y: center.y + newCenter.y - newHeight/2,
-    });
+    } as Partial<this>);
   }
 
   getBounds(): Bounds {
@@ -234,13 +215,16 @@ export class Rectangle implements IShape {
     };
   }
 
-  drawNewShape(mouse: Point): void {    
+  drawNewShape(mouse: Point, start: Point): void {
+    const width = mouse.x - start.x;
+    const height = mouse.y - start.y;
+
     this.patch({
-      width: Math.abs(mouse.x - this.x),
-      height: Math.abs(mouse.y - this.y),
-      x: Math.min(this.x, mouse.x),
-      y: Math.min(this.y, mouse.y),
-    });
+      width: Math.abs(width),
+      height: Math.abs(height),
+      x: width >= 0 ? start.x : mouse.x,
+      y: height >= 0 ? start.y : mouse.y,
+    } as Partial<this>);
   }
 
   rotate(mouse: Point, { startRotation, initialAngle }: Interaction): void {    
@@ -250,14 +234,14 @@ export class Rectangle implements IShape {
     
     this.patch({
       rotation: startRotation + angle - initialAngle,
-    });
+    } as Partial<this>);
   }
 
   move(mouse: Point, { dragOffset }: Interaction): void {
     this.patch({
       x: mouse.x - dragOffset.x,
       y: mouse.y - dragOffset.y,
-    });
+    } as Partial<this>);
   }
 
   getHandles(): (Point & { type: Handle })[] {
@@ -279,7 +263,7 @@ export class Rectangle implements IShape {
   getHandleAt({ x, y }: Point): Handle | null {
     const center = this.getCenter();
     const angle = -(this.rotation ?? 0);
-    const { x: lx, y: ly } = getLocalRotatedCoords({ x, y }, center, angle);
+    const { x: lx, y: ly } = getRotatedPointLocal({ x, y }, center, angle);
 
     for (const h of this.getHandles()) {
       if (h.type === 'rotate') {
