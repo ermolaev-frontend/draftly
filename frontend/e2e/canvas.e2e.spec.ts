@@ -1,91 +1,53 @@
 import { test, expect } from '@playwright/test';
 
-const TOOL_TITLES = ['Rectangle', 'Circle', 'Line', 'Pencil'];
-const SHAPES_PER_TYPE = 10;
 const CANVAS_SELECTOR = '[data-testid="canvas"]';
+const SNAPSHOT_TOLERANCE = 0.02;
 
-const SHAPES_COUNT = SHAPES_PER_TYPE * TOOL_TITLES.length;
+// Фиксированные координаты для стабильных снапшотов
+const start = { x: 200, y: 200 };
+const end = { x: 400, y: 350 };
+const moveFrom = { x: 300, y: 275 }; // центр прямоугольника
 
-// Helper to get random int in [min, max]
-function randInt(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-// Helper to get random point within canvas
-async function getRandomPoint(page, margin = 60) {
-  const box = await page.locator(CANVAS_SELECTOR).boundingBox();
-  if (!box) throw new Error('Canvas not found');
-  const x = randInt(box.x + margin, box.x + box.width - margin);
-  const y = randInt(box.y + margin, box.y + box.height - margin);
-
-  return { x, y };
-}
+// Для rotate handle
+const centerX = (start.x + end.x) / 2;
+const topY = Math.min(start.y, end.y);
+const rotateHandle = { x: centerX, y: topY - 30 };
+const rotateTo = { x: centerX + 40, y: topY - 30 };
 
 test.describe('Canvas E2E', () => {
-  test(`should create, manipulate, and interact with ${SHAPES_COUNT} shapes`, async ({ page }) => {
+  test('should draw and rotate a Rectangle (single shape)', async ({ page }) => {
     await page.goto('/');
-    // Clear the canvas before starting
-    await page.getByRole('button', { name: 'Clear Canvas' }).click();
+    // Очистить canvas
     const canvas = page.locator(CANVAS_SELECTOR);
     await expect(canvas).toBeVisible();
+    await page.waitForTimeout(100);
+    await page.getByRole('button', { name: 'Clear Canvas' }).click();
+    await page.waitForTimeout(100);
 
-    for (const toolTitle of TOOL_TITLES) {
-      // Select tool in toolbar
-      await page.getByRole('button', { name: toolTitle }).click();
+    // 1. Нарисовать Rectangle
+    await page.getByRole('button', { name: 'Rectangle' }).click();
+    await page.waitForTimeout(50);
+    await page.mouse.move(start.x, start.y);
+    await page.waitForTimeout(50);
+    await page.mouse.down();
+    await page.waitForTimeout(50);
+    await page.mouse.move(end.x, end.y, { steps: 10 });
+    await page.waitForTimeout(50);
+    await page.mouse.up();
+    await page.waitForTimeout(200); // гарантируем, что canvas успел отрисовать
+    const afterDraw = await canvas.screenshot();
+    expect(afterDraw).toMatchSnapshot('after-draw.png', { maxDiffPixelRatio: SNAPSHOT_TOLERANCE });
 
-      for (let i = 0; i < SHAPES_PER_TYPE; i++) {
-        // Draw shape at random position
-        const start = await getRandomPoint(page);
-        let end = await getRandomPoint(page);
-
-        // Ensure end is not too close to start
-        while (Math.abs(end.x - start.x) < 40 || Math.abs(end.y - start.y) < 40) {
-          end = await getRandomPoint(page);
-        }
-
-        if (toolTitle === 'Pencil') {
-          // Simulate a squiggle for pencil
-          await page.mouse.move(start.x, start.y);
-          await page.mouse.down();
-
-          for (let j = 0; j < 8; j++) {
-            const px = start.x + randInt(-30, 30) + j * 8;
-            const py = start.y + randInt(-30, 30) + j * 8;
-            await page.mouse.move(px, py, { steps: 2 });
-          }
-
-          await page.mouse.up();
-        } else {
-          // For rectangle, circle, line: drag from start to end
-          await page.mouse.move(start.x, start.y);
-          await page.mouse.down();
-          await page.mouse.move(end.x, end.y, { steps: 10 });
-          await page.mouse.up();
-        }
-      }
-    }
-
-    // Sample manipulation: move, resize, rotate, pointer move
-    // Move: drag from one random point to another
-    for (let i = 0; i < 5; i++) {
-      const from = await getRandomPoint(page);
-      const to = await getRandomPoint(page);
-      await page.mouse.move(from.x, from.y);
-      await page.mouse.down();
-      await page.mouse.move(to.x, to.y, { steps: 10 });
-      await page.mouse.up();
-    }
-
-    // Pointer move: just move mouse around
-    for (let i = 0; i < 10; i++) {
-      const pt = await getRandomPoint(page);
-      await page.mouse.move(pt.x, pt.y);
-      await page.waitForTimeout(20);
-    }
-    // Resize/rotate: if your UI supports, simulate drags at edges/corners (not implemented here, placeholder)
-    // You can add more logic here if you have resize/rotate handles
-
-    // Final visual check: canvas is still visible
-    await expect(canvas).toBeVisible();
+    // 2. Повернуть (выбрать Select, выделить, drag по rotate handle)
+    await page.getByTestId('toolbar-select').click();
+    await page.waitForTimeout(100);
+    await page.mouse.click(moveFrom.x, moveFrom.y);
+    await page.waitForTimeout(100);
+    await page.mouse.move(rotateHandle.x, rotateHandle.y);
+    await page.mouse.down();
+    await page.mouse.move(rotateTo.x, rotateTo.y, { steps: 10 });
+    await page.mouse.up();
+    const afterRotate = await canvas.screenshot();
+    expect(afterRotate).toMatchSnapshot('after-rotate.png', { maxDiffPixelRatio: SNAPSHOT_TOLERANCE });
   });
 }); 
