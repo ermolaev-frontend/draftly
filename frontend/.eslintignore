@@ -1,0 +1,8 @@
+# Ignore coverage reports
+coverage/
+
+# Ignore build output
+dist/
+
+# Ignore node_modules
+node_modules/ 
