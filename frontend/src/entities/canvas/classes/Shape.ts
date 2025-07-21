@@ -7,7 +7,7 @@ import { generateId, getRandomColor } from 'entities/canvas/utils/canvas';
 import type { Bounds, IShapeFields, Point } from 'shared/types/canvas';
 import type { TOOLS } from 'shared/types/colors';
 
-import { getLocalRotatedCoords, getRectCenter } from '../utils/geometry';
+import { getRectCenter, getRotatedPoint } from '../utils/geometry';
 
 export type ToolType = (typeof TOOLS)[number];
 type ShapeType = 'pencil' | 'rectangle' | 'circle' | 'line';
@@ -47,7 +47,7 @@ export abstract class Shape implements IShapeFields {
 
     const center = this.getCenter();
     const angle = -(this.rotation ?? 0);
-    const { x: lx, y: ly } = getLocalRotatedCoords(point, center, angle);
+    const { x: lx, y: ly } = getRotatedPoint(point, center, angle);
 
     return (
       lx < bounds.x ||

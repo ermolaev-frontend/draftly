@@ -141,14 +141,7 @@ export class Rectangle extends Shape {
   }
 
   isPointInShape(point: Point): boolean {
-    const center = this.getCenter();
-    const angle = -(this.rotation ?? 0);
-    const { x: lx, y: ly } = getLocalRotatedCoords(point, center, angle);
-
-    return (
-      lx >= -this.width/2 && lx <= this.width/2 &&
-      ly >= -this.height/2 && ly <= this.height/2
-    );
+    return !this.isPointOutsideBounds(point);
   }
 
   resize(mouse: Point, interaction: Interaction): void {
