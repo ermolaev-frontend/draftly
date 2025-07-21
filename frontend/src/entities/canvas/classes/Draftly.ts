@@ -39,6 +39,7 @@ export class Draftly {
     ['rotate', 'grab'],
   ]);
   private viewport: Point; 
+  private lastHoveredShapeId: string | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -338,11 +339,35 @@ export class Draftly {
   }
 
   private isAnyShapeHovered(mouse: Point): boolean {
-    return this.shapeOrder.some(id => {
+    // First, check the last hovered shape
+    if (this.lastHoveredShapeId) {
+      const shape = this.shapeMap.get(this.lastHoveredShapeId);
+
+      if (shape?.isPointInShape(mouse)) {
+        return true;
+      }
+    }
+
+    // Then search among the rest and update lastHoveredShapeId if found
+    if (this.shapeOrder.some(id => {
+      if (id === this.lastHoveredShapeId) return false;
       const shape = this.shapeMap.get(id);
 
-      return shape?.isPointInShape(mouse) ?? false;
-    });
+      if (shape?.isPointInShape(mouse)) {
+        this.lastHoveredShapeId = id;
+
+        return true;
+      }
+
+      return false;
+    })) {
+      return true;
+    }
+
+    // If nothing is found, reset lastHoveredShapeId
+    this.lastHoveredShapeId = null;
+
+    return false;
   }
 
   resizeCanvasToWrapper() {
