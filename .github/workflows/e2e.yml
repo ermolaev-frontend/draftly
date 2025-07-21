@@ -37,6 +37,13 @@ jobs:
         run: pnpm exec playwright install --with-deps
         working-directory: frontend
 
+      - name: Start preview server
+        run: pnpm preview --host &
+        working-directory: frontend
+
+      - name: Wait for frontend
+        run: npx wait-on http://localhost:4173
+
       - name: Run E2E tests
         run: pnpm run e2e
         working-directory: frontend 
