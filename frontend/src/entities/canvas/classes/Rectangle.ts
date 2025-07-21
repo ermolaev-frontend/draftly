@@ -4,7 +4,7 @@ import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts
 import type { Bounds, Point } from 'shared/types/canvas';
 
 import { hashStringToSeed } from '../utils/canvas';
-import { getLocalRotatedCoords, getRotatedPoint } from '../utils/geometry';
+import { getRotatedPointLocal, getRotatedPoint } from '../utils/geometry';
 import { Shape } from './Shape';
 
 export class Rectangle extends Shape {
@@ -155,7 +155,7 @@ export class Rectangle extends Shape {
 
     const center = this.getCenter();
     const angle = -(this.rotation ?? 0);
-    const { x: lx, y: ly } = getLocalRotatedCoords(mouse, center, angle);
+    const { x: lx, y: ly } = getRotatedPointLocal(mouse, center, angle);
     let left = -this.width/2, right = this.width/2, top = -this.height/2, bottom = this.height/2;
 
     switch (handle) {
@@ -263,7 +263,7 @@ export class Rectangle extends Shape {
   getHandleAt({ x, y }: Point): Handle | null {
     const center = this.getCenter();
     const angle = -(this.rotation ?? 0);
-    const { x: lx, y: ly } = getLocalRotatedCoords({ x, y }, center, angle);
+    const { x: lx, y: ly } = getRotatedPointLocal({ x, y }, center, angle);
 
     for (const h of this.getHandles()) {
       if (h.type === 'rotate') {
