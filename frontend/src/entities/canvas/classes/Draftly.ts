@@ -357,6 +357,7 @@ export class Draftly {
       this.canvas.style.height = rect.height + 'px';
       this.ctx.setTransform(1, 0, 0, 1, 0, 0);
       this.ctx.scale(dpr, dpr);
+      this.requestDraw();
     }
   }
 
