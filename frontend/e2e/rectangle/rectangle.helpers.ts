@@ -55,38 +55,57 @@ export async function mockWebSocket(page: import('@playwright/test').Page) {
  * Call this before page.goto() if you want to see the cursor in the browser, screenshots, or video.
  */
 export async function showCursor(page: import('@playwright/test').Page) {
-  await page.addInitScript(() => {
+  const cursorStyle = `
+    .playwright-cursor {
+      pointer-events: none;
+      position: fixed;
+      z-index: 2147483647;
+      width: 24px;
+      height: 24px;
+      background: rgba(255, 0, 100, 0.4);
+      border: 2px solid rgba(255, 0, 100, 0.9);
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(255, 0, 100, 0.5), 
+                  0 0 20px rgba(255, 0, 100, 0.3);
+      transform: translate(-50%, -50%);
+      transition: 
+        transform 0.05s cubic-bezier(0.18, 0.89, 0.32, 1.28),
+        width 0.2s ease,
+        height 0.2s ease;
+      mix-blend-mode: difference;
+    }
+    .playwright-cursor.click-effect {
+      animation: click-pulse 0.3s ease-out;
+      width: 40px;
+      height: 40px;
+      background: transparent;
+      border: 3px solid rgba(255, 255, 0, 0.8);
+    }
+    @keyframes click-pulse {
+      0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+    }
+  `;
+
+  await page.addInitScript(cursorStyle => {
     document.addEventListener('DOMContentLoaded', () => {
       const style = document.createElement('style');
-
-      style.innerHTML = `
-        .playwright-cursor {
-          pointer-events: none;
-          position: fixed;
-          z-index: 2147483647;
-          left: 0;
-          top: 0;
-          width: 14px;
-          height: 14px;
-          background: rgba(255, 205, 0, 0.6);
-          border: 2px solid #222;
-          border-radius: 50%;
-          margin-left: -7px;
-          margin-top: -7px;
-          transition: left 0.08s cubic-bezier(0.4,0,0.2,1), top 0.08s cubic-bezier(0.4,0,0.2,1);
-        }
-      `;
-
+      style.innerHTML = cursorStyle;
       document.head.appendChild(style);
 
       const cursor = document.createElement('div');
       cursor.className = 'playwright-cursor';
       document.body.appendChild(cursor);
 
-      document.addEventListener('mousemove', event => {
-        cursor.style.left = event.clientX + 'px';
-        cursor.style.top = event.clientY + 'px';
-      }, true);
+      document.addEventListener('mousemove', e => {
+        cursor.style.left = `${e.clientX}px`;
+        cursor.style.top = `${e.clientY}px`;
+      });
+
+      document.addEventListener('click', () => {
+        cursor.classList.add('click-effect');
+        setTimeout(() => cursor.classList.remove('click-effect'), 300);
+      });
     });
-  });
+  }, cursorStyle);
 } 
