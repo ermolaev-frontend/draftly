@@ -11,8 +11,8 @@ import {
   getDistanceBetweenPoints,
   getAngleBetweenPoints,
   getTranslatedPoint,
-  getLocalRotatedCoords,
-} from '../utils/geometry';
+  getRotatedPointLocal,
+} from '../../utils/geometry';
 
 describe('geometryUtils', () => {
   describe('getRotatedPoint', () => {
@@ -378,13 +378,13 @@ describe('geometryUtils', () => {
     });
   });
 
-  describe('getLocalRotatedCoords', () => {
+  describe('getRotatedPointLocal', () => {
     it('should return local rotated coordinates', () => {
       const point: Point = { x: 2, y: 0 };
       const center: Point = { x: 1, y: 1 };
       const angle = Math.PI / 2; // 90 degrees
 
-      const result = getLocalRotatedCoords(point, center, angle);
+      const result = getRotatedPointLocal(point, center, angle);
 
       expect(result.x).toBeCloseTo(1, 5);
       expect(result.y).toBeCloseTo(1, 5);
@@ -395,7 +395,7 @@ describe('geometryUtils', () => {
       const center: Point = { x: 1, y: 1 };
       const angle = Math.PI / 4; // 45 degrees
 
-      const result1 = getLocalRotatedCoords(point, center, angle);
+      const result1 = getRotatedPointLocal(point, center, angle);
       const result2 = getRotatedPoint(point, center, angle, true);
 
       expect(result1.x).toBeCloseTo(result2.x, 5);
