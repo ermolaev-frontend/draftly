@@ -12,7 +12,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --watchAll=false",
-    "ci": "pnpm run lint && pnpm run test:ci && pnpm run build"
+    "ci": "pnpm run lint && pnpm run test:ci && pnpm run build",
+    "e2e": "playwright test --config=e2e/playwright.config.ts"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
