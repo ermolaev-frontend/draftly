@@ -1,6 +1,14 @@
 import { test, expect } from '@playwright/test';
 
-import { CANVAS_SELECTOR, SNAPSHOT_TOLERANCE, start, end, handles, mockWebSocket } from './rectangle.helpers';
+import {
+  CANVAS_SELECTOR,
+  SNAPSHOT_TOLERANCE,
+  start,
+  end,
+  handles,
+  mockWebSocket,
+  showCursor,
+} from './rectangle.helpers';
 
 const resizeOffsets = {
   'top-left': { dx: -20, dy: -20 },
@@ -13,49 +21,53 @@ const resizeOffsets = {
   'left': { dx: -20, dy: 0 },
 };
 
+const DELAY = 300;
+
 test('should resize rectangle using all 8 handles', async ({ page }) => {
   // Mock WebSocket to prevent real connections during tests
   await mockWebSocket(page);
+  // Show a visible cursor overlay for debugging
+  await showCursor(page);
 
   // Open the main page
   await page.goto('/');
   const canvas = page.locator(CANVAS_SELECTOR);
   await expect(canvas).toBeVisible();
-  await page.waitForTimeout(100);
+  await page.waitForTimeout(DELAY);
 
   // Clear the canvas
   await page.getByRole('button', { name: 'Clear Canvas' }).click();
-  await page.waitForTimeout(100);
+  await page.waitForTimeout(DELAY);
 
   // Select the Rectangle tool and draw a rectangle
   await page.getByRole('button', { name: 'Rectangle' }).click();
-  await page.waitForTimeout(50);
+  await page.waitForTimeout(DELAY);
   await page.mouse.move(start.x, start.y);
   await page.mouse.down();
   await page.mouse.move(end.x, end.y, { steps: 10 });
   await page.mouse.up();
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(DELAY);
 
   // Switch to Select tool
   await page.getByTestId('toolbar-select').click();
-  await page.waitForTimeout(100);
+  await page.waitForTimeout(DELAY);
 
   // Select the rectangle by clicking its center
   const centerX = (start.x + end.x) / 2;
   const centerY = (start.y + end.y) / 2;
   await page.mouse.click(centerX, centerY);
-  await page.waitForTimeout(150); // Wait for handles to appear
+  await page.waitForTimeout(DELAY); // Wait for handles to appear
 
   // Resize using all 8 handles
   for (const [handle, { x, y }] of Object.entries(handles)) {
     const { dx, dy } = resizeOffsets[handle];
     // Move to the handle
     await page.mouse.move(x, y);
-    await page.waitForTimeout(30); // Let cursor update
+    await page.waitForTimeout(DELAY); // Let cursor update
     await page.mouse.down();
     await page.mouse.move(x + dx, y + dy, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(DELAY);
   }
 
   // Take a single screenshot and compare with the snapshot

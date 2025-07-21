@@ -34,7 +34,7 @@ export const rotateHandle = { x: centerX, y: topY - 30 };
  */
 export async function mockWebSocket(page: import('@playwright/test').Page) {
   await page.addInitScript(() => {
-    // @ts-ignore
+    // @ts-expect-error
     window.WebSocket = class {
       static CONNECTING = 0;
       static OPEN = 1;
@@ -47,5 +47,45 @@ export async function mockWebSocket(page: import('@playwright/test').Page) {
       removeEventListener() {}
       readyState = 1;
     };
+  });
+}
+
+/**
+ * Injects a visible cursor overlay for Playwright tests.
+ * Call this before page.goto() if you want to see the cursor in the browser, screenshots, or video.
+ */
+export async function showCursor(page: import('@playwright/test').Page) {
+  await page.addInitScript(() => {
+    const style = document.createElement('style');
+
+    style.innerHTML = `
+      .playwright-cursor {
+        pointer-events: none;
+        position: fixed;
+        z-index: 2147483647;
+        left: 0;
+        top: 0;
+        width: 20px;
+        height: 20px;
+        background: yellow;
+        border: 2px solid black;
+        border-radius: 50%;
+        margin-left: -10px;
+        margin-top: -10px;
+        box-shadow: 0 0 6px 2px rgba(0,0,0,0.5);
+        transition: left 0.05s linear, top 0.05s linear;
+      }
+    `;
+
+    document.head.appendChild(style);
+
+    const cursor = document.createElement('div');
+    cursor.className = 'playwright-cursor';
+    document.body.appendChild(cursor);
+
+    document.addEventListener('mousemove', event => {
+      cursor.style.left = event.clientX + 'px';
+      cursor.style.top = event.clientY + 'px';
+    }, true);
   });
 } 

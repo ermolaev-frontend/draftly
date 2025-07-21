@@ -1,12 +1,22 @@
 import { test, expect } from '@playwright/test';
 
-import { CANVAS_SELECTOR, SNAPSHOT_TOLERANCE, start, end, moveFrom, mockWebSocket } from './rectangle.helpers';
+import {
+  CANVAS_SELECTOR,
+  SNAPSHOT_TOLERANCE,
+  start,
+  end,
+  moveFrom,
+  mockWebSocket,
+  showCursor,
+} from './rectangle.helpers';
 
 const DELAY = 300;
 
 test('should move rectangle: up 10px, right 20px, down 30px, left 40px', async ({ page }) => {
   // Mock WebSocket to prevent real connections during tests
   await mockWebSocket(page);
+  // Show a visible cursor overlay for debugging
+  await showCursor(page);
 
   // Open the main page
   await page.goto('/');
