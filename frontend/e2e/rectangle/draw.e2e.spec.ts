@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test';
 
-import { CANVAS_SELECTOR, SNAPSHOT_TOLERANCE, start, end } from './rectangle.helpers';
+import { CANVAS_SELECTOR, SNAPSHOT_TOLERANCE, start, end, mockWebSocket } from './rectangle.helpers';
 
 test('should draw a new rectangle', async ({ page }) => {
+  // Mock WebSocket to prevent real connections during tests
+  await mockWebSocket(page);
+
   // Open the main page
   await page.goto('/');
   const canvas = page.locator(CANVAS_SELECTOR);

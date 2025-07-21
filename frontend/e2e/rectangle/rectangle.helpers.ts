@@ -26,4 +26,26 @@ export const handles = {
 };
 
 // Rotate handle
-export const rotateHandle = { x: centerX, y: topY - 30 }; 
+export const rotateHandle = { x: centerX, y: topY - 30 };
+
+/**
+ * Mocks the global WebSocket object to prevent real connections during e2e tests.
+ * Call this before page.goto().
+ */
+export async function mockWebSocket(page: import('@playwright/test').Page) {
+  await page.addInitScript(() => {
+    // @ts-ignore
+    window.WebSocket = class {
+      static CONNECTING = 0;
+      static OPEN = 1;
+      static CLOSING = 2;
+      static CLOSED = 3;
+      constructor() {}
+      close() {}
+      send() {}
+      addEventListener() {}
+      removeEventListener() {}
+      readyState = 1;
+    };
+  });
+} 
