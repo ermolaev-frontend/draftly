@@ -14,7 +14,6 @@ export const bottomY = Math.max(start.y, end.y);
 export const leftX = Math.min(start.x, end.x);
 export const rightX = Math.max(start.x, end.x);
 
-
 // Handles for resize (corners and sides)
 export const handles = {
   'top-left': { x: leftX, y: topY },

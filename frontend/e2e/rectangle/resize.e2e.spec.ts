@@ -126,7 +126,7 @@ test('should resize rectangle using all 8 handles', async ({ page }) => {
   // Take a single screenshot and compare with the snapshot
   const afterResize = await canvas.screenshot();
 
-//   await page.waitForTimeout(1000 * 60);
+  //   await page.waitForTimeout(1000 * 60);
 
   expect(afterResize).toMatchSnapshot('resize-all-handles.png', { maxDiffPixelRatio: SNAPSHOT_TOLERANCE });
 }); 
