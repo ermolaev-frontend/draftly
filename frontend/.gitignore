@@ -1,0 +1,16 @@
+# Node.js dependencies
+node_modules/
+
+# Build output
+/dist/
+
+# Playwright test artifacts (DO NOT ignore *-snapshots/!)
+test-results/
+playwright-report/
+playwright-traces/
+
+# Ignore Vite cache (optional)
+.vite/
+
+# Ignore coverage if used
+coverage/ 

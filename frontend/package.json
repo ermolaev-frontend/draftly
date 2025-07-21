@@ -12,7 +12,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --watchAll=false",
-    "ci": "pnpm run lint && pnpm run test:ci && pnpm run build"
+    "ci": "pnpm run lint && pnpm run test:ci && pnpm run build",
+    "e2e": "playwright test --config=e2e/playwright.config.ts"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
+    "@playwright/test": "^1.54.1",
     "@stylistic/eslint-plugin": "^5.1.0",
     "@types/jest": "^30.0.0",
     "@types/react": "^19.1.8",
@@ -39,6 +41,7 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.2.0",
     "jest": "^30.0.4",
+    "playwright": "^1.54.1",
     "ts-jest": "^29.4.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.34.1",

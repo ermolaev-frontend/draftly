@@ -50,6 +50,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           }
           onClick={() => onToolChange(tool as ToolType)}
           title={title}
+          data-testid={`toolbar-${tool}`}
         >
           <FontAwesomeIcon icon={icon} />
         </button>

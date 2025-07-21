@@ -21,6 +21,7 @@ export const DraftlyWrapper = forwardRef<Draftly, DraftlyWrapperProps>(({ onShap
   return (
     <div className={styles.canvasWrapper}>
       <canvas
+        data-testid="canvas"
         ref={setCanvasRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
