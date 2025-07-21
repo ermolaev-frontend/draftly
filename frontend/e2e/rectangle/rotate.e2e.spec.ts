@@ -9,9 +9,9 @@ import {
   rotateHandle,
   mockWebSocket,
   showCursor,
+  DELAY,
 } from './rectangle.helpers';
 
-const DELAY = 500;
 const rotateTo = { x: rotateHandle.x + 40, y: rotateHandle.y };
 
 test('should rotate rectangle using rotate handle', async ({ page }) => {

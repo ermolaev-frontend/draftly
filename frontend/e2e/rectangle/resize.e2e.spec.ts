@@ -7,6 +7,7 @@ import {
   end,
   mockWebSocket,
   showCursor,
+  DELAY,
 } from './rectangle.helpers';
 
 const resizeOffsets = {
@@ -19,8 +20,6 @@ const resizeOffsets = {
   'bottom-left': { dx: -20, dy: 20 },
   'left': { dx: -20, dy: 0 },
 };
-
-const DELAY = 500;
 
 // Функция для пересчёта координат handle по текущим координатам прямоугольника
 function getHandles(rect) {

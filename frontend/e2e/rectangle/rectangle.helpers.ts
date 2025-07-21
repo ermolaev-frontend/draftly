@@ -1,6 +1,7 @@
 // Rectangle test helpers
 export const CANVAS_SELECTOR = '[data-testid="canvas"]';
 export const SNAPSHOT_TOLERANCE = 0.02;
+export const DELAY = 50;
 
 export const start = { x: 200, y: 200 };
 export const end = { x: 400, y: 350 };
@@ -12,6 +13,7 @@ export const topY = Math.min(start.y, end.y);
 export const bottomY = Math.max(start.y, end.y);
 export const leftX = Math.min(start.x, end.x);
 export const rightX = Math.max(start.x, end.x);
+
 
 // Handles for resize (corners and sides)
 export const handles = {

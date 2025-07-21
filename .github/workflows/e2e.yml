@@ -2,8 +2,13 @@ name: E2E Tests
 
 on:
   push:
-    branches: [main, e2e-test]
+    branches: [main]
   pull_request:
+    types: [opened, reopened, edited, synchronize]
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/e2e.yml'
 
 jobs:
   e2e:

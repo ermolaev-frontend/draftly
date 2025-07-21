@@ -8,9 +8,8 @@ import {
   moveFrom,
   mockWebSocket,
   showCursor,
+  DELAY,
 } from './rectangle.helpers';
-
-const DELAY = 300;
 
 test('should move rectangle: up 10px, right 20px, down 30px, left 40px', async ({ page }) => {
   // Mock WebSocket to prevent real connections during tests

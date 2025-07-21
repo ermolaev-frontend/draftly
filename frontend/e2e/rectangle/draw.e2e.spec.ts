@@ -1,8 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import { CANVAS_SELECTOR, SNAPSHOT_TOLERANCE, start, end, mockWebSocket, showCursor } from './rectangle.helpers';
-
-const DELAY = 300;
+import { CANVAS_SELECTOR, SNAPSHOT_TOLERANCE, start, end, mockWebSocket, showCursor, DELAY } from './rectangle.helpers';
 
 test('should draw a new rectangle', async ({ page }) => {
   // Mock WebSocket to prevent real connections during tests
