@@ -15,6 +15,7 @@ export abstract class Shape implements IShapeFields {
   id: string;
   color: string;
   strokeWidth: number;
+  rotation: number = 0;
   
   constructor(shape: Partial<Shape>) {
     this.id = shape.id ?? generateId();
@@ -36,6 +37,19 @@ export abstract class Shape implements IShapeFields {
   
   patch(shape: Partial<this>): void {
     Object.assign(this, shape);
+  }
+  
+  isPointOutsideBounds(point: Point): boolean {
+    const bounds = this.getBounds();
+    if (!bounds) return true;
+    const { x, y, width, height } = bounds;
+
+    return (
+      point.x < x ||
+      point.x > x + width ||
+      point.y < y ||
+      point.y > y + height
+    );
   }
   
   // Optional methods
