@@ -1,16 +1,14 @@
 import rough from 'roughjs';
 import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts';
 
-import type { Bounds, Point, IShape } from 'shared/types/canvas';
+import type { Bounds, Point } from 'shared/types/canvas';
 
-import { generateId, hashStringToSeed } from '../utils/canvas';
+import { hashStringToSeed } from '../utils/canvas';
 import { getPointToSegmentDistance, getRectCenter } from '../utils/geometry';
+import { Shape } from './Shape';
 
-export class Line implements IShape {
+export class Line extends Shape {
   readonly type = 'line';
-  readonly color: string;
-  readonly strokeWidth: number;
-  readonly id: string;
 
   readonly x1: number;
   readonly y1: number;
@@ -18,17 +16,11 @@ export class Line implements IShape {
   readonly y2: number;
 
   constructor(shape: Partial<Line>) {
-    this.id = shape.id ?? generateId();
-    this.color = shape.color ?? 'red';
-    this.strokeWidth = shape.strokeWidth ?? 1;
+    super(shape);
     this.x1 = shape.x1 ?? 0;
     this.y1 = shape.y1 ?? 0;
     this.x2 = shape.x2 ?? 0;
     this.y2 = shape.y2 ?? 0;
-  }
-
-  patch(shape: Partial<Line>): void {
-    Object.assign(this, shape);
   }
 
   startDragging(interaction: Interaction, mouse: Point): void {
@@ -115,12 +107,12 @@ export class Line implements IShape {
       this.patch({
         x1: mouse.x,
         y1: mouse.y,
-      });
+      } as Partial<this>);
     } else if (handle === 'end') {
       this.patch({
         x2: mouse.x,
         y2: mouse.y,
-      });
+      } as Partial<this>);
     }
   }
 
@@ -137,7 +129,7 @@ export class Line implements IShape {
     this.patch({
       x2: mouse.x,
       y2: mouse.y,
-    });
+    } as Partial<this>);
   }
 
   move(mouse: Point, { dragOffset }: Interaction): void {
@@ -153,7 +145,7 @@ export class Line implements IShape {
       y1: this.y1 + dy,
       x2: this.x2 + dx,
       y2: this.y2 + dy,
-    });
+    } as Partial<this>);
   }
 
   getHandleAt({ x, y }: Point): Handle | null {

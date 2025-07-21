@@ -1,17 +1,14 @@
 import rough from 'roughjs';
 import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts';
-import { BASE_PALETTE } from 'shared/types/colors';
 
-import type { Bounds, Point, IShape } from 'shared/types/canvas';
+import type { Bounds, Point } from 'shared/types/canvas';
 
-import { generateId, hashStringToSeed } from '../utils/canvas';
+import { hashStringToSeed } from '../utils/canvas';
 import { getLocalRotatedCoords, getRectCenter, getRotatedPoint } from '../utils/geometry';
+import { Shape } from './Shape';
 
-export class Rectangle implements IShape {
+export class Rectangle extends Shape {
   readonly type = 'rectangle';
-  readonly color: string;
-  readonly strokeWidth: number;
-  readonly id: string;
   readonly x: number;
   readonly y: number;
   readonly width: number;
@@ -19,18 +16,12 @@ export class Rectangle implements IShape {
   readonly rotation: number;
 
   constructor(shape: Partial<Rectangle>) {
-    this.id = shape.id ?? generateId();
-    this.color = shape.color ?? BASE_PALETTE[0];
-    this.strokeWidth = shape.strokeWidth ?? 1;
+    super(shape);
     this.x = shape.x ?? 0;
     this.y = shape.y ?? 0;
     this.width = shape.width ?? 1;
     this.height = shape.height ?? 1;
     this.rotation = shape.rotation ?? 0;
-  }
-
-  patch(shape: Partial<Rectangle>) {
-    Object.assign(this, shape);
   }
 
   startDragging(interaction: Interaction, mouse: Point): void {
@@ -222,7 +213,7 @@ export class Rectangle implements IShape {
       height: newHeight,
       x: center.x + newCenter.x - newWidth/2,
       y: center.y + newCenter.y - newHeight/2,
-    });
+    } as Partial<this>);
   }
 
   getBounds(): Bounds {
@@ -240,7 +231,7 @@ export class Rectangle implements IShape {
       height: Math.abs(mouse.y - this.y),
       x: Math.min(this.x, mouse.x),
       y: Math.min(this.y, mouse.y),
-    });
+    } as Partial<this>);
   }
 
   rotate(mouse: Point, { startRotation, initialAngle }: Interaction): void {    
@@ -250,14 +241,14 @@ export class Rectangle implements IShape {
     
     this.patch({
       rotation: startRotation + angle - initialAngle,
-    });
+    } as Partial<this>);
   }
 
   move(mouse: Point, { dragOffset }: Interaction): void {
     this.patch({
       x: mouse.x - dragOffset.x,
       y: mouse.y - dragOffset.y,
-    });
+    } as Partial<this>);
   }
 
   getHandles(): (Point & { type: Handle })[] {

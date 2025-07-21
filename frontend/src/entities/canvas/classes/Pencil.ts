@@ -1,26 +1,17 @@
 import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts';
 
-import type { Bounds, Point, IShape } from 'shared/types/canvas';
+import type { Bounds, Point } from 'shared/types/canvas';
 
-import { generateId } from '../utils/canvas';
 import { getPointToSegmentDistance, getScaledPointInRect } from '../utils/geometry';
+import { Shape } from './Shape';
 
-export class Pencil implements IShape {
+export class Pencil extends Shape {
   readonly type = 'pencil';
-  readonly color: string;
-  readonly strokeWidth: number;
-  readonly id: string;
   readonly points: Point[];
 
   constructor(shape: Partial<Pencil>) {
-    this.id = shape.id ?? generateId();
-    this.color = shape.color ?? 'red';
-    this.strokeWidth = shape.strokeWidth ?? 1;
+    super(shape);
     this.points = shape.points ?? [];
-  }
-
-  patch(shape: Partial<Pencil>) {
-    Object.assign(this, shape);
   }
 
   startDragging(interaction: Interaction, mouse: Point): void {
@@ -202,7 +193,7 @@ export class Pencil implements IShape {
       ),
     );
 
-    this.patch({ points: newPoints });
+    this.patch({ points: newPoints } as Partial<this>);
   }
 
   getBounds(): Bounds | null {
@@ -229,7 +220,7 @@ export class Pencil implements IShape {
   drawNewShape(mouse: Point): void {    
     this.patch({
       points: this.points.concat(mouse),
-    });
+    } as Partial<this>);
   }
 
   move(mouse: Point, { dragOffset, initialPoints }: Interaction): void {
@@ -242,7 +233,7 @@ export class Pencil implements IShape {
           x: pt.x + dx,
           y: pt.y + dy,
         })),
-      });
+      } as Partial<this>);
     }
   }
 
