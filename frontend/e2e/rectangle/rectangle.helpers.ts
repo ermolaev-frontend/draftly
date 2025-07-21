@@ -34,7 +34,7 @@ export const rotateHandle = { x: centerX, y: topY - 30 };
  */
 export async function mockWebSocket(page: import('@playwright/test').Page) {
   await page.addInitScript(() => {
-    // @ts-expect-error
+    // @ts-expect-error: Overriding global WebSocket for test mocking
     window.WebSocket = class {
       static CONNECTING = 0;
       static OPEN = 1;
@@ -56,36 +56,37 @@ export async function mockWebSocket(page: import('@playwright/test').Page) {
  */
 export async function showCursor(page: import('@playwright/test').Page) {
   await page.addInitScript(() => {
-    const style = document.createElement('style');
+    document.addEventListener('DOMContentLoaded', () => {
+      const style = document.createElement('style');
 
-    style.innerHTML = `
-      .playwright-cursor {
-        pointer-events: none;
-        position: fixed;
-        z-index: 2147483647;
-        left: 0;
-        top: 0;
-        width: 20px;
-        height: 20px;
-        background: yellow;
-        border: 2px solid black;
-        border-radius: 50%;
-        margin-left: -10px;
-        margin-top: -10px;
-        box-shadow: 0 0 6px 2px rgba(0,0,0,0.5);
-        transition: left 0.05s linear, top 0.05s linear;
-      }
-    `;
+      style.innerHTML = `
+        .playwright-cursor {
+          pointer-events: none;
+          position: fixed;
+          z-index: 2147483647;
+          left: 0;
+          top: 0;
+          width: 14px;
+          height: 14px;
+          background: rgba(255, 205, 0, 0.6);
+          border: 2px solid #222;
+          border-radius: 50%;
+          margin-left: -7px;
+          margin-top: -7px;
+          transition: left 0.08s cubic-bezier(0.4,0,0.2,1), top 0.08s cubic-bezier(0.4,0,0.2,1);
+        }
+      `;
 
-    document.head.appendChild(style);
+      document.head.appendChild(style);
 
-    const cursor = document.createElement('div');
-    cursor.className = 'playwright-cursor';
-    document.body.appendChild(cursor);
+      const cursor = document.createElement('div');
+      cursor.className = 'playwright-cursor';
+      document.body.appendChild(cursor);
 
-    document.addEventListener('mousemove', event => {
-      cursor.style.left = event.clientX + 'px';
-      cursor.style.top = event.clientY + 'px';
-    }, true);
+      document.addEventListener('mousemove', event => {
+        cursor.style.left = event.clientX + 'px';
+        cursor.style.top = event.clientY + 'px';
+      }, true);
+    });
   });
 } 

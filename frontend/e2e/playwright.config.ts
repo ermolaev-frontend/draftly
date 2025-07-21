@@ -7,7 +7,7 @@ export default defineConfig({
   retries: 0,
   use: {
     baseURL: 'http://localhost:5173',
-    headless: true,
+    headless: false,
     viewport: { width: 1280, height: 800 },
     ignoreHTTPSErrors: true,
     video: 'retain-on-failure',
@@ -26,9 +26,9 @@ export default defineConfig({
     //   name: 'webkit',
     //   use: { ...devices['Desktop Safari'] },
     // },
-    {
-      name: 'webkit-iphone',
-      use: { ...devices['iPhone 12'] },
-    },
+    // {
+    //   name: 'webkit-iphone',
+    //   use: { ...devices['iPhone 12'] },
+    // },
   ],
 }); 
