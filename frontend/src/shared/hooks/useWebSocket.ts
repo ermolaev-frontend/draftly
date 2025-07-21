@@ -8,10 +8,10 @@ import type { IShape, IShapeFields } from 'shared/types/canvas';
 
 interface Props {
   roomId: string;
-  onShapesReceived: (shapes: IShape[]) => void;
-  onShapeAdded?: (shape: IShape) => void;
-  onShapeUpdated?: (shape: IShape) => void;
-  onShapeDeleted?: (shapeId: string) => void;
+  onShapesReceived: (_shapes: IShape[]) => void;
+  onShapeAdded?: (_shape: IShape) => void;
+  onShapeUpdated?: (_shape: IShape) => void;
+  onShapeDeleted?: (_shapeId: string) => void;
   onEmptyShapes?: () => void;
 }
 
@@ -45,8 +45,10 @@ export const useWebSocket = (props: Props) => {
 
   const connect = useCallback(() => {
     console.log('Attempting to connect to WebSocket...');
+
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       console.log('WebSocket already connected or connection in progress');
+
       return;
     }
 
@@ -63,27 +65,32 @@ export const useWebSocket = (props: Props) => {
     ws.onmessage = event => {
       try {
         const data: any = JSON.parse(event.data);
+
         switch (data.type) {
           case 'broadcast':
             if (data.data) {
               const shapes = createShapesFromData(data.data);
               onShapesReceived(shapes);
             }
+
             break;
           case 'add_shape':
             if (data.shape && onShapeAdded) {
               onShapeAdded(createShapesFromData([data.shape])[0]);
             }
+
             break;
           case 'update_shape':
             if (data.shape && onShapeUpdated) {
               onShapeUpdated(createShapesFromData([data.shape])[0]);
             }
+
             break;
           case 'delete_shape':
             if (data.shapeId && onShapeDeleted) {
               onShapeDeleted(data.shapeId);
             }
+
             break;
           case 'empty_shapes':
             if (onEmptyShapes) onEmptyShapes();
@@ -168,6 +175,7 @@ export const useWebSocket = (props: Props) => {
           type: 'join_room',
           roomId,
         }));
+
         setCurrentRoom(roomId);
       }
     }

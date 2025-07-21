@@ -36,4 +36,5 @@ export const EditorPage: React.FC = () => {
     </div>
   );
 };
+
 export default EditorPage; 

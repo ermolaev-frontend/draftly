@@ -4,8 +4,8 @@ import { BASE_PALETTE } from 'shared/types/colors';
 
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
-import { generateId, hashStringToSeed } from '../canvasUtils';
-import { getLocalRotatedCoords, getRectCenter, getRotatedPoint } from '../geometryUtils';
+import { generateId, hashStringToSeed } from '../utils/canvas';
+import { getLocalRotatedCoords, getRectCenter, getRotatedPoint } from '../utils/geometry';
 
 export class Rectangle implements IShape {
   readonly type = 'rectangle';
@@ -156,6 +156,7 @@ export class Rectangle implements IShape {
     const center = this.getCenter();
     const angle = -(this.rotation ?? 0);
     const { x: lx, y: ly } = getLocalRotatedCoords(point, center, angle);
+
     return (
       lx >= -this.width/2 && lx <= this.width/2 &&
       ly >= -this.height/2 && ly <= this.height/2
@@ -167,6 +168,7 @@ export class Rectangle implements IShape {
 
     if (handle === 'rotate') {
       this.rotate(mouse, interaction);
+
       return;
     }
 
@@ -208,10 +210,11 @@ export class Rectangle implements IShape {
 
     const newWidth = right - left;
     const newHeight = bottom - top;
+
     const newCenter = getRotatedPoint(
       { x: (left + right) / 2, y: (top + bottom) / 2 },
       { x: 0, y: 0 },
-      this.rotation ?? 0
+      this.rotation ?? 0,
     );
       
     this.patch({

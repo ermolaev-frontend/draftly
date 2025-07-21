@@ -3,8 +3,8 @@ import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts
 
 import type { Bounds, Point, IShape } from 'shared/types/canvas';
 
-import { generateId, hashStringToSeed } from '../canvasUtils';
-import { isPointInCircle, getDistanceBetweenPoints } from '../geometryUtils';
+import { generateId, hashStringToSeed } from '../utils/canvas';
+import { isPointInCircle, getDistanceBetweenPoints } from '../utils/geometry';
 
 export class Circle implements IShape {
   readonly type = 'circle';
@@ -118,6 +118,7 @@ export class Circle implements IShape {
 
   resize(mouse: Point): void {
     const newRadius = getDistanceBetweenPoints({ x: this.x, y: this.y }, mouse);
+
     this.patch({
       radius: Math.max(20, newRadius),
     });
