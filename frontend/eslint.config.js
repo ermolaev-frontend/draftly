@@ -9,6 +9,13 @@ import react from 'eslint-plugin-react'
 import { globalIgnores } from 'eslint/config'
 
 export default tseslint.config([
+  {
+    ignores: [
+      'coverage/',
+      'dist/',
+      'node_modules/',
+    ],
+  },
   globalIgnores(['dist']),
   {
     files: ['**/*.{ts,tsx}'],
