@@ -104,6 +104,8 @@ export class Circle extends Shape {
   }
 
   isPointInShape(point: Point): boolean {
+    if (this.isPointOutsideBounds(point)) return false;
+
     return isPointInCircle(point, { x: this.x, y: this.y }, this.radius);
   }
 

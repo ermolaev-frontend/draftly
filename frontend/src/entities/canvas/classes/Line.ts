@@ -99,6 +99,8 @@ export class Line extends Shape {
   }
 
   isPointInShape(point: Point): boolean {
+    if (this.isPointOutsideBounds(point)) return false;
+    
     return getPointToSegmentDistance(point, { x: this.x1, y: this.y1 }, { x: this.x2, y: this.y2 }) < 64;
   }
 

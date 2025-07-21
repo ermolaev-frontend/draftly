@@ -7,6 +7,8 @@ import { generateId, getRandomColor } from 'entities/canvas/utils/canvas';
 import type { Bounds, IShapeFields, Point } from 'shared/types/canvas';
 import type { TOOLS } from 'shared/types/colors';
 
+import { getLocalRotatedCoords, getRectCenter } from '../utils/geometry';
+
 export type ToolType = (typeof TOOLS)[number];
 type ShapeType = 'pencil' | 'rectangle' | 'circle' | 'line';
 
@@ -42,14 +44,24 @@ export abstract class Shape implements IShapeFields {
   isPointOutsideBounds(point: Point): boolean {
     const bounds = this.getBounds();
     if (!bounds) return true;
-    const { x, y, width, height } = bounds;
+
+    const center = this.getCenter();
+    const angle = -(this.rotation ?? 0);
+    const { x: lx, y: ly } = getLocalRotatedCoords(point, center, angle);
 
     return (
-      point.x < x ||
-      point.x > x + width ||
-      point.y < y ||
-      point.y > y + height
+      lx < bounds.x ||
+      lx > bounds.x + bounds.width ||
+      ly < bounds.y ||
+      ly > bounds.y + bounds.height
     );
+  }
+  
+  getCenter(): Point {
+    const bounds = this.getBounds();
+    if (!bounds) throw new Error('Cannot get center: bounds is null');
+    
+    return getRectCenter(bounds);
   }
   
   // Optional methods

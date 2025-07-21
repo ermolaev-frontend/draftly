@@ -127,6 +127,7 @@ export class Pencil extends Shape {
 
   isPointInShape(point: Point): boolean {
     if (!this.points || this.points.length < 2) return false;
+    if (this.isPointOutsideBounds(point)) return false;
 
     for (let i = 1; i < this.points.length; i++) {
       const start = this.points[i-1];

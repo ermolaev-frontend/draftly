@@ -4,7 +4,7 @@ import Interaction, { type Handle } from 'entities/canvas/classes/Interaction.ts
 import type { Bounds, Point } from 'shared/types/canvas';
 
 import { hashStringToSeed } from '../utils/canvas';
-import { getLocalRotatedCoords, getRectCenter, getRotatedPoint } from '../utils/geometry';
+import { getLocalRotatedCoords, getRotatedPoint } from '../utils/geometry';
 import { Shape } from './Shape';
 
 export class Rectangle extends Shape {
@@ -64,10 +64,6 @@ export class Rectangle extends Shape {
       initialPoints: undefined,
       initialBounds: undefined,
     });
-  }
-
-  private getCenter(): Point {
-    return getRectCenter({ x: this.x, y: this.y, width: this.width, height: this.height });
   }
 
   draw(ctx: CanvasRenderingContext2D, roughCanvas: ReturnType<typeof rough.canvas>): void {
