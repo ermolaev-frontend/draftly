@@ -3,14 +3,15 @@ import { Rectangle } from 'entities/canvas/classes/Rectangle';
 import { Circle } from 'entities/canvas/classes/Circle';
 import { Line } from 'entities/canvas/classes/Line';
 import { Pencil } from 'entities/canvas/classes/Pencil';
+import { Shape } from 'entities/canvas/classes/Shape.ts';
 
-import type { IShape, IShapeFields } from 'shared/types/canvas';
+import type { IShapeFields } from 'shared/types/canvas';
 
 interface Props {
   roomId: string;
-  onShapesReceived: (_shapes: IShape[]) => void;
-  onShapeAdded?: (_shape: IShape) => void;
-  onShapeUpdated?: (_shape: IShape) => void;
+  onShapesReceived: (_shapes: Shape[]) => void;
+  onShapeAdded?: (_shape: Shape) => void;
+  onShapeUpdated?: (_shape: Shape) => void;
   onShapeDeleted?: (_shapeId: string) => void;
   onEmptyShapes?: () => void;
 }
@@ -19,7 +20,7 @@ interface Props {
 const WS_SERVER_URL = import.meta.env.VITE_WS_SERVER_URL ?? 'ws://localhost:3002';
 
 // Function to create shapes from data
-const createShapesFromData = (data: IShapeFields[]): IShape[] => {
+const createShapesFromData = (data: IShapeFields[]): Shape[] => {
   return data.map((shapeData: IShapeFields) => {
     switch (shapeData.type) {
       case 'rectangle':
@@ -127,7 +128,7 @@ export const useWebSocket = (props: Props) => {
     }
   }, []);
 
-  const sendShapes = useCallback((shapes: IShape[]) => {
+  const sendShapes = useCallback((shapes: Shape[]) => {
     if (wsRef.current?.readyState === WebSocket.OPEN && currentRoom) {
       wsRef.current.send(JSON.stringify(shapes));
       console.log(`Sending ${shapes.length} shapes to room ${currentRoom}`);
@@ -136,13 +137,13 @@ export const useWebSocket = (props: Props) => {
     }
   }, [currentRoom]);
 
-  const sendAddShape = useCallback((shape: IShape) => {
+  const sendAddShape = useCallback((shape: Shape) => {
     if (wsRef.current?.readyState === WebSocket.OPEN && currentRoom) {
       wsRef.current.send(JSON.stringify({ type: 'add_shape', shape }));
     }
   }, [currentRoom]);
 
-  const sendUpdateShape = useCallback((shape: IShape) => {
+  const sendUpdateShape = useCallback((shape: Shape) => {
     if (wsRef.current?.readyState === WebSocket.OPEN && currentRoom) {
       wsRef.current.send(JSON.stringify({ type: 'update_shape', shape }));
     }

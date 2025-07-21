@@ -1,4 +1,6 @@
-import type { Point, Bounds, IShape } from 'shared/types/canvas';
+import { Shape } from 'entities/canvas/classes/Shape.ts';
+
+import type { Point, Bounds } from 'shared/types/canvas';
 
 type InteractionType = 'idle' | 'dragging' | 'resizing' | 'drawing' | 'panning';
 export type Handle = 'nw' | 'n' | 'e' | 'ne' | 'se' | 's' | 'sw' | 'w' | 'rotate' | 'radius' | 'start' | 'end';
@@ -7,7 +9,7 @@ const systemCenter: Point = { x: 0, y: 0 };
 
 export default class Interaction {
   readonly type: InteractionType = 'idle';
-  readonly shape: IShape | null = null;
+  readonly shape: Shape | null = null;
   readonly dragOffset: Point = systemCenter;
   readonly handle: Handle | null = null;
   readonly initialAngle: number = 0; // angle between Ox and shape handle in rad when rotation is started

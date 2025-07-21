@@ -1,6 +1,5 @@
 import { BASE_PALETTE } from 'shared/types/colors';
-
-import type { IShape } from 'shared/types/canvas';
+import { Shape } from 'entities/canvas/classes/Shape.ts';
 
 import { Rectangle } from '../classes/Rectangle';
 import { Circle } from '../classes/Circle';
@@ -52,7 +51,7 @@ export function getRandomFromArray<T>(arr: T[]): T {
   return arr[idx];
 }
 
-export function getInitialShapes (canvas: HTMLCanvasElement, shapesCount: number): IShape[] {
+export function getInitialShapes (canvas: HTMLCanvasElement, shapesCount: number): Shape[] {
   const margin = 40; // inner margin for shapes
   const zoneRows = 6;
   const zoneCols = 6;
@@ -71,12 +70,12 @@ export function getInitialShapes (canvas: HTMLCanvasElement, shapesCount: number
     }
   }
 
-  const shapes: IShape[] = [];
+  const shapes: Shape[] = [];
 
   for (let i = 0; i < shapesCount; i++) {
     const zone = zones[i % zones.length];
     const typeRand = Math.random();
-    let newShape: IShape;
+    let newShape: Shape;
 
     if (typeRand < 0.25) {
       // Rectangle
