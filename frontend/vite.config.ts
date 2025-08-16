@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import federation from '@originjs/vite-plugin-federation';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -29,7 +30,28 @@ export default defineConfig({
         start_url: '.',
       },
     }),
+    federation({
+      name: 'draftly',
+      filename: 'remoteEntry.js',
+      exposes: {
+        './App': './src/app/App.tsx',
+      },
+      shared: {
+        react: { requiredVersion: '^19.1.0' },
+        'react-dom': { requiredVersion: '^19.1.0' },
+      },
+    }),
   ],
+  build: {
+    target: 'esnext',
+    minify: false,
+    cssCodeSplit: false,
+    rollupOptions: {
+      output: {
+        minifyInternalExports: false,
+      },
+    },
+  },
   resolve: {
     alias: {
       shared: '/src/shared',
