@@ -42,8 +42,8 @@ export default defineConfig({
       },
     }),
   ],
-  // Реальный домен для продакшена
-  base: 'https://draftly.ermolaev-frontend.ru',
+  // Базовый путь для приложения (не полный URL!)
+  base: '/',
   build: {
     target: 'esnext',
     minify: false,
