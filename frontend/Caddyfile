@@ -1,8 +1,7 @@
 :80
 root * /usr/share/caddy
 
-# Allow CORS for JavaScript and CSS files
-header *.js,*.css {
+header {
     Access-Control-Allow-Origin *
     Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
     Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization"
