@@ -1,6 +1,14 @@
 :80
 root * /usr/share/caddy
-file_server
+
+# Приоритет для статических файлов
+@static {
+    path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
+}
+
+# Сначала ищем статические файлы, потом fallback на index.html
+try_files @static {path} {path}/ /index.html
+
+# Заголовки для правильных MIME типов
 header *.js Content-Type "application/javascript"
-header *.css Content-Type "text/css"
-try_files {path} {path}/ /index.html 
+header *.css Content-Type "text/css" 
