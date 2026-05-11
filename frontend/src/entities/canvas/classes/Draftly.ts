@@ -144,57 +144,38 @@ export class Draftly {
     const mouse = this.getMousePos(e);
 
     if (this.isDrawingToolSelected()) {
-      let newShape: Shape | null = null;
-
-      switch (this.currentTool) {
-        case 'pencil': {
-          newShape = new Pencil({
-            color: this.currentColor,
-            strokeWidth: getRandomStrokeWidth(),
-            points: [mouse],
-          });
-
-          break;
-        }
-
-        case 'rectangle': {
-          newShape = new Rectangle({
-            color: this.currentColor,
-            strokeWidth: getRandomStrokeWidth(),
-            x: mouse.x,
-            y: mouse.y,
-            width: 1,
-            height: 1,
-          });
-
-          break;
-        }
-
-        case 'circle': {
-          newShape = new Circle({
-            color: this.currentColor,
-            strokeWidth: getRandomStrokeWidth(),
-            x: mouse.x,
-            y: mouse.y,
-            radius: 1,
-          });
-
-          break;
-        }
-
-        case 'line': {
-          newShape = new Line({
-            color: this.currentColor,
-            strokeWidth: getRandomStrokeWidth(),
-            x1: mouse.x,
-            y1: mouse.y,
-            x2: mouse.x,
-            y2: mouse.y,
-          });
-
-          break;
-        }
-      }
+      const shapeFactories: Partial<Record<ToolType, () => Shape>> = {
+        pencil: () => new Pencil({
+          color: this.currentColor,
+          strokeWidth: getRandomStrokeWidth(),
+          points: [mouse],
+        }),
+        rectangle: () => new Rectangle({
+          color: this.currentColor,
+          strokeWidth: getRandomStrokeWidth(),
+          x: mouse.x,
+          y: mouse.y,
+          width: 1,
+          height: 1,
+        }),
+        circle: () => new Circle({
+          color: this.currentColor,
+          strokeWidth: getRandomStrokeWidth(),
+          x: mouse.x,
+          y: mouse.y,
+          radius: 1,
+        }),
+        line: () => new Line({
+          color: this.currentColor,
+          strokeWidth: getRandomStrokeWidth(),
+          x1: mouse.x,
+          y1: mouse.y,
+          x2: mouse.x,
+          y2: mouse.y,
+        }),
+      };
+      
+      const newShape = shapeFactories[this.currentTool]?.() ?? null;
 
       if (newShape) {
         this.applyAddShape(newShape);
