@@ -146,41 +146,45 @@ export class Pencil extends Shape {
       newW = initialBounds.width,
       newH = initialBounds.height;
 
-    switch (handle) {
-      case 'nw':
+    const resizeByHandle: Partial<Record<Handle, () => void>> = {
+      nw: () => {
         newX = mouse.x;
         newY = mouse.y;
         newW = initialBounds.x + initialBounds.width - mouse.x;
         newH = initialBounds.y + initialBounds.height - mouse.y;
-        break;
-      case 'ne':
+      },
+      ne: () => {
         newY = mouse.y;
         newW = mouse.x - initialBounds.x;
         newH = initialBounds.y + initialBounds.height - mouse.y;
-        break;
-      case 'se':
+      },
+      se: () => {
         newW = mouse.x - initialBounds.x;
         newH = mouse.y - initialBounds.y;
-        break;
-      case 'sw':
+      },
+      sw: () => {
         newX = mouse.x;
         newW = initialBounds.x + initialBounds.width - mouse.x;
         newH = mouse.y - initialBounds.y;
-        break;
-      case 'n':
+      },
+      n: () => {
         newY = mouse.y;
         newH = initialBounds.y + initialBounds.height - mouse.y;
-        break;
-      case 's':
+      },
+      s: () => {
         newH = mouse.y - initialBounds.y;
-        break;
-      case 'e':
+      },
+      e: () => {
         newW = mouse.x - initialBounds.x;
-        break;
-      case 'w':
+      },
+      w: () => {
         newX = mouse.x;
         newW = initialBounds.x + initialBounds.width - mouse.x;
-        break;
+      },
+    };
+
+    if (handle) {
+      resizeByHandle[handle]?.();
     }
 
     newW = Math.max(10, newW);
