@@ -158,35 +158,39 @@ export class Rectangle extends Shape {
     const { x: lx, y: ly } = getRotatedPointLocal(mouse, center, angle);
     let left = -this.width/2, right = this.width/2, top = -this.height/2, bottom = this.height/2;
 
-    switch (handle) {
-      case 'nw':
+    const resizeByHandle: Partial<Record<Handle, () => void>> = {
+      nw: () => {
         left = Math.min(lx, right - 20);
         top = Math.min(ly, bottom - 20);
-        break;
-      case 'ne':
+      },
+      ne: () => {
         right = Math.max(lx, left + 20);
         top = Math.min(ly, bottom - 20);
-        break;
-      case 'se':
+      },
+      se: () => {
         right = Math.max(lx, left + 20);
         bottom = Math.max(ly, top + 20);
-        break;
-      case 'sw':
+      },
+      sw: () => {
         left = Math.min(lx, right - 20);
         bottom = Math.max(ly, top + 20);
-        break;
-      case 'n':
+      },
+      n: () => {
         top = Math.min(ly, bottom - 20);
-        break;
-      case 's':
+      },
+      s: () => {
         bottom = Math.max(ly, top + 20);
-        break;
-      case 'e':
+      },
+      e: () => {
         right = Math.max(lx, left + 20);
-        break;
-      case 'w':
+      },
+      w: () => {
         left = Math.min(lx, right - 20);
-        break;
+      },
+    };
+
+    if (handle) {
+      resizeByHandle[handle]?.();
     }
 
     const newWidth = right - left;
