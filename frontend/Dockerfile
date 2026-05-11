@@ -1,12 +1,12 @@
 # Stage 1: Build
 FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
-RUN pnpm run lint
-RUN pnpm test
-RUN pnpm run build
+RUN npm run lint
+RUN npm test
+RUN npm run build
 
 # Stage 2: Serve with Caddy
 FROM caddy:alpine

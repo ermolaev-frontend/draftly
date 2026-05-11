@@ -49,14 +49,14 @@ The application follows a modular architecture with clear separation of concerns
 #### Deployment
 - **Docker** - Containerization
 - **Caddy** - Production web server
-- **pnpm** - Package manager
+- **npm** - Package manager
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+ 
-- pnpm 8+
+- npm (bundled with Node.js)
 - Git
 
 ### Environment Setup
@@ -95,7 +95,7 @@ This will start both frontend and backend servers automatically.
 ```bash
 # Frontend
 cd frontend
-pnpm install
+npm install
 
 # Backend
 cd backend
@@ -111,7 +111,7 @@ npm run dev
 3. **Start Frontend Development Server**:
 ```bash
 cd frontend
-pnpm dev
+npm run dev
 ```
 
 4. **Access the Application**:
@@ -122,8 +122,8 @@ pnpm dev
 
 ```bash
 cd frontend
-pnpm build
-pnpm preview
+npm run build
+npm run preview
 ```
 
 ### Docker Deployment
@@ -139,18 +139,18 @@ The application will be available at: http://localhost:8080
 
 ```bash
 cd frontend
-pnpm test              # Run tests
-pnpm test:watch        # Watch mode
-pnpm test:coverage     # Coverage report
-pnpm test:ci          # CI mode
+npm test              # Run tests
+npm run test:watch        # Watch mode
+npm run test:coverage     # Coverage report
+npm run test:ci          # CI mode
 ```
 
 ### Code Quality
 
 ```bash
 cd frontend
-pnpm lint             # ESLint
-pnpm ci               # Full CI pipeline (lint + test + build)
+npm run lint             # ESLint
+npm run ci               # Full CI pipeline (lint + test + build)
 ```
 
 ## Project Structure

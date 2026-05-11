@@ -82,12 +82,12 @@ function App() {
 
 ### Разработка
 ```bash
-pnpm dev
+npm run dev
 ```
 
 ### Продакшн сборка
 ```bash
-pnpm build
+npm run build
 ```
 
 После сборки в папке `dist` появится файл `remoteEntry.js`, который нужно разместить на сервере.

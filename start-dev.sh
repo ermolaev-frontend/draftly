@@ -29,7 +29,7 @@ sleep 2
 # Start frontend server
 echo "🎨 Starting frontend server..."
 cd frontend
-pnpm install
+npm install
 npm run dev &
 FRONTEND_PID=$!
 cd ..
